@@ -1,0 +1,328 @@
+"use client"
+
+import { usePathname } from "next/navigation"
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  Package,
+  Users,
+  BarChart2,
+  Wallet,
+  ClipboardList,
+  Blocks,
+  Megaphone,
+  Sparkles,
+  Zap,
+  FileBarChart,
+} from "lucide-react"
+import { cn } from "@/lib/utils"
+import { useBrandFilter } from "@/lib/brand-filter-context"
+import { supabase } from "@/lib/supabase"
+
+interface SubItem {
+  title: string
+  url: string
+  countKey?: string // key for notification count
+}
+
+interface NavItem {
+  title: string
+  url: string
+  icon: React.ElementType
+  subItems?: SubItem[]
+  centralOnly?: boolean
+  countKey?: string
+}
+
+const NAV_ITEMS: NavItem[] = [
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Orders",
+    url: "/orders",
+    icon: ShoppingCart,
+    countKey: "pendingOrders",
+    subItems: [
+      { title: "All Orders", url: "/orders/all" },
+      { title: "Pending", url: "/orders/pending", countKey: "pendingOrders" },
+      { title: "Fulfillment", url: "/orders/fulfillment", countKey: "processingOrders" },
+      { title: "Shipments", url: "/orders/shipments" },
+      { title: "Disputes", url: "/orders/refunds" },
+      { title: "Quotes", url: "/orders/quotes" },
+    ],
+  },
+  {
+    title: "Products",
+    url: "/catalog",
+    icon: Package,
+    subItems: [
+      { title: "Listings", url: "/catalog/listings" },
+      { title: "Collections", url: "/catalog/collections" },
+      { title: "Inventory", url: "/catalog/inventory" },
+      { title: "Pricing", url: "/catalog/pricing" },
+      { title: "Sourcing", url: "/catalog/sourcing" },
+      { title: "Review", url: "/catalog/sourcing/review", countKey: "newScraped" },
+      { title: "Queue", url: "/catalog/publishing-queue" },
+      { title: "Images", url: "/catalog/image-studio" },
+    ],
+  },
+  {
+    title: "Retailers",
+    url: "/retailers",
+    icon: Users,
+    subItems: [
+      { title: "All Retailers", url: "/retailers/directory" },
+      { title: "Campaigns", url: "/retailers/campaigns" },
+      { title: "Follow-ups", url: "/retailers/follow-ups" },
+      { title: "WhatsApp", url: "/retailers/whatsapp" },
+      { title: "Faire Direct", url: "/retailers/faire-direct" },
+    ],
+  },
+  {
+    title: "Analytics",
+    url: "/analytics",
+    icon: BarChart2,
+    subItems: [
+      { title: "Revenue", url: "/analytics/revenue" },
+      { title: "Stores", url: "/analytics/stores" },
+      { title: "Products", url: "/analytics/products" },
+      { title: "Traffic", url: "/analytics/traffic" },
+      { title: "Geography", url: "/analytics/geography" },
+    ],
+  },
+  {
+    title: "AI Tools",
+    url: "/workspace/ai-tools",
+    icon: Sparkles,
+    subItems: [
+      { title: "All Tools", url: "/workspace/ai-tools/all" },
+      { title: "Titles", url: "/workspace/ai-tools/title-optimizer" },
+      { title: "Descriptions", url: "/workspace/ai-tools/description-generator" },
+      { title: "Tags", url: "/workspace/ai-tools/product-tags" },
+      { title: "Audit", url: "/workspace/ai-tools/listing-audit" },
+      { title: "Pricing", url: "/workspace/ai-tools/pricing-recommender" },
+      { title: "Emails", url: "/workspace/ai-tools/retailer-email" },
+      { title: "Trends", url: "/workspace/ai-tools/trend-analyzer" },
+    ],
+  },
+  {
+    title: "Comms",
+    url: "/workspace/emails",
+    icon: Megaphone,
+    centralOnly: true,
+    subItems: [
+      { title: "Dashboard", url: "/workspace/emails/dashboard" },
+      { title: "Compose", url: "/workspace/emails/compose" },
+      { title: "Email Templates", url: "/workspace/emails/templates" },
+      { title: "Email Logs", url: "/workspace/emails/logs" },
+      { title: "SMS", url: "/workspace/messaging/sms" },
+      { title: "WhatsApp", url: "/workspace/messaging/whatsapp" },
+      { title: "MSG Templates", url: "/workspace/messaging/templates" },
+      { title: "MSG Logs", url: "/workspace/messaging/logs" },
+    ],
+  },
+  {
+    title: "Ops",
+    url: "/operations",
+    icon: ClipboardList,
+    centralOnly: true,
+    subItems: [
+      { title: "Tasks", url: "/operations/tasks" },
+      { title: "My Tasks", url: "/operations/my-tasks" },
+    ],
+  },
+  {
+    title: "Finance",
+    url: "/finance",
+    icon: Wallet,
+    centralOnly: true,
+    subItems: [
+      { title: "Overview", url: "/finance/banking" },
+      { title: "Transactions", url: "/finance/banking/transactions" },
+      { title: "Reconcile", url: "/finance/banking/reconciliation" },
+      { title: "Ledger", url: "/workspace/ledger" },
+    ],
+  },
+  {
+    title: "Stores",
+    url: "/workspace/stores",
+    icon: Blocks,
+    centralOnly: true,
+    subItems: [
+      { title: "All Stores", url: "/workspace/stores/all" },
+      { title: "Applications", url: "/workspace/applications", countKey: "draftApps" },
+    ],
+  },
+  {
+    title: "Reports",
+    url: "/reports",
+    icon: FileBarChart,
+    centralOnly: true,
+    subItems: [
+      { title: "All Reports", url: "/reports/all" },
+      { title: "Day Close", url: "/reports/day-close" },
+      { title: "Targets", url: "/operations/targets" },
+    ],
+  },
+  {
+    title: "Automations",
+    url: "/automations",
+    icon: Zap,
+    centralOnly: true,
+    subItems: [
+      { title: "Overview", url: "/automations/overview" },
+      { title: "Sync", url: "/automations/sync" },
+      { title: "Notifications", url: "/automations/notifications" },
+      { title: "History", url: "/automations/history" },
+    ],
+  },
+  {
+    title: "More",
+    url: "/workspace",
+    icon: Blocks,
+    centralOnly: true,
+    subItems: [
+      { title: "Vendors", url: "/workspace/vendors" },
+      { title: "Knowledge", url: "/workspace/knowledge" },
+      { title: "Calendar", url: "/workspace/calendar" },
+      { title: "Training", url: "/workspace/training" },
+      { title: "SOPs", url: "/workspace/sops" },
+      { title: "Links", url: "/workspace/links" },
+      { title: "Settings", url: "/workspace/settings" },
+      { title: "Account", url: "/workspace/account" },
+    ],
+  },
+]
+
+function getActiveNavItem(pathname: string, items: NavItem[]): NavItem | null {
+  for (const item of items) {
+    if (item.subItems) {
+      for (const sub of item.subItems) {
+        if (pathname === sub.url || pathname.startsWith(sub.url + "/")) {
+          return item
+        }
+      }
+    }
+    if (pathname === item.url || pathname.startsWith(item.url + "/")) {
+      return item
+    }
+  }
+  return null
+}
+
+function isSubItemActive(pathname: string, subUrl: string, isFirst: boolean, parentUrl: string): boolean {
+  if (pathname === subUrl) return true
+  if (pathname.startsWith(subUrl + "/")) return true
+  return false
+}
+
+function CountBadge({ count }: { count: number }) {
+  if (count <= 0) return null
+  return (
+    <span className="ml-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white leading-none">
+      {count > 99 ? "99+" : count}
+    </span>
+  )
+}
+
+export function TopNavigation() {
+  const pathname = usePathname()
+  const { activeBrand } = useBrandFilter()
+  const [counts, setCounts] = useState<Record<string, number>>({})
+
+  // Fetch notification counts
+  useEffect(() => {
+    async function fetchCounts() {
+      const [pendingRes, processingRes, scrapedRes, appsRes] = await Promise.all([
+        supabase.from("faire_orders").select("*", { count: "exact", head: true }).eq("state", "NEW"),
+        supabase.from("faire_orders").select("*", { count: "exact", head: true }).eq("state", "PROCESSING"),
+        supabase.from("scraped_products").select("*", { count: "exact", head: true }).eq("status", "new"),
+        supabase.from("faire_seller_applications").select("*", { count: "exact", head: true }).eq("status", "drafting"),
+      ])
+      setCounts({
+        pendingOrders: pendingRes.count ?? 0,
+        processingOrders: processingRes.count ?? 0,
+        newScraped: scrapedRes.count ?? 0,
+        draftApps: appsRes.count ?? 0,
+      })
+    }
+    fetchCounts()
+  }, [])
+
+  const visibleItems = activeBrand === "all"
+    ? NAV_ITEMS
+    : NAV_ITEMS.filter((item) => !item.centralOnly)
+
+  const activeItem = getActiveNavItem(pathname, visibleItems)
+  const subItems = activeItem?.subItems
+
+  return (
+    <div className="shrink-0">
+      {/* Primary nav bar */}
+      <nav
+        className="grid bg-[hsl(225,47%,15%)]"
+        style={{ gridTemplateColumns: `repeat(${visibleItems.length}, 1fr)` }}
+      >
+        {visibleItems.map((item) => {
+          const isActive = activeItem?.url === item.url
+          const Icon = item.icon
+          const count = item.countKey ? counts[item.countKey] ?? 0 : 0
+          return (
+            <Link
+              key={item.url}
+              href={item.url}
+              className={cn(
+                "flex items-center justify-center gap-1.5 h-12 text-sm font-medium transition-colors",
+                isActive
+                  ? "bg-primary text-white"
+                  : "text-white/70 hover:bg-white/10 hover:text-white"
+              )}
+            >
+              <Icon className="size-4" />
+              {item.title}
+              {count > 0 && (
+                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white leading-none">
+                  {count}
+                </span>
+              )}
+            </Link>
+          )
+        })}
+      </nav>
+
+      {/* Sub-nav bar */}
+      {subItems && subItems.length > 0 && (
+        <div
+          className="grid border-b border-border bg-background"
+          style={{ gridTemplateColumns: `repeat(${subItems.length}, 1fr)` }}
+        >
+          {subItems.map((sub, i) => {
+            const active = isSubItemActive(pathname, sub.url, i === 0, activeItem!.url)
+            const subCount = sub.countKey ? counts[sub.countKey] ?? 0 : 0
+            return (
+              <Link
+                key={sub.url}
+                href={sub.url}
+                className={cn(
+                  "flex items-center justify-center gap-1.5 h-11 text-sm transition-colors",
+                  i < subItems.length - 1 && "border-r border-border",
+                  active
+                    ? "bg-primary/8 text-primary font-semibold border-b-2 border-b-primary"
+                    : "text-muted-foreground font-medium hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                {sub.title}
+                <CountBadge count={subCount} />
+              </Link>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
