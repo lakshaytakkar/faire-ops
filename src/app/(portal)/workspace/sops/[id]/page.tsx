@@ -15,6 +15,12 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Circle,
+  CheckCircle2,
+  Clock,
+  ListOrdered,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -55,6 +61,155 @@ const CATEGORY_OPTIONS = [
 ]
 
 const TEAM_MEMBERS = ["Lakshay", "Aditya", "Khushal", "Bharti", "Allen", "Harsh"]
+
+/* ------------------------------------------------------------------ */
+/*  Content parser — splits markdown into structured steps             */
+/* ------------------------------------------------------------------ */
+
+interface SOPStep {
+  title: string
+  body: string
+  substeps: string[]
+}
+
+function parseContentToSteps(content: string): { preamble: string; steps: SOPStep[] } {
+  const lines = content.split("\n")
+  let preamble = ""
+  const steps: SOPStep[] = []
+  let currentStep: SOPStep | null = null
+  let inPreamble = true
+  let bodyLines: string[] = []
+
+  for (const line of lines) {
+    // Detect step headers: "## Step N:", "## N.", "### Step N", or numbered lines like "1. **Title**"
+    const stepMatch = line.match(/^#{1,3}\s*(?:Step\s*)?(\d+)[.:)\s-]+\s*(.+)/i)
+      || line.match(/^(\d+)\.\s*\*?\*?(.+?)\*?\*?\s*$/)
+
+    if (stepMatch) {
+      // Save previous step
+      if (currentStep) {
+        currentStep.body = bodyLines.join("\n").trim()
+        steps.push(currentStep)
+        bodyLines = []
+      }
+      inPreamble = false
+      currentStep = {
+        title: stepMatch[2].replace(/\*\*/g, "").replace(/#/g, "").trim(),
+        body: "",
+        substeps: [],
+      }
+      continue
+    }
+
+    // Detect sub-steps within a step: "- item" or "* item"
+    if (currentStep && (line.match(/^\s*[-*]\s+.+/) || line.match(/^\s+\d+\.\s+.+/))) {
+      const cleaned = line.replace(/^\s*[-*]\s+/, "").replace(/^\s+\d+\.\s+/, "").trim()
+      if (cleaned) currentStep.substeps.push(cleaned)
+      continue
+    }
+
+    if (inPreamble) {
+      preamble += line + "\n"
+    } else if (currentStep) {
+      bodyLines.push(line)
+    }
+  }
+
+  // Save last step
+  if (currentStep) {
+    currentStep.body = bodyLines.join("\n").trim()
+    steps.push(currentStep)
+  }
+
+  // If no steps found, treat the whole content as a single step
+  if (steps.length === 0 && content.trim()) {
+    const contentLines = content.split("\n").filter(l => !l.startsWith("#") && l.trim() !== "---")
+    steps.push({
+      title: "Procedure",
+      body: contentLines.join("\n").trim(),
+      substeps: [],
+    })
+  }
+
+  return { preamble: preamble.trim(), steps }
+}
+
+/* ------------------------------------------------------------------ */
+/*  SOPStepCard — expandable step with rich numbering                  */
+/* ------------------------------------------------------------------ */
+
+function SOPStepCard({ step, index, total }: { step: SOPStep; index: number; total: number }) {
+  const [expanded, setExpanded] = useState(index === 0)
+  const stepNum = index + 1
+
+  // Parse preamble-like metadata from body
+  const bodyLines = step.body.split("\n").filter(l => l.trim() && l.trim() !== "---")
+
+  return (
+    <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+      {/* Step header — always visible, clickable */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition-colors cursor-pointer text-left"
+      >
+        {/* Step number circle */}
+        <div className="shrink-0 w-9 h-9 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center">
+          <span className="text-sm font-bold text-primary">{stepNum}</span>
+        </div>
+
+        {/* Title + meta */}
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-semibold text-foreground">{step.title}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Step {stepNum} of {total}
+            {step.substeps.length > 0 && ` · ${step.substeps.length} sub-steps`}
+          </p>
+        </div>
+
+        {/* Expand chevron */}
+        {expanded ? (
+          <ChevronUp className="size-4 text-muted-foreground shrink-0" />
+        ) : (
+          <ChevronDown className="size-4 text-muted-foreground shrink-0" />
+        )}
+      </button>
+
+      {/* Expanded content */}
+      {expanded && (
+        <div className="px-5 pb-5 pt-0 border-t">
+          {/* Body text */}
+          {bodyLines.length > 0 && (
+            <div className="mt-3 text-sm text-foreground/80 leading-relaxed space-y-1.5">
+              {bodyLines.map((line, i) => {
+                // Bold text
+                const formatted = line.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+                if (line.startsWith("**") && line.endsWith("**")) {
+                  return <p key={i} className="font-semibold text-foreground text-sm" dangerouslySetInnerHTML={{ __html: formatted }} />
+                }
+                return <p key={i} className="text-sm" dangerouslySetInnerHTML={{ __html: formatted }} />
+              })}
+            </div>
+          )}
+
+          {/* Sub-steps checklist */}
+          {step.substeps.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Checklist</p>
+              {step.substeps.map((sub, si) => (
+                <div key={si} className="flex items-start gap-2.5 py-1.5 px-3 rounded-md bg-muted/30">
+                  <div className="shrink-0 w-5 h-5 rounded-full border-2 border-border flex items-center justify-center mt-0.5">
+                    <span className="text-[10px] font-bold text-muted-foreground">{si + 1}</span>
+                  </div>
+                  <p className="text-sm text-foreground/80">{sub.replace(/\*\*(.+?)\*\*/g, "$1")}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 /* ------------------------------------------------------------------ */
 /*  Page                                                               */
@@ -294,15 +449,46 @@ export default function SOPDetailPage() {
               </div>
             ) : (
               <div>
+                {/* Description as overview */}
                 {sop.description && (
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {sop.description}
-                  </p>
-                )}
-                {sop.content ? (
-                  <div className="text-sm whitespace-pre-wrap leading-relaxed">
-                    {sop.content}
+                  <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/40 border border-border/50 mb-5">
+                    <FileText className="size-5 text-primary shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Overview</p>
+                      <p className="text-sm text-foreground leading-relaxed">{sop.description}</p>
+                    </div>
                   </div>
+                )}
+
+                {/* Steps */}
+                {sop.content ? (
+                  (() => {
+                    const { preamble, steps } = parseContentToSteps(sop.content)
+                    return (
+                      <div className="space-y-3">
+                        {/* Preamble metadata */}
+                        {preamble && (
+                          <div className="text-sm text-muted-foreground space-y-1 mb-2">
+                            {preamble.split("\n").filter(l => l.trim() && !l.startsWith("#") && l.trim() !== "---").map((line, i) => {
+                              const formatted = line.replace(/\*\*(.+?)\*\*/g, "<strong class='text-foreground'>$1</strong>")
+                              return <p key={i} className="text-sm" dangerouslySetInnerHTML={{ __html: formatted }} />
+                            })}
+                          </div>
+                        )}
+
+                        {/* Step header */}
+                        <div className="flex items-center gap-2 pt-2">
+                          <ListOrdered className="size-4 text-primary" />
+                          <h3 className="text-sm font-semibold text-foreground">{steps.length} Steps</h3>
+                        </div>
+
+                        {/* Step cards */}
+                        {steps.map((step, i) => (
+                          <SOPStepCard key={i} step={step} index={i} total={steps.length} />
+                        ))}
+                      </div>
+                    )
+                  })()
                 ) : (
                   <p className="text-sm text-muted-foreground italic">
                     No content yet. Click Edit to add content.
