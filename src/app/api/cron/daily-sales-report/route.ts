@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { sendEmail, isResendConfigured } from "@/lib/resend"
 
 function getSupabase() {
   return createClient(
@@ -12,6 +13,8 @@ export const maxDuration = 60
 
 const DM_CHANNEL_ID = "8504dd9e-273f-4184-9ad8-a90b4859c582"
 const SENDER = "Priya Sharma"
+const PRIYA_AI_ID = "723844b5-6f5a-4200-890f-24b0b94b25dd"
+const LAKSHAY_EMAIL = "lakshaytakkar01@gmail.com"
 
 function formatCents(cents: number): string {
   return "$" + (cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -140,21 +143,109 @@ export async function GET(request: Request) {
       .update({ last_message_at: new Date().toISOString() })
       .eq("id", DM_CHANNEL_ID)
 
+    // Also post to Priya's AI conversation so it shows in ai-team page
+    let convId: string | null = null
+    const { data: existingConv } = await supabase
+      .from("ai_conversations")
+      .select("id")
+      .eq("ai_employee_id", PRIYA_AI_ID)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .single()
+
+    if (existingConv) {
+      convId = existingConv.id
+      await supabase.from("ai_conversations").update({ updated_at: new Date().toISOString() }).eq("id", convId)
+    } else {
+      const { data: newConv } = await supabase
+        .from("ai_conversations")
+        .insert({ ai_employee_id: PRIYA_AI_ID, title: "Daily Sales Reports" })
+        .select("id")
+        .single()
+      convId = newConv?.id ?? null
+    }
+
+    if (convId) {
+      await supabase.from("ai_messages").insert({
+        conversation_id: convId,
+        role: "assistant",
+        content: report,
+      })
+    }
+
+    // Send email via Resend
+    let emailSent = false
+    if (isResendConfigured()) {
+      const emailHtml = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 24px; color: white; margin-bottom: 24px;">
+            <h1 style="margin: 0 0 4px; font-size: 20px;">📊 Daily Sales Report</h1>
+            <p style="margin: 0; opacity: 0.9; font-size: 14px;">${formatDate(today)}</p>
+          </div>
+          ${orderCount === 0 ? '<p style="color: #666; font-size: 14px;">No new orders today.</p>' : `
+          <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+            <div style="flex: 1; background: #f8fafc; border-radius: 8px; padding: 16px; text-align: center;">
+              <div style="font-size: 24px; font-weight: 700; color: #1e293b;">${orderCount}</div>
+              <div style="font-size: 12px; color: #64748b; text-transform: uppercase;">Orders</div>
+            </div>
+            <div style="flex: 1; background: #f8fafc; border-radius: 8px; padding: 16px; text-align: center;">
+              <div style="font-size: 24px; font-weight: 700; color: #059669;">${formatCents(totalRevenue)}</div>
+              <div style="font-size: 12px; color: #64748b; text-transform: uppercase;">Revenue</div>
+            </div>
+            <div style="flex: 1; background: #f8fafc; border-radius: 8px; padding: 16px; text-align: center;">
+              <div style="font-size: 24px; font-weight: 700; color: #1e293b;">${totalItems}</div>
+              <div style="font-size: 12px; color: #64748b; text-transform: uppercase;">Items</div>
+            </div>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <thead>
+              <tr style="border-bottom: 2px solid #e2e8f0;">
+                <th style="text-align: left; padding: 8px 0; color: #64748b; font-size: 12px; text-transform: uppercase;">Store</th>
+                <th style="text-align: right; padding: 8px 0; color: #64748b; font-size: 12px; text-transform: uppercase;">Orders</th>
+                <th style="text-align: right; padding: 8px 0; color: #64748b; font-size: 12px; text-transform: uppercase;">Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${Object.values(byStore).sort((a, b) => b.revenue - a.revenue).map(s =>
+                `<tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 10px 0; font-weight: 500;">${s.name}</td>
+                  <td style="padding: 10px 0; text-align: right;">${s.count}</td>
+                  <td style="padding: 10px 0; text-align: right; font-weight: 600; color: #059669;">${formatCents(s.revenue)}</td>
+                </tr>`
+              ).join("")}
+            </tbody>
+          </table>
+          `}
+          <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8;">
+            Sent by Priya Sharma · Faire Ops Automation
+          </div>
+        </div>
+      `
+      const emailResult = await sendEmail({
+        to: LAKSHAY_EMAIL,
+        toName: "Lakshay",
+        subject: `📊 Daily Sales: ${orderCount} orders · ${formatCents(totalRevenue)} — ${formatDate(today)}`,
+        html: emailHtml,
+      })
+      emailSent = emailResult.success
+    }
+
     // Log the automation run
     await supabase.from("sync_log").insert({
       store_id: null,
       type: "daily_sales_report",
       status: "success",
-      details: { orders: orderCount, revenue_cents: totalRevenue },
+      details: { orders: orderCount, revenue_cents: totalRevenue, email_sent: emailSent },
       started_at: new Date().toISOString(),
       finished_at: new Date().toISOString(),
-    }).then(() => {}) // fire and forget
+    }).then(() => {})
 
     return NextResponse.json({
       success: true,
       orders: orderCount,
       revenue: formatCents(totalRevenue),
-      message: "Daily sales report sent to Priya Sharma → Lakshay DM",
+      emailSent,
+      message: "Daily sales report sent to chat + email",
     })
   } catch (error) {
     console.error("Daily sales report error:", error)
