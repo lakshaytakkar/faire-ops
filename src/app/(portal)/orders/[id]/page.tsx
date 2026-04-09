@@ -352,7 +352,7 @@ export default function OrderDetailPage() {
               </span>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             {retailerName} &middot; {store?.name ?? "\u2014"} &middot; Placed {formatDate(order.faire_created_at)}
           </p>
         </div>
@@ -395,8 +395,8 @@ export default function OrderDetailPage() {
           {/* Row: Timeline + Summary side by side */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Timeline */}
-            <div className="rounded-md border bg-card overflow-hidden">
-              <div className="px-4 py-3 border-b"><span className="text-sm font-semibold">Fulfillment</span></div>
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b"><span className="text-[0.9375rem] font-semibold tracking-tight">Fulfillment</span></div>
               <div className="p-4">
                 <div className="space-y-5">
                   {TIMELINE_STEPS.map((step, i) => {
@@ -423,8 +423,8 @@ export default function OrderDetailPage() {
             </div>
 
             {/* Financials */}
-            <div className="rounded-md border bg-card overflow-hidden">
-              <div className="px-4 py-3 border-b"><span className="text-sm font-semibold">Financials</span></div>
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b"><span className="text-[0.9375rem] font-semibold tracking-tight">Financials</span></div>
               <div className="p-4 space-y-0">
                 <div className="py-1.5 flex justify-between"><span className="text-sm text-muted-foreground">Subtotal</span><span className="text-sm font-medium">${formatCents(financials.subtotalCents)}</span></div>
                 <div className="py-1.5 flex justify-between"><span className="text-sm text-muted-foreground">Shipping</span><span className="text-sm font-medium">${formatCents(financials.shippingCents)}</span></div>
@@ -438,10 +438,10 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Line Items */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b flex items-center justify-between">
-              <span className="text-sm font-semibold">Items ({lineItems.length || order.item_count})</span>
-              {itemsTotal > 0 && <span className="text-sm font-semibold">${formatCents(itemsTotal)}</span>}
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b flex items-center justify-between">
+              <span className="text-[0.9375rem] font-semibold tracking-tight">Items ({lineItems.length || order.item_count})</span>
+              {itemsTotal > 0 && <span className="text-[0.9375rem] font-semibold tracking-tight">${formatCents(itemsTotal)}</span>}
             </div>
             <div className="divide-y">
               {lineItems.length > 0 ? lineItems.map((item, i) => {
@@ -465,10 +465,10 @@ export default function OrderDetailPage() {
                       ) : (
                         <p className="text-sm font-medium truncate">{item.name}</p>
                       )}
-                      {item.sku && <p className="text-xs text-muted-foreground">{item.sku}</p>}
+                      {item.sku && <p className="text-sm text-muted-foreground">{item.sku}</p>}
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-xs text-muted-foreground">{item.qty} x {"$" + formatCents(item.unitPriceCents)}</p>
+                      <p className="text-sm text-muted-foreground">{item.qty} x {"$" + formatCents(item.unitPriceCents)}</p>
                       <p className="text-sm font-medium">{"$" + formatCents(item.qty * item.unitPriceCents)}</p>
                     </div>
                   </div>
@@ -482,8 +482,8 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Notes */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b"><span className="text-sm font-semibold">Notes &amp; Activity</span></div>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b"><span className="text-[0.9375rem] font-semibold tracking-tight">Notes &amp; Activity</span></div>
             <div className="p-4 space-y-3">
               <textarea className="w-full rounded-md border p-3 text-sm min-h-[80px] resize-none" placeholder="Add internal notes..." defaultValue={order.notes ?? ""} />
               <div className="space-y-0">
@@ -521,8 +521,8 @@ export default function OrderDetailPage() {
         {/* RIGHT COL */}
         <div className="space-y-5">
           {/* Shipping Address */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b"><span className="text-sm font-semibold">Shipping Address</span></div>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b"><span className="text-[0.9375rem] font-semibold tracking-tight">Shipping Address</span></div>
             <div className="p-4">
               <p className="text-sm font-medium">{retailerName}</p>
               {getLine1(order) && <p className="text-sm text-muted-foreground mt-0.5">{getLine1(order)}</p>}
@@ -541,8 +541,8 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Retailer */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b"><span className="text-sm font-semibold">Retailer</span></div>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b"><span className="text-[0.9375rem] font-semibold tracking-tight">Retailer</span></div>
             <div className="p-4 space-y-1">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
@@ -558,15 +558,15 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Brand / Store */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b"><span className="text-sm font-semibold">Brand</span></div>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b"><span className="text-[0.9375rem] font-semibold tracking-tight">Brand</span></div>
             <div className="p-4 flex items-center gap-3">
               {store ? (
                 <>
                   <span className="w-8 h-8 rounded flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: store.color }}>{store.short}</span>
                   <div>
                     <p className="text-sm font-medium">{store.name}</p>
-                    <p className="text-xs text-muted-foreground">{store.category}</p>
+                    <p className="text-sm text-muted-foreground">{store.category}</p>
                   </div>
                 </>
               ) : (
@@ -597,11 +597,11 @@ export default function OrderDetailPage() {
 
             if (trackingData) {
               return (
-                <div className="rounded-md border bg-card overflow-hidden">
-                  <div className="px-4 py-3 border-b flex items-center justify-between">
+                <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+                  <div className="px-5 py-3.5 border-b flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Truck className="size-3.5 text-muted-foreground" />
-                      <span className="text-sm font-semibold">Tracking</span>
+                      <span className="text-[0.9375rem] font-semibold tracking-tight">Tracking</span>
                     </div>
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${trackingStatusStyles[trackingData.status] ?? "bg-slate-100 text-slate-600"}`}>
                       {trackingStatusLabel[trackingData.status] ?? trackingData.status}
@@ -659,8 +659,8 @@ export default function OrderDetailPage() {
             }
 
             return (
-              <div className="rounded-md border bg-card overflow-hidden">
-                <div className="px-4 py-3 border-b flex items-center gap-2"><Truck className="size-3.5 text-muted-foreground" /><span className="text-sm font-semibold">Tracking</span></div>
+              <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+                <div className="px-5 py-3.5 border-b flex items-center gap-2"><Truck className="size-3.5 text-muted-foreground" /><span className="text-[0.9375rem] font-semibold tracking-tight">Tracking</span></div>
                 <div className="p-4 space-y-1.5">
                   {carrier && <div className="flex justify-between"><span className="text-xs text-muted-foreground">Carrier</span><span className="text-xs font-medium">{carrier}</span></div>}
                   {trackingNumber && (
@@ -672,7 +672,7 @@ export default function OrderDetailPage() {
                       </span>
                     </div>
                   )}
-                  {!trackingNumber && <p className="text-xs text-muted-foreground">No tracking info yet</p>}
+                  {!trackingNumber && <p className="text-sm text-muted-foreground">No tracking info yet</p>}
                 </div>
               </div>
             )
@@ -692,11 +692,11 @@ export default function OrderDetailPage() {
             const approvedQuote = vendorQuotes.find((q) => q.status === "approved")
             const shippedQuote = vendorQuotes.find((q) => q.status === "shipped")
             return (
-              <div className="rounded-md border bg-card overflow-hidden">
-                <div className="px-4 py-3 border-b flex items-center justify-between">
+              <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+                <div className="px-5 py-3.5 border-b flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <FileText className="size-3.5 text-muted-foreground" />
-                    <span className="text-sm font-semibold">Vendor Quotes</span>
+                    <span className="text-[0.9375rem] font-semibold tracking-tight">Vendor Quotes</span>
                   </div>
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusBadge[quoteStatus] ?? "bg-slate-100 text-slate-600"}`}>
                     {quoteStatus.charAt(0).toUpperCase() + quoteStatus.slice(1)}
@@ -758,9 +758,9 @@ export default function OrderDetailPage() {
 
           {/* Payout Status */}
           {order.state === "DELIVERED" && (
-            <div className="rounded-md border bg-card overflow-hidden">
-              <div className="px-4 py-3 border-b">
-                <span className="text-sm font-semibold">Payout</span>
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b">
+                <span className="text-[0.9375rem] font-semibold tracking-tight">Payout</span>
               </div>
               <div className="p-4">
                 {payoutStatus ? (

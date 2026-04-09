@@ -240,7 +240,7 @@ Return ONLY the new description.`
             <ArrowLeft className="size-3" /> Catalog
           </Link>
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold font-heading leading-tight">{product.name}</h1>
+            <h1 className="text-2xl font-bold font-heading leading-tight">{product.name}</h1>
           </div>
           {/* AI Title Rewrite */}
           {isGeminiConfigured() && (
@@ -249,7 +249,7 @@ Return ONLY the new description.`
                 <button onClick={() => setTitleRewrite({...titleRewrite, mode: "suggest"})} className="flex items-center gap-1.5 text-xs text-primary hover:underline"><Sparkles className="size-3" /> Rewrite title with AI</button>
               )}
               {titleRewrite.mode === "suggest" && (
-                <div className="mt-1.5 rounded-md border bg-card p-3 space-y-2 max-w-lg">
+                <div className="mt-1.5 rounded-lg border border-border/80 bg-card shadow-sm p-3 space-y-2 max-w-lg">
                   <p className="text-xs font-medium text-muted-foreground">Suggestions for the AI? (optional)</p>
                   <input value={titleRewrite.suggestions} onChange={(e) => setTitleRewrite({...titleRewrite, suggestions: e.target.value})} placeholder="e.g., emphasize eco-friendly, mention quantity..." className="h-8 w-full rounded-md border px-3 text-sm" />
                   <div className="flex gap-2">
@@ -296,7 +296,7 @@ Return ONLY the new description.`
                 </span>
               )}
               {product.made_in_country && (
-                <span className="text-xs text-muted-foreground">Made in {product.made_in_country}</span>
+                <span className="text-sm text-muted-foreground">Made in {product.made_in_country}</span>
               )}
             </div>
           )}
@@ -346,10 +346,10 @@ Return ONLY the new description.`
         {/* LEFT COLUMN */}
         <div className="lg:col-span-2 space-y-4">
           {/* B. Image Gallery Card */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b flex items-center gap-2">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b flex items-center gap-2">
               <ImageIcon className="size-3.5 text-muted-foreground" />
-              <span className="text-sm font-semibold">Images ({images.length})</span>
+              <span className="text-[0.9375rem] font-semibold tracking-tight">Images ({images.length})</span>
             </div>
             <div className="p-4">
               <div className="flex items-center justify-center">
@@ -389,9 +389,9 @@ Return ONLY the new description.`
 
           {/* C. Description Card */}
           {description && (
-            <div className="rounded-md border bg-card overflow-hidden">
-              <div className="px-4 py-3 border-b flex items-center justify-between">
-                <span className="text-sm font-semibold">Description</span>
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b flex items-center justify-between">
+                <span className="text-[0.9375rem] font-semibold tracking-tight">Description</span>
                 {isGeminiConfigured() && descRewrite.mode === "idle" && (
                   <button onClick={() => setDescRewrite({...descRewrite, mode: "suggest"})} className="flex items-center gap-1.5 text-xs text-primary hover:underline"><Sparkles className="size-3" /> Rewrite</button>
                 )}
@@ -426,20 +426,20 @@ Return ONLY the new description.`
 
           {/* D. Variants Table Card */}
           {variants.length > 0 && (
-            <div className="rounded-md border bg-card overflow-hidden">
-              <div className="px-4 py-3 border-b">
-                <span className="text-sm font-semibold">Variants ({variants.length})</span>
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b">
+                <span className="text-[0.9375rem] font-semibold tracking-tight">Variants ({variants.length})</span>
               </div>
               <div className="overflow-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b bg-muted/40">
-                      <th className="px-4 py-3.5 text-xs font-medium text-muted-foreground tracking-wide uppercase text-left">Variant</th>
-                      <th className="px-4 py-3.5 text-xs font-medium text-muted-foreground tracking-wide uppercase text-left">SKU</th>
-                      <th className="px-4 py-3.5 text-xs font-medium text-muted-foreground tracking-wide uppercase text-right cursor-pointer select-none" onClick={() => toggleSort("price")}><span className="flex items-center justify-end">WS Price <SortIcon col="price" /></span></th>
-                      <th className="px-4 py-3.5 text-xs font-medium text-muted-foreground tracking-wide uppercase text-right">Retail</th>
-                      <th className="px-4 py-3.5 text-xs font-medium text-muted-foreground tracking-wide uppercase text-center cursor-pointer select-none" onClick={() => toggleSort("inventory")}><span className="flex items-center justify-center">Inventory <SortIcon col="inventory" /></span></th>
-                      <th className="px-4 py-3.5 text-xs font-medium text-muted-foreground tracking-wide uppercase text-center">State</th>
+                      <th className="px-4 py-3.5 text-xs font-semibold text-muted-foreground tracking-wide uppercase text-left">Variant</th>
+                      <th className="px-4 py-3.5 text-xs font-semibold text-muted-foreground tracking-wide uppercase text-left">SKU</th>
+                      <th className="px-4 py-3.5 text-xs font-semibold text-muted-foreground tracking-wide uppercase text-right cursor-pointer select-none" onClick={() => toggleSort("price")}><span className="flex items-center justify-end">WS Price <SortIcon col="price" /></span></th>
+                      <th className="px-4 py-3.5 text-xs font-semibold text-muted-foreground tracking-wide uppercase text-right">Retail</th>
+                      <th className="px-4 py-3.5 text-xs font-semibold text-muted-foreground tracking-wide uppercase text-center cursor-pointer select-none" onClick={() => toggleSort("inventory")}><span className="flex items-center justify-center">Inventory <SortIcon col="inventory" /></span></th>
+                      <th className="px-4 py-3.5 text-xs font-semibold text-muted-foreground tracking-wide uppercase text-center">State</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -462,7 +462,7 @@ Return ONLY the new description.`
                         <tr key={v.id || realIdx} className="border-b last:border-b-0 hover:bg-muted/20 transition-colors">
                           <td className="px-4 py-3.5 text-sm">
                             <span className="font-medium">{v.name || `Variant ${realIdx + 1}`}</span>
-                            {optionsStr && <p className="text-xs text-muted-foreground mt-0.5">{optionsStr}</p>}
+                            {optionsStr && <p className="text-sm text-muted-foreground mt-0.5">{optionsStr}</p>}
                           </td>
                           <td className="px-4 py-3.5 text-sm text-muted-foreground text-xs">{v.sku || "\u2014"}</td>
                           <td className="px-4 py-3.5 text-sm text-right font-medium">{vWs !== null ? `$${vWs.toFixed(2)}` : "\u2014"}</td>
@@ -525,45 +525,45 @@ Return ONLY the new description.`
         {/* RIGHT COLUMN */}
         <div className="space-y-4">
           {/* E. Pricing Card */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b"><span className="text-sm font-semibold">Pricing</span></div>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b"><span className="text-[0.9375rem] font-semibold tracking-tight">Pricing</span></div>
             <div className="p-4 space-y-0">
-              <div className="py-1.5 flex justify-between">
+              <div className="py-2.5 flex justify-between">
                 <span className="text-sm text-muted-foreground">WS Price</span>
-                <span className="text-sm font-medium">${formatCents(product.wholesale_price_cents)}</span>
+                <span className="text-sm font-semibold text-foreground">${formatCents(product.wholesale_price_cents)}</span>
               </div>
-              <div className="py-1.5 flex justify-between">
+              <div className="py-2.5 flex justify-between">
                 <span className="text-sm text-muted-foreground">Retail Price</span>
-                <span className="text-sm font-medium">${formatCents(product.retail_price_cents)}</span>
+                <span className="text-sm font-semibold text-foreground">${formatCents(product.retail_price_cents)}</span>
               </div>
-              <div className="py-1.5 flex justify-between">
+              <div className="py-2.5 flex justify-between">
                 <span className="text-sm text-muted-foreground">Margin</span>
-                <span className={`text-sm font-medium ${margin >= 50 ? "text-emerald-600" : margin >= 40 ? "text-foreground" : "text-amber-600"}`}>
+                <span className={`text-sm font-semibold ${margin >= 50 ? "text-emerald-600" : margin >= 40 ? "text-foreground" : "text-amber-600"}`}>
                   {margin}%
                 </span>
               </div>
               {product.minimum_order_quantity > 0 && (
-                <div className="py-1.5 flex justify-between">
+                <div className="py-2.5 flex justify-between">
                   <span className="text-sm text-muted-foreground">MOQ</span>
-                  <span className="text-sm font-medium">{product.minimum_order_quantity}</span>
+                  <span className="text-sm font-semibold text-foreground">{product.minimum_order_quantity}</span>
                 </div>
               )}
             </div>
           </div>
 
           {/* F. Inventory Card */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b"><span className="text-sm font-semibold">Inventory</span></div>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b"><span className="text-[0.9375rem] font-semibold tracking-tight">Inventory</span></div>
             <div className="p-4 space-y-0">
-              <div className="py-1.5 flex justify-between">
+              <div className="py-2.5 flex justify-between">
                 <span className="text-sm text-muted-foreground">Total Inventory</span>
-                <span className={`text-sm font-medium ${product.total_inventory === 0 ? "text-red-600" : ""}`}>
+                <span className={`text-sm font-semibold ${product.total_inventory === 0 ? "text-red-600" : "text-foreground"}`}>
                   {product.total_inventory}
                 </span>
               </div>
-              <div className="py-1.5 flex justify-between">
+              <div className="py-2.5 flex justify-between">
                 <span className="text-sm text-muted-foreground">Variants</span>
-                <span className="text-sm font-medium">{product.variant_count}</span>
+                <span className="text-sm font-semibold text-foreground">{product.variant_count}</span>
               </div>
               {variants.length > 0 && (
                 <>
@@ -583,8 +583,8 @@ Return ONLY the new description.`
           </div>
 
           {/* G. Store Card */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b"><span className="text-sm font-semibold">Brand</span></div>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b"><span className="text-[0.9375rem] font-semibold tracking-tight">Brand</span></div>
             <div className="p-4 space-y-2">
               {store ? (
                 <div className="flex items-center gap-3">
@@ -593,15 +593,15 @@ Return ONLY the new description.`
                   </span>
                   <div>
                     <p className="text-sm font-medium">{store.name}</p>
-                    <p className="text-xs text-muted-foreground">{store.category}</p>
+                    <p className="text-sm text-muted-foreground">{store.category}</p>
                   </div>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">{"\u2014"}</p>
               )}
-              <div className="py-1.5 flex justify-between">
+              <div className="py-2.5 flex justify-between">
                 <span className="text-xs text-muted-foreground">Product ID</span>
-                <span className="text-xs text-muted-foreground truncate max-w-[60%]" title={product.faire_product_id}>
+                <span className="text-sm text-muted-foreground truncate max-w-[60%]" title={product.faire_product_id}>
                   {product.faire_product_id.length > 20
                     ? product.faire_product_id.slice(0, 20) + "\u2026"
                     : product.faire_product_id}
@@ -612,10 +612,10 @@ Return ONLY the new description.`
 
           {/* H. Tags Card */}
           {product.tags && product.tags.length > 0 && (
-            <div className="rounded-md border bg-card overflow-hidden">
-              <div className="px-4 py-3 border-b flex items-center gap-2">
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b flex items-center gap-2">
                 <Tag className="size-3.5 text-muted-foreground" />
-                <span className="text-sm font-semibold">Tags</span>
+                <span className="text-[0.9375rem] font-semibold tracking-tight">Tags</span>
               </div>
               <div className="p-4 flex flex-wrap gap-1.5">
                 {product.tags.map((tag) => (

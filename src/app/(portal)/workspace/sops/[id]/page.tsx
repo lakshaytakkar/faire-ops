@@ -263,8 +263,8 @@ export default function SOPDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left: Content (span 2) */}
         <div className="lg:col-span-2">
-          <div className="rounded-md border bg-card p-5">
-            <h2 className="text-sm font-semibold mb-3">Content</h2>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5">
+            <h2 className="text-[0.9375rem] font-semibold tracking-tight mb-3">Content</h2>
             {editing ? (
               <div className="space-y-3">
                 <div>
@@ -316,8 +316,8 @@ export default function SOPDetailPage() {
         {/* Right: Info + Actions */}
         <div className="space-y-5">
           {/* Info Card */}
-          <div className="rounded-md border bg-card p-5">
-            <h2 className="text-sm font-semibold mb-3">Details</h2>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5">
+            <h2 className="text-[0.9375rem] font-semibold tracking-tight mb-3">Details</h2>
             <div className="space-y-3">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Owner</p>
@@ -392,8 +392,8 @@ export default function SOPDetailPage() {
           </div>
 
           {/* Actions Card */}
-          <div className="rounded-md border bg-card p-5">
-            <h2 className="text-sm font-semibold mb-3">Actions</h2>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5">
+            <h2 className="text-[0.9375rem] font-semibold tracking-tight mb-3">Actions</h2>
             <div className="space-y-2">
               {/* Draft -> Published */}
               {sop.status === "draft" && (

@@ -286,7 +286,7 @@ export default function RetailerDetailPage() {
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
         <div className="bg-card border rounded-lg shadow-xl w-full max-w-lg mx-4" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between px-4 py-3 border-b">
-            <h3 className="text-sm font-semibold flex items-center gap-2"><Mail className="size-4" /> Send Email</h3>
+            <h3 className="text-[0.9375rem] font-semibold tracking-tight flex items-center gap-2"><Mail className="size-4" /> Send Email</h3>
             <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="size-4" /></button>
           </div>
           <div className="p-4 space-y-3">
@@ -429,7 +429,7 @@ export default function RetailerDetailPage() {
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
         <div className="bg-card border rounded-lg shadow-xl w-full max-w-lg mx-4" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between px-4 py-3 border-b">
-            <h3 className="text-sm font-semibold flex items-center gap-2"><MessageCircle className="size-4 text-emerald-600" /> WhatsApp</h3>
+            <h3 className="text-[0.9375rem] font-semibold tracking-tight flex items-center gap-2"><MessageCircle className="size-4 text-emerald-600" /> WhatsApp</h3>
             <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="size-4" /></button>
           </div>
           <div className="p-4 space-y-3">
@@ -501,7 +501,7 @@ export default function RetailerDetailPage() {
           >
             <ArrowLeft className="size-3" /> Retailers
           </Link>
-          <h1 className="text-xl font-bold">{displayName}</h1>
+          <h1 className="text-2xl font-bold">{displayName}</h1>
           {location && (
             <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1">
               <MapPin className="size-3" /> {location}
@@ -544,9 +544,9 @@ export default function RetailerDetailPage() {
         {/* LEFT COL (span 2) */}
         <div className="lg:col-span-2 space-y-5">
           {/* Order History */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b">
-              <span className="text-sm font-semibold">Order History ({orders.length})</span>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b">
+              <span className="text-[0.9375rem] font-semibold tracking-tight">Order History ({orders.length})</span>
             </div>
             {displayOrders.length > 0 ? (
               <div className="overflow-x-auto">
@@ -630,30 +630,30 @@ export default function RetailerDetailPage() {
           </div>
 
           {/* Revenue Summary */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b">
-              <span className="text-sm font-semibold">Revenue Summary</span>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b">
+              <span className="text-[0.9375rem] font-semibold tracking-tight">Revenue Summary</span>
             </div>
             <div className="p-4 space-y-0">
               <div className="py-1.5 flex justify-between">
                 <span className="text-sm text-muted-foreground">Total Revenue</span>
-                <span className="text-sm font-medium">${formatCents(revenue.totalCents)}</span>
+                <span className="text-sm font-semibold text-foreground">${formatCents(revenue.totalCents)}</span>
               </div>
               <div className="py-1.5 flex justify-between">
                 <span className="text-sm text-muted-foreground">Total Orders</span>
-                <span className="text-sm font-medium">{revenue.count}</span>
+                <span className="text-sm font-semibold text-foreground">{revenue.count}</span>
               </div>
               <div className="py-1.5 flex justify-between">
                 <span className="text-sm text-muted-foreground">Average Order</span>
-                <span className="text-sm font-medium">${formatCents(revenue.avgCents)}</span>
+                <span className="text-sm font-semibold text-foreground">${formatCents(revenue.avgCents)}</span>
               </div>
               <div className="py-1.5 flex justify-between">
                 <span className="text-sm text-muted-foreground">First Order</span>
-                <span className="text-sm font-medium">{formatDate(revenue.firstOrder)}</span>
+                <span className="text-sm font-semibold text-foreground">{formatDate(revenue.firstOrder)}</span>
               </div>
               <div className="py-1.5 flex justify-between">
                 <span className="text-sm text-muted-foreground">Last Order</span>
-                <span className="text-sm font-medium">{formatDate(revenue.lastOrder)}</span>
+                <span className="text-sm font-semibold text-foreground">{formatDate(revenue.lastOrder)}</span>
               </div>
             </div>
           </div>
@@ -662,43 +662,43 @@ export default function RetailerDetailPage() {
         {/* RIGHT COL */}
         <div className="space-y-5">
           {/* Contact Card */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b">
-              <span className="text-sm font-semibold">Contact</span>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b">
+              <span className="text-[0.9375rem] font-semibold tracking-tight">Contact</span>
             </div>
             <div className="p-4 space-y-2">
               {retailer.name && (
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Name</span>
-                  <span className="text-sm font-medium">{retailer.name}</span>
+                  <span className="text-sm font-semibold text-foreground">{retailer.name}</span>
                 </div>
               )}
               {retailer.company_name && (
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Company</span>
-                  <span className="text-sm font-medium">{retailer.company_name}</span>
+                  <span className="text-sm font-semibold text-foreground">{retailer.company_name}</span>
                 </div>
               )}
               {location && (
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Location</span>
-                  <span className="text-sm font-medium text-right">{location}</span>
+                  <span className="text-sm font-semibold text-foreground text-right">{location}</span>
                 </div>
               )}
               {retailer.phone && (
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Phone</span>
-                  <span className="text-sm font-medium">{retailer.phone}</span>
+                  <span className="text-sm font-semibold text-foreground">{retailer.phone}</span>
                 </div>
               )}
             </div>
           </div>
 
           {/* Stores Card */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b flex items-center gap-2">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b flex items-center gap-2">
               <Store className="size-3.5 text-muted-foreground" />
-              <span className="text-sm font-semibold">Stores</span>
+              <span className="text-[0.9375rem] font-semibold tracking-tight">Stores</span>
             </div>
             <div className="p-4">
               {retailerStores.length > 0 ? (
@@ -720,27 +720,27 @@ export default function RetailerDetailPage() {
           </div>
 
           {/* Quick Stats Card */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b flex items-center gap-2">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b flex items-center gap-2">
               <ShoppingBag className="size-3.5 text-muted-foreground" />
-              <span className="text-sm font-semibold">Quick Stats</span>
+              <span className="text-[0.9375rem] font-semibold tracking-tight">Quick Stats</span>
             </div>
             <div className="p-4 space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Total Spent</span>
-                <span className="text-sm font-medium">${formatCents(retailer.total_spent_cents ?? 0)}</span>
+                <span className="text-sm font-semibold text-foreground">${formatCents(retailer.total_spent_cents ?? 0)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Orders</span>
-                <span className="text-sm font-medium">{retailer.total_orders ?? 0}</span>
+                <span className="text-sm font-semibold text-foreground">{retailer.total_orders ?? 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">First</span>
-                <span className="text-sm font-medium">{formatDate(retailer.first_order_at)}</span>
+                <span className="text-sm font-semibold text-foreground">{formatDate(retailer.first_order_at)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Last</span>
-                <span className="text-sm font-medium">{formatDate(retailer.last_order_at)}</span>
+                <span className="text-sm font-semibold text-foreground">{formatDate(retailer.last_order_at)}</span>
               </div>
             </div>
           </div>

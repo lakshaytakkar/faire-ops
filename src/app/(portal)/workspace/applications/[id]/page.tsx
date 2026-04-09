@@ -373,7 +373,7 @@ export default function ApplicationDetailPage() {
     return (
       <div className="space-y-0.5">
         <span className="text-xs text-muted-foreground">{label}</span>
-        <p className="text-sm font-medium">{value ?? "—"}</p>
+        <p className="text-sm font-semibold text-foreground">{value ?? "—"}</p>
       </div>
     )
   }
@@ -480,8 +480,8 @@ export default function ApplicationDetailPage() {
         {/* LEFT COLUMN */}
         <div className="lg:col-span-2 space-y-5">
           {/* Stage Timeline Card */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b"><span className="text-sm font-semibold">Application Stage</span></div>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b"><span className="text-[0.9375rem] font-semibold tracking-tight">Application Stage</span></div>
             <div className="p-4">
               <div className="space-y-5">
                 {TIMELINE_STAGES.map((stage, i) => {
@@ -524,9 +524,9 @@ export default function ApplicationDetailPage() {
           </div>
 
           {/* Application Details Card */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b">
-              <span className="text-sm font-semibold">Application Details</span>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b">
+              <span className="text-[0.9375rem] font-semibold tracking-tight">Application Details</span>
             </div>
             <div className="p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -576,9 +576,9 @@ export default function ApplicationDetailPage() {
 
           {/* Brand Story Card (if exists and not editing) */}
           {app.brand_story && !editing && (
-            <div className="rounded-md border bg-card overflow-hidden">
-              <div className="px-4 py-3 border-b">
-                <span className="text-sm font-semibold">Brand Story</span>
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b">
+                <span className="text-[0.9375rem] font-semibold tracking-tight">Brand Story</span>
               </div>
               <div className="p-4">
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{app.brand_story}</p>
@@ -590,9 +590,9 @@ export default function ApplicationDetailPage() {
         {/* RIGHT COLUMN */}
         <div className="space-y-5">
           {/* Follow-ups Card */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b flex items-center justify-between">
-              <span className="text-sm font-semibold">Follow-ups</span>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b flex items-center justify-between">
+              <span className="text-[0.9375rem] font-semibold tracking-tight">Follow-ups</span>
               <Button
                 variant="outline"
                 size="xs"
@@ -669,7 +669,7 @@ export default function ApplicationDetailPage() {
                         </span>
                         <span className="text-xs text-muted-foreground">{fmtDate(f.followup_date)}</span>
                       </div>
-                      {f.note && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{f.note}</p>}
+                      {f.note && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{f.note}</p>}
                     </div>
                     <button
                       onClick={() => deleteFollowup(f.id)}
@@ -684,9 +684,9 @@ export default function ApplicationDetailPage() {
           </div>
 
           {/* Quick Links Card */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b flex items-center justify-between">
-              <span className="text-sm font-semibold">Quick Links</span>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b flex items-center justify-between">
+              <span className="text-[0.9375rem] font-semibold tracking-tight">Quick Links</span>
               <Button
                 variant="outline"
                 size="xs"
@@ -780,9 +780,9 @@ export default function ApplicationDetailPage() {
           </div>
 
           {/* Record Info Card */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b">
-              <span className="text-sm font-semibold">Record Info</span>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b">
+              <span className="text-[0.9375rem] font-semibold tracking-tight">Record Info</span>
             </div>
             <div className="p-4 space-y-2">
               <div className="flex justify-between">

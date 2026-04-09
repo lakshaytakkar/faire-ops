@@ -84,7 +84,7 @@ function Skeleton() {
         <div className="lg:col-span-2 space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="rounded-md border bg-card overflow-hidden h-[220px]" />
+              <div key={i} className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden h-[220px]" />
             ))}
           </div>
         </div>
@@ -390,7 +390,7 @@ export default function CollectionDetailPage() {
         {/* Product Grid */}
         <div className="lg:col-span-2">
           {products.length === 0 ? (
-            <div className="rounded-md border bg-card p-12 text-center">
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm p-12 text-center">
               <Package className="size-10 mx-auto text-muted-foreground/40" />
               <p className="mt-3 text-sm text-muted-foreground">
                 No products match this collection&apos;s filters.
@@ -404,7 +404,7 @@ export default function CollectionDetailPage() {
                   <div
                     key={product.id}
                     onClick={() => setSelectedProduct(product)}
-                    className="rounded-md border bg-card overflow-hidden hover:shadow-sm cursor-pointer transition-shadow"
+                    className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden hover:shadow-sm cursor-pointer transition-shadow"
                   >
                     {/* Image */}
                     <div className="aspect-square relative">
@@ -456,7 +456,7 @@ export default function CollectionDetailPage() {
         {/* Sidebar */}
         <div className="space-y-4">
           {/* Collection Info */}
-          <div className="rounded-md border bg-card p-5 space-y-4">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 space-y-4">
             <h3 className="text-sm font-semibold flex items-center gap-1.5">
               <Icon className="size-4" />
               Collection Info
@@ -485,7 +485,7 @@ export default function CollectionDetailPage() {
                 </pre>
               </div>
               {collection.created_at && (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <Calendar className="size-3" />
                   Created {new Date(collection.created_at).toLocaleDateString()}
                 </div>
@@ -496,7 +496,7 @@ export default function CollectionDetailPage() {
                     collection.is_active ? "bg-emerald-500" : "bg-zinc-300"
                   }`}
                 />
-                <span className="text-xs text-muted-foreground">
+                <span className="text-sm text-muted-foreground">
                   {collection.is_active ? "Active" : "Inactive"}
                 </span>
               </div>
@@ -504,7 +504,7 @@ export default function CollectionDetailPage() {
           </div>
 
           {/* Generate Thumbnail */}
-          <div className="rounded-md border bg-card p-5 space-y-3">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 space-y-3">
             <h3 className="text-sm font-semibold flex items-center gap-1.5">
               <ImageIcon className="size-4" />
               Thumbnail
@@ -516,7 +516,7 @@ export default function CollectionDetailPage() {
                 className="w-full h-32 object-cover rounded-md"
               />
             ) : (
-              <p className="text-xs text-muted-foreground">No thumbnail set.</p>
+              <p className="text-sm text-muted-foreground">No thumbnail set.</p>
             )}
             <button
               onClick={handleGenerateThumbnail}
@@ -530,7 +530,7 @@ export default function CollectionDetailPage() {
 
           {/* Store Info */}
           {store && (
-            <div className="rounded-md border bg-card p-5 space-y-2">
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 space-y-2">
               <h3 className="text-sm font-semibold">Store</h3>
               <div className="flex items-center gap-2">
                 <span

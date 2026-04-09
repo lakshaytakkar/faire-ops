@@ -76,9 +76,9 @@ function formatDate(dateStr: string | null): string {
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between py-2">
+    <div className="flex items-center justify-between py-2.5">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-sm font-medium">{value || "—"}</span>
+      <span className="text-sm font-semibold text-foreground">{value || "—"}</span>
     </div>
   )
 }
@@ -249,7 +249,7 @@ export default function StoreDetailPage() {
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold font-heading text-foreground">{store.name}</h1>
+            <h1 className="text-2xl font-bold font-heading text-foreground">{store.name}</h1>
             <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
               {store.category}
             </span>
@@ -311,8 +311,8 @@ export default function StoreDetailPage() {
         {/* Left column */}
         <div className="lg:col-span-2 space-y-5">
           {/* Card 1: Store Overview */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b text-sm font-semibold">Store Overview</div>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b text-[0.9375rem] font-semibold tracking-tight">Store Overview</div>
             <div className="p-5">
               {editing ? (
                 <div className="space-y-3">
@@ -333,7 +333,7 @@ export default function StoreDetailPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Category</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Category</label>
                     <Input
                       value={form.category}
                       onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -342,7 +342,7 @@ export default function StoreDetailPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Description</label>
                     <textarea
                       value={form.description}
                       onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -365,8 +365,8 @@ export default function StoreDetailPage() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm font-semibold">{store.name}</p>
-                    <p className="text-xs text-muted-foreground">{store.category}</p>
-                    <p className="text-xs text-muted-foreground">ID: {store.faire_store_id}</p>
+                    <p className="text-sm text-muted-foreground">{store.category}</p>
+                    <p className="text-sm text-muted-foreground">ID: {store.faire_store_id}</p>
                     {store.description && (
                       <p className="text-sm text-muted-foreground mt-2">{store.description}</p>
                     )}
@@ -377,14 +377,14 @@ export default function StoreDetailPage() {
           </div>
 
           {/* Card 2: Brand Kit */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b text-sm font-semibold">Brand Kit</div>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b text-[0.9375rem] font-semibold tracking-tight">Brand Kit</div>
             <div className="p-5">
               {editing ? (
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Primary Color</label>
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Primary Color</label>
                       <div className="flex items-center gap-2 mt-1">
                         <input
                           type="color"
@@ -401,7 +401,7 @@ export default function StoreDetailPage() {
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Accent Color</label>
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Accent Color</label>
                       <div className="flex items-center gap-2 mt-1">
                         <input
                           type="color"
@@ -418,7 +418,7 @@ export default function StoreDetailPage() {
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Brand Font</label>
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Brand Font</label>
                       <select
                         value={form.brand_font}
                         onChange={(e) => setForm({ ...form, brand_font: e.target.value })}
@@ -433,7 +433,7 @@ export default function StoreDetailPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Brand Style</label>
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Brand Style</label>
                       <select
                         value={form.brand_style}
                         onChange={(e) => setForm({ ...form, brand_style: e.target.value })}
@@ -449,7 +449,7 @@ export default function StoreDetailPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Brand Tagline</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Brand Tagline</label>
                     <Input
                       value={form.brand_tagline}
                       onChange={(e) => setForm({ ...form, brand_tagline: e.target.value })}
@@ -458,7 +458,7 @@ export default function StoreDetailPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Brand Guidelines</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Brand Guidelines</label>
                     <textarea
                       value={form.brand_guidelines}
                       onChange={(e) => setForm({ ...form, brand_guidelines: e.target.value })}
@@ -474,27 +474,27 @@ export default function StoreDetailPage() {
                     {store.brand_primary_color ? (
                       <div className="flex flex-col items-center gap-1">
                         <div className="w-8 h-8 rounded border" style={{ backgroundColor: store.brand_primary_color }} />
-                        <span className="text-xs text-muted-foreground">{store.brand_primary_color}</span>
-                        <span className="text-xs text-muted-foreground">Primary</span>
+                        <span className="text-sm text-muted-foreground">{store.brand_primary_color}</span>
+                        <span className="text-sm text-muted-foreground">Primary</span>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center gap-1">
+                      <div className="flex flex-col items-center gap-1.5">
                         <div className="w-8 h-8 rounded border bg-muted" />
-                        <span className="text-xs text-muted-foreground">Not set</span>
-                        <span className="text-xs text-muted-foreground">Primary</span>
+                        <span className="text-sm text-muted-foreground">Not set</span>
+                        <span className="text-sm text-muted-foreground">Primary</span>
                       </div>
                     )}
                     {store.brand_accent_color ? (
-                      <div className="flex flex-col items-center gap-1">
+                      <div className="flex flex-col items-center gap-1.5">
                         <div className="w-8 h-8 rounded border" style={{ backgroundColor: store.brand_accent_color }} />
-                        <span className="text-xs text-muted-foreground">{store.brand_accent_color}</span>
-                        <span className="text-xs text-muted-foreground">Accent</span>
+                        <span className="text-sm text-muted-foreground">{store.brand_accent_color}</span>
+                        <span className="text-sm text-muted-foreground">Accent</span>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center gap-1">
+                      <div className="flex flex-col items-center gap-1.5">
                         <div className="w-8 h-8 rounded border bg-muted" />
-                        <span className="text-xs text-muted-foreground">Not set</span>
-                        <span className="text-xs text-muted-foreground">Accent</span>
+                        <span className="text-sm text-muted-foreground">Not set</span>
+                        <span className="text-sm text-muted-foreground">Accent</span>
                       </div>
                     )}
                   </div>
@@ -522,7 +522,7 @@ export default function StoreDetailPage() {
                   {/* Guidelines */}
                   {store.brand_guidelines && (
                     <div>
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Guidelines</p>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Guidelines</p>
                       <p className="text-sm text-muted-foreground">{store.brand_guidelines}</p>
                     </div>
                   )}
@@ -536,13 +536,13 @@ export default function StoreDetailPage() {
           </div>
 
           {/* Card 3: Contact & Operations */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b text-sm font-semibold">Contact & Operations</div>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b text-[0.9375rem] font-semibold tracking-tight">Contact & Operations</div>
             <div className="p-5">
               {editing ? (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Website</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Website</label>
                     <Input
                       value={form.website_url}
                       onChange={(e) => setForm({ ...form, website_url: e.target.value })}
@@ -551,7 +551,7 @@ export default function StoreDetailPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Email</label>
                     <Input
                       value={form.contact_email}
                       onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
@@ -560,7 +560,7 @@ export default function StoreDetailPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Phone</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Phone</label>
                     <Input
                       value={form.contact_phone}
                       onChange={(e) => setForm({ ...form, contact_phone: e.target.value })}
@@ -569,7 +569,7 @@ export default function StoreDetailPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Instagram</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Instagram</label>
                     <Input
                       value={form.instagram}
                       onChange={(e) => setForm({ ...form, instagram: e.target.value })}
@@ -578,7 +578,7 @@ export default function StoreDetailPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Ships From</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ships From</label>
                     <Input
                       value={form.ships_from}
                       onChange={(e) => setForm({ ...form, ships_from: e.target.value })}
@@ -586,7 +586,7 @@ export default function StoreDetailPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Lead Time (days)</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Lead Time (days)</label>
                     <Input
                       type="number"
                       value={form.lead_time_days}
@@ -595,7 +595,7 @@ export default function StoreDetailPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Min Order ($)</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Min Order ($)</label>
                     <Input
                       type="number"
                       value={form.min_order_amount_cents / 100}
@@ -604,7 +604,7 @@ export default function StoreDetailPage() {
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Return Policy</label>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Return Policy</label>
                     <textarea
                       value={form.return_policy}
                       onChange={(e) => setForm({ ...form, return_policy: e.target.value })}
@@ -700,13 +700,13 @@ export default function StoreDetailPage() {
         {/* Right column */}
         <div className="space-y-5">
           {/* Card 4: Sync Status */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b text-sm font-semibold">Sync Status</div>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b text-[0.9375rem] font-semibold tracking-tight">Sync Status</div>
             <div className="p-5 space-y-3">
               <div>
                 <p className="text-sm text-muted-foreground">Last Synced</p>
                 <p className="text-sm font-medium mt-0.5">{timeAgo(store.last_synced_at)}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{formatDate(store.last_synced_at)}</p>
+                <p className="text-sm text-muted-foreground mt-0.5">{formatDate(store.last_synced_at)}</p>
               </div>
               <Button className="w-full" onClick={handleSync} disabled={syncing}>
                 <RefreshCw className={`size-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
@@ -716,8 +716,8 @@ export default function StoreDetailPage() {
           </div>
 
           {/* Card 5: Quick Stats */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b text-sm font-semibold">Statistics</div>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b text-[0.9375rem] font-semibold tracking-tight">Statistics</div>
             <div className="p-5 divide-y">
               <InfoRow label="Total Orders" value={store.total_orders.toLocaleString()} />
               <InfoRow label="Total Products" value={store.total_products.toLocaleString()} />
@@ -735,8 +735,8 @@ export default function StoreDetailPage() {
           </div>
 
           {/* Card 6: Store Links */}
-          <div className="rounded-md border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b text-sm font-semibold">Links</div>
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b text-[0.9375rem] font-semibold tracking-tight">Links</div>
             <div className="p-5 space-y-2">
               {store.faire_url && (
                 <a

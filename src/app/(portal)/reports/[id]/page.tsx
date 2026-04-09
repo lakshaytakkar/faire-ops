@@ -219,21 +219,21 @@ Keep it professional, highlight key metrics and any concerns. No markdown format
       <div>
         <h2 className="text-sm font-semibold mb-3">Key Metrics</h2>
         <div className="grid grid-cols-4 gap-3">
-          <div className="rounded-md border bg-card px-4 py-3 text-center">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm px-4 py-3 text-center">
             <div className="text-2xl font-bold">{c.orders.total}</div>
-            <div className="text-xs text-muted-foreground font-medium mt-0.5">Total Orders</div>
+            <div className="text-sm text-muted-foreground font-medium mt-0.5">Total Orders</div>
           </div>
-          <div className="rounded-md border bg-card px-4 py-3 text-center">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm px-4 py-3 text-center">
             <div className="text-2xl font-bold">{cents(c.orders.revenue_cents)}</div>
-            <div className="text-xs text-muted-foreground font-medium mt-0.5">Revenue</div>
+            <div className="text-sm text-muted-foreground font-medium mt-0.5">Revenue</div>
           </div>
-          <div className="rounded-md border bg-card px-4 py-3 text-center">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm px-4 py-3 text-center">
             <div className="text-2xl font-bold">{cents(avgOrderValue)}</div>
-            <div className="text-xs text-muted-foreground font-medium mt-0.5">Avg Order Value</div>
+            <div className="text-sm text-muted-foreground font-medium mt-0.5">Avg Order Value</div>
           </div>
-          <div className="rounded-md border bg-card px-4 py-3 text-center">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm px-4 py-3 text-center">
             <div className="text-2xl font-bold">{deliveredPct}%</div>
-            <div className="text-xs text-muted-foreground font-medium mt-0.5">Delivered</div>
+            <div className="text-sm text-muted-foreground font-medium mt-0.5">Delivered</div>
           </div>
         </div>
       </div>
@@ -242,7 +242,7 @@ Keep it professional, highlight key metrics and any concerns. No markdown format
       {c.orders_by_store.length > 0 && (
         <div>
           <h2 className="text-sm font-semibold mb-3">Orders by Store</h2>
-          <div className="rounded-md border overflow-hidden">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
@@ -274,7 +274,7 @@ Keep it professional, highlight key metrics and any concerns. No markdown format
       {c.orders_by_state.length > 0 && (
         <div>
           <h2 className="text-sm font-semibold mb-3">Orders by Status</h2>
-          <div className="rounded-md border bg-card p-4">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4">
             {c.orders_by_state.map((item) => (
               <Bar
                 key={item.state}
@@ -293,7 +293,7 @@ Keep it professional, highlight key metrics and any concerns. No markdown format
       {c.orders_by_source.length > 0 && (
         <div>
           <h2 className="text-sm font-semibold mb-3">Orders by Source</h2>
-          <div className="rounded-md border bg-card p-4">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4">
             {c.orders_by_source.map((item) => (
               <Bar
                 key={item.source}
@@ -312,7 +312,7 @@ Keep it professional, highlight key metrics and any concerns. No markdown format
       {c.top_retailers.length > 0 && (
         <div>
           <h2 className="text-sm font-semibold mb-3">Top Retailers</h2>
-          <div className="rounded-md border overflow-hidden">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
@@ -340,7 +340,7 @@ Keep it professional, highlight key metrics and any concerns. No markdown format
       {/* Section 7: Financial Summary */}
       <div>
         <h2 className="text-sm font-semibold mb-3">Financial Summary</h2>
-        <div className="rounded-md border bg-card divide-y">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm divide-y">
           <div className="flex items-center justify-between px-4 py-3">
             <span className="text-sm">Total Revenue</span>
             <span className="text-sm font-semibold">{cents(c.financial.revenue)}</span>
