@@ -17,6 +17,10 @@
     {
       "path": "/api/cron/auto-reconcile",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/daily-sales-report",
+      "schedule": "30 13 * * *"
     }
   ],
   "headers": [
