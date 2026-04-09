@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { ChevronRight, ChevronDown, Search, ChevronsUpDown, Calendar, User } from "lucide-react"
 
 interface TreeNode {
@@ -107,11 +107,17 @@ function collectIds(nodes: TreeNode[]): Set<string> {
 }
 
 export function TreeExplorer({ nodes, onStatusChange, onNodeClick, expandAll: initialExpandAll }: TreeExplorerProps) {
-  const [expanded, setExpanded] = useState<Set<string>>(() => {
-    if (initialExpandAll) return collectIds(nodes)
-    return new Set<string>()
-  })
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState("")
+  const [initialized, setInitialized] = useState(false)
+
+  // Expand all when nodes first arrive and expandAll is true
+  useEffect(() => {
+    if (initialExpandAll && nodes.length > 0 && !initialized) {
+      setExpanded(collectIds(nodes))
+      setInitialized(true)
+    }
+  }, [nodes, initialExpandAll, initialized])
   const [statusDropdownId, setStatusDropdownId] = useState<string | null>(null)
 
   const filteredNodes = useMemo(() => filterTree(nodes, search), [nodes, search])

@@ -386,6 +386,7 @@ export default function TasksPage() {
       {viewMode === "explorer" && (
         <TreeExplorer
           nodes={buildTree(tasks)}
+          expandAll
           onStatusChange={(id, status) => updateTaskStatus(id, status as Task["status"])}
           onNodeClick={(node) => {
             const task = tasks.find((t) => t.id === node.id)
