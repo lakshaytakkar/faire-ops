@@ -67,10 +67,10 @@ function Skeleton() {
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-lg border bg-card p-5 h-[100px]" />
+          <div key={i} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 h-[100px]" />
         ))}
       </div>
-      <div className="rounded-lg border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b h-14" />
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="px-4 py-4 border-b">
@@ -431,7 +431,7 @@ export default function AdsPage() {
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold tracking-tight">Ads</h1>
+        <h1 className="text-2xl font-bold">Ads</h1>
         <Button onClick={() => setShowCreate(true)} size="sm">
           <Plus className="size-4 mr-1.5" />
           Create Ad

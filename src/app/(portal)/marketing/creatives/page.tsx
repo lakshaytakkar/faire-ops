@@ -334,7 +334,7 @@ export default function CreativeLibraryPage() {
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold tracking-tight">Creative Library</h1>
+        <h1 className="text-2xl font-bold">Creative Library</h1>
         <div className="flex items-center gap-2">
           <Link href="/marketing/creatives/generate">
             <Button variant="outline">

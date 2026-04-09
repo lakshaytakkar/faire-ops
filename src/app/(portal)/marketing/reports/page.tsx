@@ -345,10 +345,7 @@ export default function ReportBuilderPage() {
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <BarChart3 className="size-5 text-primary" />
-          <h1 className="text-xl font-bold tracking-tight">Ad Reports</h1>
-        </div>
+        <h1 className="text-2xl font-bold">Ad Reports</h1>
         <div className="flex items-center gap-2">
           {savedReports.length > 0 && (
             <div className="flex items-center gap-1 mr-2">
@@ -462,7 +459,7 @@ export default function ReportBuilderPage() {
 
       {loading ? (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 space-y-3">
                 <Skeleton className="h-4 w-20" />
@@ -485,7 +482,7 @@ export default function ReportBuilderPage() {
       ) : (
         <>
           {/* Summary cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {selectedMetrics.has("spend_cents") && (
               <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Spend</p>

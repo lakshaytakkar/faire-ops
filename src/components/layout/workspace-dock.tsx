@@ -37,6 +37,7 @@ const WORKSPACE_ITEMS = [
   { href: "/automations/overview", icon: Zap, label: "Automations", color: "#f97316", bg: "rgba(249,115,22,0.15)" },
   { href: "/analytics/revenue", icon: BarChart3, label: "Analytics", color: "#3b82f6", bg: "rgba(59,130,246,0.15)" },
   { href: "/workspace/ai-tools", icon: Sparkles, label: "AI Tools", color: "#f59e0b", bg: "rgba(245,158,11,0.15)" },
+  { href: "/workspace/ai-team", icon: Users, label: "Remote Team", color: "#8b5cf6", bg: "rgba(139,92,246,0.15)" },
   { href: "/workspace/gmail", icon: Mail, label: "Gmail", color: "#EA4335", bg: "rgba(234,67,53,0.15)" },
   { href: "/workspace/settings", icon: Settings, label: "Settings", color: "#64748b", bg: "rgba(100,116,139,0.15)" },
 ]
@@ -46,15 +47,15 @@ export function WorkspaceDock() {
   const [showProfile, setShowProfile] = useState(false)
 
   return (
-    <aside className="shrink-0 w-[48px] bg-black flex flex-col items-center py-2 gap-1 border-l border-white/5">
+    <aside className="shrink-0 w-[48px] bg-black flex flex-col items-center py-2 gap-1 border-l border-white/5 overflow-y-auto">
       {/* User profile at top */}
       <div className="relative">
         <button
           onClick={() => setShowProfile(!showProfile)}
-          className="flex items-center justify-center w-8 h-8 rounded-md bg-primary group"
+          className="flex items-center justify-center w-8 h-8 rounded-md overflow-hidden group"
           title="Lakshay — Sr. Manager"
         >
-          <span className="text-[10px] font-bold text-white">LK</span>
+          <img src="https://eeoesllyceegmzfqfbyu.supabase.co/storage/v1/object/public/images/team/lakshay.png" alt="Lakshay" className="w-full h-full object-cover" />
           <span className="absolute right-full mr-2 px-2 py-1 rounded-md bg-foreground text-background text-[10px] font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
             Lakshay
           </span>

@@ -493,12 +493,12 @@ export default function CampaignsPage() {
           <Skeleton className="h-8 w-40" />
           <Skeleton className="h-8 w-36" />
         </div>
-        <div className="flex gap-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-8 w-20" />
-          ))}
-        </div>
         <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b flex gap-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-8 w-20" />
+            ))}
+          </div>
           <div className="p-4 space-y-1">
             {Array.from({ length: 8 }).map((_, i) => (
               <TableRowSkeleton key={i} />
@@ -519,39 +519,38 @@ export default function CampaignsPage() {
         </Button>
       </div>
 
-      {/* Tabs + Search */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-        <div className="flex gap-1">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => { setTab(t.key); setPage(0) }}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                tab === t.key
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              {t.label}
-              <span className="ml-1.5 text-xs opacity-70">{counts[t.key]}</span>
-            </button>
-          ))}
-        </div>
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search campaigns..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(0) }}
-            className="w-full rounded-md border px-3 py-2 pl-9 text-sm bg-background"
-          />
-        </div>
-      </div>
-
       {/* Table */}
       {paged.length === 0 ? (
         <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+          {/* Toolbar */}
+          <div className="flex flex-wrap items-center gap-3 border-b px-4 py-3">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search campaigns..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(0) }}
+                className="h-8 w-60 pl-8 text-sm rounded-md border bg-background px-3 focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="flex items-center gap-1">
+              {TABS.map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => { setTab(t.key); setPage(0) }}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                    tab === t.key
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {t.label}
+                  <span className="ml-1.5 text-xs opacity-70">{counts[t.key]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="flex items-center justify-center size-12 rounded-full bg-muted mb-4">
               <Target className="size-6 text-muted-foreground" />
@@ -571,6 +570,35 @@ export default function CampaignsPage() {
         </div>
       ) : (
         <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+          {/* Toolbar */}
+          <div className="flex flex-wrap items-center gap-3 border-b px-4 py-3">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search campaigns..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(0) }}
+                className="h-8 w-60 pl-8 text-sm rounded-md border bg-background px-3 focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="flex items-center gap-1">
+              {TABS.map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => { setTab(t.key); setPage(0) }}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                    tab === t.key
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {t.label}
+                  <span className="ml-1.5 text-xs opacity-70">{counts[t.key]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

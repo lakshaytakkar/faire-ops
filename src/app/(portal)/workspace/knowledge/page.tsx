@@ -25,6 +25,12 @@ import {
   BarChart3,
   Rocket,
   Printer,
+  HelpCircle,
+  ShoppingCart,
+  CreditCard,
+  Settings,
+  RefreshCw,
+  FileText,
   type LucideIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -120,7 +126,77 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Seed Data                                                          */
+/*  Help Articles (static data)                                        */
+/* ------------------------------------------------------------------ */
+
+interface HelpArticle {
+  id: string
+  title: string
+  description: string
+  category: string
+  link: string
+}
+
+const HELP_CATEGORY_ICONS: Record<string, LucideIcon> = {
+  "Getting Started": Rocket,
+  Orders: ShoppingCart,
+  Products: Package,
+  Shipping: Truck,
+  Payments: CreditCard,
+  Account: Settings,
+}
+
+const HELP_CATEGORY_BADGE: Record<string, string> = {
+  "Getting Started": "bg-teal-50 text-teal-700",
+  Orders: "bg-blue-50 text-blue-700",
+  Products: "bg-purple-50 text-purple-700",
+  Shipping: "bg-orange-50 text-orange-700",
+  Payments: "bg-emerald-50 text-emerald-700",
+  Account: "bg-amber-50 text-amber-700",
+}
+
+const HELP_ARTICLES: HelpArticle[] = [
+  { id: "h1", title: "Setting Up Your Faire Store", description: "Step-by-step guide to creating your brand profile, uploading your logo, and configuring store settings for the first time.", category: "Getting Started", link: "#" },
+  { id: "h2", title: "Your First Product Listing", description: "How to create your first product listing with optimized titles, descriptions, images, and pricing for maximum visibility.", category: "Getting Started", link: "#" },
+  { id: "h3", title: "Accepting and Processing Orders", description: "Learn the complete order lifecycle from receiving a new order notification to accepting, packing, and marking it shipped.", category: "Orders", link: "#" },
+  { id: "h4", title: "Handling Order Cancellations", description: "How to properly cancel orders, communicate with retailers, and minimize the impact on your store health metrics.", category: "Orders", link: "#" },
+  { id: "h5", title: "Bulk Product Upload Guide", description: "Use Faire's CSV template to upload hundreds of products at once, including variants, pricing, and inventory counts.", category: "Products", link: "#" },
+  { id: "h6", title: "Optimizing Product Images", description: "Image requirements, recommended dimensions, and photography tips to make your products stand out in search results.", category: "Products", link: "#" },
+  { id: "h7", title: "Shipping Label Generation", description: "How to generate prepaid shipping labels through Faire, choose carriers, and set up shipping profiles for different product types.", category: "Shipping", link: "#" },
+  { id: "h8", title: "International Shipping Setup", description: "Configure international shipping rates, understand customs requirements, and manage cross-border order fulfillment.", category: "Shipping", link: "#" },
+  { id: "h9", title: "Understanding Your Payouts", description: "How Faire calculates payouts, Net 30 payment terms, commission deductions, and how to read your payout statements.", category: "Payments", link: "#" },
+  { id: "h10", title: "Faire Direct: Zero Commission", description: "Set up Faire Direct links to bring your own retailers and pay 0% commission on all orders from those accounts.", category: "Payments", link: "#" },
+  { id: "h11", title: "Managing Team Members", description: "Add team members to your Faire brand account, set permissions, and manage access levels for different roles.", category: "Account", link: "#" },
+  { id: "h12", title: "Store Health Score Explained", description: "Understand the metrics that affect your store health score and actionable steps to keep it in the green zone.", category: "Account", link: "#" },
+]
+
+/* ------------------------------------------------------------------ */
+/*  FAQ Data (static)                                                  */
+/* ------------------------------------------------------------------ */
+
+interface FAQItem {
+  id: string
+  question: string
+  answer: string
+}
+
+const FAQ_DATA: FAQItem[] = [
+  { id: "f1", question: "How long do I have to ship an order after accepting it?", answer: "Faire expects orders to ship within your configured processing time, which defaults to 3 business days. You can adjust this in Store Settings. Consistently shipping late damages your store health score and search ranking. Set a realistic processing time you can reliably meet, and aim to ship earlier when possible." },
+  { id: "f2", question: "What is Faire's return policy for retailers?", answer: "Faire offers retailers free returns on first orders within 60 days of delivery. This means if a new retailer is unhappy with their first purchase, they can return it at no cost. Repeat orders do not qualify for free returns unless you offer them. Returns are deducted from your future payouts. To minimize returns, ensure product photos accurately represent your items and descriptions are thorough." },
+  { id: "f3", question: "How does Faire's commission structure work?", answer: "Faire charges 25% commission on first orders from new marketplace retailers, 15% on repeat orders from returning retailers, and 0% on Faire Direct orders (retailers you bring to the platform). There are no listing fees, monthly fees, or setup costs. Factor these rates into your wholesale pricing to maintain healthy margins." },
+  { id: "f4", question: "When do I receive my payouts from Faire?", answer: "Faire processes payouts on Net 30 terms from the ship date. Once you mark an order as shipped and provide tracking, the 30-day clock starts. Payouts are deposited directly into your linked bank account. Plan your cash flow around this timeline, especially during high-volume periods when you may have significant capital tied up in shipped but unpaid orders." },
+  { id: "f5", question: "How do I sync inventory across multiple sales channels?", answer: "If you sell on Faire and other platforms (Shopify, your website, etc.), use inventory management software that integrates with Faire's API. Options include tools like Inventory Planner, Cin7, or custom integrations. Manual tracking across channels leads to overselling and cancellations. At minimum, update Faire inventory counts whenever stock changes on any channel." },
+  { id: "f6", question: "What should I do if a shipment is damaged in transit?", answer: "If a retailer reports damaged goods, respond within 24 hours through Faire messaging. Offer a replacement or credit without requiring the retailer to fight for resolution. File a claim with your shipping carrier if you purchased insurance. Document the issue with photos for your records. A well-handled damage claim often strengthens the retailer relationship more than a flawless delivery." },
+  { id: "f7", question: "How can I improve my search ranking on Faire?", answer: "Faire's search algorithm considers title optimization (front-load keywords), product tag coverage, image count and quality, store health score, conversion rate, and fulfillment reliability. Focus on writing keyword-rich titles, using all available tags, uploading 4-8 images per listing, maintaining a healthy store score, and shipping on time. Consistent improvements across all factors yield the best results." },
+  { id: "f8", question: "Can I set different processing times for different products?", answer: "Faire allows you to set a store-wide processing time in your Store Settings. For made-to-order or custom products that need longer lead times, you can use the backorder feature with custom lead time messaging. Communicate any extended processing times clearly in the product description so retailers know what to expect before ordering." },
+  { id: "f9", question: "How does the Faire 60-day payment guarantee work?", answer: "Faire assumes credit risk on marketplace orders. If a retailer does not pay for their order, Faire still pays you in full. This guarantee is included in the commission you pay, effectively giving you risk-free accounts receivable. The guarantee applies to all marketplace and Faire Direct orders, removing the traditional wholesale risk of unpaid invoices." },
+  { id: "f10", question: "What is the best way to handle seasonal inventory planning?", answer: "Retailers buy 3-6 months ahead of the retail season. Spring products should be listed by November-January, holiday products by May-July. Work backward from wholesale buying windows to plan production. Build inventory fully before each buying window starts. Use prior year sales data to forecast quantities. Running out of bestsellers during a peak buying window is lost revenue you cannot recover." },
+  { id: "f11", question: "How do I convert marketplace retailers to Faire Direct?", answer: "After a retailer has reordered 2-3 times through the marketplace, invite them to use your Faire Direct link. Position it as a benefit for them: Net 60 payment terms and free returns. Share the link via Faire messaging, email, or on your invoices. Most retailers are happy to switch once they understand the advantages. This drops your commission from 15% to 0% on those orders." },
+  { id: "f12", question: "What metrics should I review weekly?", answer: "Establish a weekly review covering: product views (search visibility), conversion rate (listing effectiveness), revenue trends (growth tracking), store health score (fulfillment reliability), late shipment rate, cancellation rate, and traffic sources. Compare week-over-week to catch trends early. Create action items for any declining metrics and track improvements over time." },
+]
+
+/* ------------------------------------------------------------------ */
+/*  Seed Data (Knowledge Articles from Supabase)                       */
 /* ------------------------------------------------------------------ */
 
 const SEED_ARTICLES = [
@@ -375,28 +451,7 @@ Monitor your Faire Direct performance in your dashboard. Track how many retailer
       "Communicate proactively with retailers if a delay is unavoidable",
       "Monitor your late shipment rate weekly in the Faire analytics dashboard",
     ],
-    full_content: `Your late shipment rate is one of the most scrutinized metrics in Faire's store health evaluation. Faire uses this metric to determine your search ranking, eligibility for promotional features, and overall standing on the platform. A high late shipment rate can significantly reduce your visibility and sales.
-
-**Faire's Shipping Expectations**
-By default, Faire expects brands to ship orders within 3 business days of acceptance. This timeline can be adjusted in your store settings if your products require longer processing (custom, made-to-order, etc.). The key is setting realistic expectations and then consistently meeting them. It is far better to set a 5-7 day processing time and ship early than to promise 3 days and ship late.
-
-**How Late Shipments Impact Your Store**
-Faire tracks your late shipment rate as a rolling metric. When this rate exceeds acceptable thresholds, several negative consequences can follow: reduced visibility in search results, removal from curated collections and recommendations, warning notices on your store page visible to retailers, and in severe cases, account suspension. The algorithm favors reliable brands.
-
-**Processing Time Settings**
-Review and set your processing time honestly. Go to Store Settings and set a processing time that you can consistently meet, including during busy seasons. If you have a mix of ready-to-ship and made-to-order products, set your processing time for the longest lead time and pleasantly surprise retailers by shipping faster when possible.
-
-**Tracking Number Requirements**
-Always upload tracking numbers to Faire as soon as they are available. Untracked shipments are harder for Faire to verify as on-time, and some retailers may dispute untracked deliveries. Use carriers that provide tracking by default — USPS Priority, UPS, FedEx, or equivalent services.
-
-**Proactive Communication**
-If a delay is unavoidable due to supply chain issues, high volume, or other factors, communicate with the retailer through Faire's messaging system immediately. Most retailers are understanding about delays when brands communicate proactively. Silence followed by a late shipment is far worse than a heads-up message about a delay.
-
-**Operational Systems**
-Build systems to prevent late shipments. Check for new orders at least twice daily. Maintain a packing schedule that processes orders in FIFO (first in, first out) order. Keep packaging materials stocked and ready. During peak seasons, consider hiring temporary help or extending your processing time in advance.
-
-**Monitoring Your Rate**
-Check your late shipment rate weekly in Faire's analytics dashboard. If you notice it creeping up, immediately investigate the cause — whether it is inventory issues, processing bottlenecks, or carrier delays — and take corrective action before it impacts your store health score.`,
+    full_content: "Late shipment rate is a critical store health metric. Faire expects brands to ship within their configured processing time. Set realistic expectations, upload tracking promptly, and monitor your rate weekly.",
   },
   {
     title: "Seasonal Planning for Wholesale",
@@ -415,28 +470,7 @@ Check your late shipment rate weekly in Faire's analytics dashboard. If you noti
       "Participate in Faire Markets (virtual trade shows) aligned with seasonal buying windows",
       "Create seasonal marketing campaigns targeting retailers at the start of each buying window",
     ],
-    full_content: `One of the biggest mistakes new wholesale brands make on Faire is following a direct-to-consumer seasonal calendar. Retailers buy products months before they need them on shelves, meaning your seasonal strategy must be significantly ahead of consumer timing.
-
-**The Wholesale Calendar**
-Retailers typically buy for four main seasons, and their buying windows open 3-6 months before the retail season. Spring products (March-May retail): Retailers buy October-January. Summer products (June-August retail): Retailers buy January-March. Fall products (September-November retail): Retailers buy April-July. Holiday products (November-December retail): Retailers buy May-August.
-
-**Listing Timing**
-Have your seasonal products fully listed, photographed, and optimized on Faire at the beginning of each buying window. If your spring candles are not on Faire until February, you have already missed most of the buying window. Early listers also benefit from less competition — the retailers shopping earliest are often the most serious buyers with the largest budgets.
-
-**Inventory Planning**
-Work backward from wholesale buying windows to plan your production schedule. If retailers need to order holiday products by August, and your production takes 6-8 weeks, you need to start production by June at the latest. Factor in photography, listing creation, and quality control time as well.
-
-**Seasonal Collection Strategy**
-Create dedicated collections on Faire for each season and prominently feature them on your store page. Update your store banner and featured products to match the current buying season. Retailers who visit your store should immediately see seasonally relevant products without scrolling.
-
-**Faire Markets**
-Faire hosts virtual market events aligned with the main buying seasons. These are essentially online trade shows where Faire promotes participating brands to retailers. Watch for market event announcements and apply to participate — they drive significant traffic and orders, especially during key seasonal transitions.
-
-**Marketing Windows**
-Align your retailer outreach, email campaigns, and Faire Direct pushes with the start of buying windows. Send targeted messages highlighting new seasonal offerings, any early-order discounts, and bestseller data from previous seasons. Retailers making buying decisions respond well to data that helps them choose confidently.
-
-**Year-Round Products**
-Even if your products are not explicitly seasonal, you can create seasonal relevance through your marketing and merchandising. A general-purpose product can be positioned as a "holiday gift" in summer buying windows or a "spring refresh" item in winter. Adapt your descriptions and photography to resonate with the current buying season.`,
+    full_content: "Wholesale operates on a different calendar. Retailers buy 3-6 months ahead of the retail season. Plan your inventory and listings around wholesale buying windows, not consumer timing.",
   },
   {
     title: "Building Retailer Relationships",
@@ -454,28 +488,7 @@ Even if your products are not explicitly seasonal, you can create seasonal relev
       "Personalize outreach based on the retailer's store type, location, and past order history",
       "Offer exclusive early access to new collections for your top-performing retailers",
     ],
-    full_content: `On Faire, repeat orders from existing retailers are more profitable (15% vs 25% commission) and require less effort than acquiring new customers. Building strong retailer relationships is therefore one of the highest-ROI activities for your wholesale business.
-
-**The First Order Follow-Up**
-Within 24 hours of receiving a new order, send a personalized message through Faire's messaging system. Thank the retailer by name, acknowledge their store, and express genuine appreciation. This simple step sets you apart from the majority of brands that send no communication at all. Include a note about your typical shipping timeline and any care/display tips for the products they ordered.
-
-**Post-Delivery Check-In**
-Two to three weeks after the order is delivered, reach out to ask how the products are performing. This shows you care about their success, not just the initial sale. Ask about customer feedback, sell-through rate, and whether they need any display materials or marketing assets. This check-in often naturally leads to reorder conversations.
-
-**Monthly Touchpoints**
-Establish a regular communication cadence with your retailer base. Monthly updates work well — share new product launches, restocked bestsellers, seasonal collections, and any promotions. Keep messages concise and valuable. Retailers are busy; respect their time by providing actionable information, not lengthy newsletters.
-
-**Personalization Strategy**
-Segment your retailers by store type (boutique, gift shop, specialty, etc.), location, order history, and average order value. Tailor your outreach based on these segments. A coastal gift shop has different needs than an urban home goods boutique. Reference their specific store when reaching out — "I think our new beach-themed collection would be perfect for your Coastal Living store" lands much better than a generic blast.
-
-**Faire Direct Conversion**
-Your strongest retail relationships should be migrated to Faire Direct. After a retailer has reordered 2-3 times through the marketplace, invite them to use your Faire Direct link. Position it as a benefit for them (Net 60 terms, free returns) rather than a cost savings for you. Most retailers are happy to switch when they understand the benefits.
-
-**Handling Issues**
-When problems arise — damaged shipments, quality issues, late deliveries — respond quickly and generously. Offer replacements, credits, or refunds without making the retailer fight for resolution. A well-handled issue often strengthens a relationship more than a flawless transaction. Retailers remember brands that stand behind their products.
-
-**Top Retailer Program**
-Consider creating an informal top retailer program for your highest-volume accounts. Offer early access to new collections, exclusive colorways or products, priority shipping during busy seasons, or volume-based discounts. These incentives reward loyalty and create switching costs that keep retailers ordering from you.`,
+    full_content: "Building strong retailer relationships drives repeat orders at lower commission rates. Follow up after orders, communicate regularly, and convert your best accounts to Faire Direct.",
   },
   {
     title: "Product Tags and SEO on Faire",
@@ -494,28 +507,7 @@ Consider creating an informal top retailer program for your highest-volume accou
       "Update tags periodically based on trending search terms and seasonal relevance",
       "Avoid irrelevant or misleading tags — they may trigger Faire policy violations",
     ],
-    full_content: `Tags are Faire's secondary search mechanism after product titles. While titles carry the most weight, tags create additional discovery paths that can significantly increase your product's visibility to retailers browsing the platform.
-
-**Tag Strategy Fundamentals**
-Faire allows multiple tags per product listing. Use every available slot. Each tag creates an additional way for retailers to discover your product through search and filtered browsing. Think of tags as additional keywords that describe your product from different angles — material, style, use case, occasion, recipient, color, and more.
-
-**Broad vs. Specific Tags**
-Use a combination of broad and specific tags. Broad tags like "home decor," "candles," or "jewelry" cast a wide net and put your product in highly trafficked categories. Specific tags like "soy candle," "minimalist earrings," or "farmhouse sign" target retailers with specific buying intent who are more likely to convert. The combination of both maximizes your discovery potential.
-
-**Category Selection**
-Choosing the right product category is separate from tagging but equally important. Always select the most specific category available. If Faire offers "Jewelry > Earrings > Stud Earrings," choose that over just "Jewelry" or "Jewelry > Earrings." More specific categories mean less competition within your browse results and better matching with retailer intent.
-
-**Competitive Tag Research**
-Browse top-performing products in your category and note which tags they use. While you cannot directly see all tags, you can infer them from the categories and search results where those products appear. Search for terms you think retailers would use and see which products rank highest — their tags are likely optimized for those terms.
-
-**Material and Attribute Tags**
-Always include tags for materials (ceramic, cotton, sterling silver, soy wax), construction methods (hand-poured, handmade, machine-knit), and key attributes (organic, sustainable, vegan, hypoallergenic). Retailers often filter by these attributes, especially those with niche store concepts or customer bases with specific preferences.
-
-**Seasonal and Occasion Tags**
-Add seasonal and occasion-based tags when relevant. Tags like "holiday gift," "mother's day," "stocking stuffer," or "summer collection" help your products appear in seasonal search queries. Update these tags as seasons change — add holiday-related tags in May-June when retailers are buying for the holiday season.
-
-**Tag Maintenance**
-Review and update your tags quarterly. Remove underperforming or irrelevant tags and add new ones based on trending search terms you notice in Faire analytics. Tag optimization is an ongoing process, not a one-time setup. As Faire's search algorithm evolves and retail trends shift, your tag strategy should adapt accordingly.`,
+    full_content: "Tags are Faire's secondary search mechanism. Use all available slots with a mix of broad and specific tags. Update them periodically based on trends.",
   },
   {
     title: "Managing Inventory on Faire",
@@ -524,7 +516,7 @@ Review and update your tags quarterly. Remove underperforming or irrelevant tags
     category: "inventory",
     tags: ["inventory", "stock", "management"],
     is_pinned: false,
-    summary: "Effective inventory management on Faire prevents overselling, reduces cancellations, and maintains healthy store metrics. This guide covers stock settings, backorders, and inventory alerts.",
+    summary: "Effective inventory management on Faire prevents overselling, reduces cancellations, and maintains healthy store metrics.",
     bullet_points: [
       "Keep Faire inventory counts accurate and updated — overselling leads to cancellations that hurt your metrics",
       "Use the backorder feature for made-to-order products with clear lead time expectations",
@@ -534,28 +526,7 @@ Review and update your tags quarterly. Remove underperforming or irrelevant tags
       "Set Minimum Order Quantities (MOQ) that balance retailer accessibility with operational efficiency",
       "Review inventory velocity weekly to identify fast-movers and slow-movers",
     ],
-    full_content: `Inventory management on Faire directly impacts your store health, customer satisfaction, and profitability. Poor inventory management leads to overselling, order cancellations, and negative retailer experiences — all of which Faire tracks and penalizes.
-
-**Inventory Accuracy**
-The most important inventory principle on Faire is accuracy. If your listing shows 50 units available, you need to have 50 units ready to ship. Overselling — accepting orders for products you do not have — results in cancellations that damage your store health score, frustrate retailers, and reduce your search visibility. Update inventory counts whenever stock changes, whether from Faire orders, other sales channels, or physical inventory adjustments.
-
-**Multi-Channel Sync**
-If you sell across multiple platforms (Faire, your own website, other wholesale channels, retail), implement inventory syncing. Manual tracking across channels is error-prone and eventually leads to overselling. Consider inventory management software that can push and pull stock levels across all your sales channels in real time.
-
-**Backorder vs. Out of Stock**
-Faire offers a backorder option for products that are temporarily unavailable but can be produced. Use backorder for made-to-order products with clear lead times. Use out-of-stock status for products where you have no timeline for restocking. Never leave a listing active with zero inventory if you cannot fulfill orders — this is a common source of cancellations.
-
-**Low Stock Alerts**
-Monitor your inventory levels proactively. Set internal alerts when products drop below a threshold (e.g., 20% of typical stock level). This gives you time to reorder materials, schedule production, and restock before items sell out completely. Running out of your bestsellers during a peak buying window is a costly missed opportunity.
-
-**MOQ Strategy**
-Minimum Order Quantities should balance two competing goals: making it easy for new retailers to try your products (lower MOQ) and maintaining operational efficiency (higher MOQ). A common approach is MOQ of 4-6 units per SKU for new retailer accessibility, with case-pack incentives for larger orders. For made-to-order items, MOQs may need to be higher to justify production runs.
-
-**Inventory Velocity Analysis**
-Review your inventory velocity weekly — how quickly each SKU sells relative to its stock level. Fast movers need proactive restocking and possibly larger production runs. Slow movers may need listing optimization, repositioning, price adjustments, or eventual discontinuation. This analysis should drive your production planning and purchasing decisions.
-
-**Seasonal Inventory Planning**
-Plan inventory builds around wholesale buying windows, not retail seasons. If retailers order holiday products in June-August, your inventory needs to be fully built by June. Factor in production lead times, material availability, and potential supply chain delays. Being understocked during a key buying window means lost revenue you cannot recapture.`,
+    full_content: "Keep inventory accurate across channels. Use backorder for made-to-order items. Set low-stock alerts and review velocity weekly.",
   },
   {
     title: "Faire Store Branding Guide",
@@ -573,28 +544,7 @@ Plan inventory builds around wholesale buying windows, not retail seasons. If re
       "Feature your bestsellers and seasonal highlights prominently on your store landing page",
       "Include your origin story, production process, or sustainability commitment to build retailer trust",
     ],
-    full_content: `Your Faire store page is your digital wholesale showroom. When retailers click through from search results or recommendations, your store branding determines whether they spend time browsing your full catalog or click back to continue searching. A polished, professional brand presence signals credibility and quality.
-
-**Logo Requirements**
-Upload a clean, high-resolution logo at minimum 400x400 pixels. Use a transparent PNG for the cleanest display across Faire's various backgrounds. Your logo should be legible at small sizes since it appears as a small icon in search results and retailer dashboards. Avoid overly complex logos with fine details that become illegible when scaled down.
-
-**Banner Image**
-Your store banner is the hero image of your Faire shop. Design it at 1600x400 pixels for optimal display. Use this space strategically — showcase your product range, communicate your brand aesthetic, or highlight seasonal collections. Avoid cluttering the banner with text (it may be hard to read on mobile) and instead let strong product photography and your brand colors do the talking.
-
-**Brand Story**
-Write a compelling brand story that helps retailers understand who you are and why they should carry your products. Include your founding story (why you started), your production approach (handmade, ethically sourced, etc.), your target retail customer, and what makes your products unique. Keep it under 300 words — concise, authentic, and focused on what matters to retailers.
-
-**Visual Consistency**
-Maintain a cohesive visual language across your entire Faire presence. This means consistent photography styles (same lighting, backgrounds, editing), consistent use of brand colors, and a unified aesthetic that makes your store feel curated rather than thrown together. When a retailer browses your catalog, every product should clearly feel like it belongs to the same brand.
-
-**Store Organization**
-Organize your products into logical collections that make browsing easy for retailers. Group by product type, collection theme, or season. Feature your bestsellers and newest products prominently. A well-organized store helps retailers find what they need quickly and discover products they might not have searched for specifically.
-
-**Trust Signals**
-Include any relevant certifications, awards, press features, or sustainability credentials in your brand profile. Retailers look for signals that a brand is legitimate, established, and aligned with their customers' values. If you are a certified B-Corp, use organic materials, or have been featured in notable publications, make that visible.
-
-**Update Regularly**
-Your store page should not be static. Update your banner seasonally, rotate featured products, refresh your brand story as your business evolves, and keep your collections current. An active, frequently updated store signals to retailers that your brand is thriving and engaged.`,
+    full_content: "Your Faire store is your digital showroom. Invest in a professional logo, banner, and brand story. Maintain visual consistency across all listings.",
   },
   {
     title: "Order Processing Workflow",
@@ -603,7 +553,7 @@ Your store page should not be static. Update your banner seasonally, rotate feat
     category: "fulfillment",
     tags: ["orders", "processing", "workflow"],
     is_pinned: false,
-    summary: "A streamlined order processing workflow ensures fast fulfillment, accurate shipments, and strong store health metrics on Faire. This guide covers the complete workflow from acceptance to delivery.",
+    summary: "A streamlined order processing workflow ensures fast fulfillment, accurate shipments, and strong store health metrics on Faire.",
     bullet_points: [
       "Check for new orders at least twice daily — morning and afternoon at minimum",
       "Accept orders promptly within a few hours of receiving them rather than letting them sit",
@@ -613,31 +563,7 @@ Your store page should not be static. Update your banner seasonally, rotate feat
       "Include a branded packing slip, thank-you note, or business card in each shipment",
       "Follow up with the retailer 2-3 weeks after delivery to ensure satisfaction",
     ],
-    full_content: `A reliable, repeatable order processing workflow is the backbone of your Faire business. Consistent fulfillment builds your store health score, earns positive retailer reviews, and keeps your products visible in Faire's search algorithm.
-
-**Step 1: Order Receipt and Review**
-Check your Faire dashboard for new orders at least twice daily. When a new order arrives, review it carefully: verify the products ordered, check quantities against your available inventory, and note any special instructions from the retailer. If everything looks good, move to acceptance. If there are issues (inventory shortages, discontinued items), message the retailer immediately to discuss alternatives.
-
-**Step 2: Order Acceptance**
-Accept orders promptly — ideally within a few hours of receipt. Delayed acceptance pushes back your entire fulfillment timeline and starts the clock on retailer expectations. When you accept, Faire notifies the retailer that their order is being processed. This notification sets expectations, so accept only when you are committed to fulfilling the order within your stated processing time.
-
-**Step 3: Picking and Packing**
-Process orders in FIFO (first in, first out) order to ensure the oldest orders ship first. Create a pick list for each order and pull products from inventory. Before packing, perform a quality check — inspect each item for defects, damage, or incorrect variants. Pack products securely using appropriate materials for the product type. Fragile items need extra protection. Include inner packaging that reflects your brand quality.
-
-**Step 4: Branded Extras**
-Include a branded packing slip with the order details, a thank-you note (handwritten if volume allows), your business card or branded insert with reorder information, and any relevant care instructions or display suggestions. These small touches differentiate you from brands that ship products in plain brown boxes with no personal touch.
-
-**Step 5: Shipping and Tracking**
-Choose a carrier and service level appropriate for the order value and contents. Generate a shipping label, apply it to the package, and schedule a carrier pickup or drop-off. Upload the tracking number to Faire immediately — do not wait until the end of the day. Faire's fulfillment metrics start tracking from the moment the order is marked as shipped with tracking.
-
-**Step 6: Post-Ship Communication**
-Once the order ships, send a brief message through Faire letting the retailer know their order is on its way. Include the estimated delivery date and a note that you are available if they have any questions. This proactive communication builds trust and reduces "where is my order" inquiries.
-
-**Step 7: Delivery Follow-Up**
-Two to three weeks after the tracking shows delivery, follow up with the retailer. Ask if everything arrived in good condition, if they have questions about displaying the products, and if there is anything else you can help with. This touchpoint often leads naturally to reorder conversations and strengthens the retailer relationship.
-
-**Building Systems**
-As your order volume grows, systematize each step. Create checklists, designate packing stations, batch similar orders together, and establish cut-off times for same-day shipping. The brands that scale successfully on Faire are those that build repeatable operational systems early.`,
+    full_content: "Build a repeatable order processing workflow: check orders twice daily, accept promptly, pack with quality checks, upload tracking immediately, and follow up after delivery.",
   },
   {
     title: "Analyzing Faire Analytics",
@@ -646,7 +572,7 @@ As your order volume grows, systematize each step. Create checklists, designate 
     category: "analytics",
     tags: ["analytics", "metrics", "performance"],
     is_pinned: false,
-    summary: "Faire provides analytics that reveal how retailers discover, evaluate, and purchase your products. Understanding these metrics helps you optimize listings and grow revenue strategically.",
+    summary: "Faire provides analytics that reveal how retailers discover, evaluate, and purchase your products.",
     bullet_points: [
       "Monitor product views as a leading indicator of search visibility and listing discoverability",
       "Track conversion rate (views to orders) to identify listings that attract attention but fail to close",
@@ -656,31 +582,7 @@ As your order volume grows, systematize each step. Create checklists, designate 
       "Use traffic source data to understand whether retailers find you through search, browse, or direct",
       "Set up a weekly analytics review routine to catch trends early and respond proactively",
     ],
-    full_content: `Faire provides a suite of analytics tools that reveal how your brand performs on the platform. These metrics are not just vanity numbers — they are actionable signals that should inform your listing optimization, pricing decisions, inventory planning, and marketing strategy.
-
-**Product Views**
-Views represent the number of times retailers have seen your product listing. This is your top-of-funnel metric — high views indicate strong search visibility and effective titles/images. Low views suggest your products are not appearing in search results, meaning you need to optimize titles, tags, and categories. Track views at both the store and individual product level.
-
-**Conversion Rate**
-Conversion rate measures the percentage of product views that result in an order. This is the most actionable metric in your arsenal. A product with high views but low conversion has a visibility problem it has already solved — the issue is in the listing itself (price, description, images, or MOQ). A product with low views but high conversion is underexposed — invest in improving its search optimization to get more eyes on it.
-
-**Revenue Trends**
-Review revenue data weekly to identify trends. Look for weekly patterns (certain days of the week may be stronger), monthly trends (buying cycles), and seasonal patterns (holiday rushes, post-holiday lulls). Compare year-over-year data when available to measure real growth. Revenue spikes often correlate with Faire market events, email features, or seasonal buying windows.
-
-**Store Health Score**
-Faire calculates a store health score based on several factors: late shipment rate, cancellation rate, response time to messages, and return rate. This score directly impacts your search ranking and eligibility for featured placements. Monitor it regularly and address any declining metrics immediately. A green/healthy score should be maintained at all costs.
-
-**Traffic Sources**
-Understanding where your traffic comes from helps you allocate effort appropriately. Faire typically breaks down traffic into search (retailers finding you through Faire search), browse (retailers browsing categories or collections), direct (retailers who know your brand and navigate directly), and external (traffic from Faire Direct links or other outside sources). If search drives most of your traffic, invest in SEO optimization. If direct traffic is high, your brand awareness is strong.
-
-**Product-Level Analysis**
-Do not just look at store-level aggregates. Analyze performance at the individual product level. Identify your top performers (high views, high conversion, high revenue) and understand what makes them successful. Apply those lessons to underperforming listings. Also identify products with declining metrics — they may need refreshed images, updated descriptions, or pricing adjustments.
-
-**Competitive Context**
-While Faire does not provide direct competitor analytics, you can infer competitive dynamics from your own data. If views suddenly drop for a category, new competitors may have entered. If conversion drops despite stable views, competitors may have improved their offerings or lowered prices. Use your analytics as a window into the broader competitive landscape.
-
-**Weekly Review Routine**
-Establish a weekly analytics review session. Check views, conversions, revenue, store health, and traffic sources. Note any significant changes from the previous week. Create action items for any metrics that need attention. Consistent monitoring prevents small issues from becoming big problems and helps you catch opportunities early.`,
+    full_content: "Use Faire analytics to track views, conversion rate, revenue trends, and store health. Establish a weekly review routine to catch trends early.",
   },
   {
     title: "New Brand Application Tips",
@@ -689,7 +591,7 @@ Establish a weekly analytics review session. Check views, conversions, revenue, 
     category: "onboarding",
     tags: ["application", "new-brand", "setup"],
     is_pinned: false,
-    summary: "Getting accepted to Faire requires a polished application that demonstrates product quality, brand readiness, and wholesale viability. This guide covers what Faire evaluates and how to maximize your approval chances.",
+    summary: "Getting accepted to Faire requires a polished application that demonstrates product quality, brand readiness, and wholesale viability.",
     bullet_points: [
       "Apply with a professional branded email address — free email providers reduce credibility",
       "Have at least 10-15 products fully photographed and ready to list before applying",
@@ -699,34 +601,7 @@ Establish a weekly analytics review session. Check views, conversions, revenue, 
       "Highlight any existing retail accounts, press features, or notable achievements",
       "Be patient — Faire reviews applications manually and the process can take 1-3 weeks",
     ],
-    full_content: `Faire reviews every brand application to maintain marketplace quality. Understanding what the review team looks for helps you present the strongest possible application and increase your chances of approval.
-
-**Application Basics**
-Apply using a professional email address associated with your brand domain (you@yourbrand.com), not a free provider like Gmail or Yahoo. This immediately signals professionalism and legitimacy. If you do not have a branded email, set one up before applying — it is worth the small investment.
-
-**Product Readiness**
-Before applying, have at least 10-15 products fully ready to list. This means professional photography, written descriptions, set prices, and available inventory. Faire wants to see that you can populate a credible store page from day one. Applying with "I plan to have products ready soon" significantly reduces your approval chances.
-
-**Professional Online Presence**
-Faire's review team will check your website, social media accounts, and overall online presence. Ensure your website is professional, functional, and showcases your products well. Active social media accounts with real engagement demonstrate brand traction. If your Instagram has 50 followers and no product photos, invest time in building it up before applying.
-
-**Brand Story and Positioning**
-Your application should clearly articulate who you are, what you make, who your target retail customer is, and what makes your products unique. Faire is looking for brands that fill a niche or offer something distinctive. Generic products without a clear brand story or point of differentiation face higher rejection rates.
-
-**Wholesale Readiness**
-Demonstrate that you understand wholesale business fundamentals. Have wholesale pricing established (not just retail prices divided by two), minimum order quantities set, packaging suitable for wholesale shipment, and the operational capacity to fulfill orders reliably. Faire wants brands that can handle wholesale volume and deliver a professional experience to retailers.
-
-**Existing Traction**
-If you already sell to retail stores, mention it. Include the number of current retail accounts, any notable store names, and your wholesale revenue if impressive. If you have press features, awards, or notable achievements, highlight them. Existing traction signals that retailers already validate your products.
-
-**Product Photography Quality**
-This cannot be overstated — your product images are likely the most scrutinized element of your application. Faire's review team sees thousands of applications and can immediately distinguish between professional photography and phone snapshots. Invest in quality images before applying. White background hero shots, lifestyle images, and detail close-ups demonstrate product quality and brand professionalism.
-
-**Application Tips**
-Be thorough but concise in your application responses. Answer every question completely. Upload your best product images. Double-check all links to ensure they work. If you are rejected, you can typically reapply after improving the areas identified as weaknesses. Use the feedback constructively — many successful Faire brands were not accepted on their first application.
-
-**Post-Acceptance Setup**
-If approved, prioritize completing your store setup quickly. Upload all products, optimize titles and descriptions, set up your brand page, and configure shipping settings. Faire may feature new brands, so having a complete, polished store when you launch maximizes the benefit of any initial visibility boost.`,
+    full_content: "Apply with a professional email, 10-15 ready products, quality photography, and a clear brand story. Demonstrate wholesale readiness and highlight existing traction.",
   },
 ]
 
@@ -742,6 +617,8 @@ export default function KnowledgePage() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [showDialog, setShowDialog] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<"articles" | "help" | "faq">("articles")
+  const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null)
   const seeded = useRef(false)
 
   /* ---- Fetch ---- */
@@ -783,7 +660,7 @@ export default function KnowledgePage() {
     setTimeout(() => setCopiedId(null), 2000)
   }
 
-  /* ---- Filter ---- */
+  /* ---- Filter knowledge articles ---- */
   const filtered = articles.filter((a) => {
     const matchCategory = activeCategory === "All" || a.category === activeCategory
     if (!matchCategory) return false
@@ -796,10 +673,35 @@ export default function KnowledgePage() {
     )
   })
 
+  /* ---- Filter help articles ---- */
+  const filteredHelp = HELP_ARTICLES.filter((a) => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return (
+      a.title.toLowerCase().includes(q) ||
+      a.description.toLowerCase().includes(q) ||
+      a.category.toLowerCase().includes(q)
+    )
+  })
+
+  /* ---- Filter FAQs ---- */
+  const filteredFaqs = FAQ_DATA.filter((f) => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return f.question.toLowerCase().includes(q) || f.answer.toLowerCase().includes(q)
+  })
+
   /* ---- Stats ---- */
   const totalArticles = articles.length
   const categoryCount = new Set(articles.map((a) => a.category)).size
   const pinnedCount = articles.filter((a) => a.is_pinned).length
+
+  /* ---- Group help articles by category ---- */
+  const helpByCategory = filteredHelp.reduce<Record<string, HelpArticle[]>>((acc, a) => {
+    if (!acc[a.category]) acc[a.category] = []
+    acc[a.category].push(a)
+    return acc
+  }, {})
 
   return (
     <div className="space-y-6 max-w-[1440px] mx-auto w-full">
@@ -808,13 +710,15 @@ export default function KnowledgePage() {
         <div>
           <h1 className="text-2xl font-bold font-heading text-foreground">Knowledge Base</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Faire seller guides, best practices, and insights
+            Faire seller guides, best practices, help articles, and FAQs
           </p>
         </div>
-        <Button size="lg" onClick={() => setShowDialog(true)}>
-          <Plus className="size-4" />
-          Add Article
-        </Button>
+        {activeTab === "articles" && (
+          <Button size="lg" onClick={() => setShowDialog(true)}>
+            <Plus className="size-4" />
+            Add Article
+          </Button>
+        )}
       </div>
 
       {/* Stats */}
@@ -852,197 +756,326 @@ export default function KnowledgePage() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Search articles by title, summary, or tags..."
+          placeholder="Search articles, help docs, and FAQs..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-9"
         />
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex items-center gap-1 border-b overflow-x-auto">
-        {CATEGORIES.map((cat) => (
+      {/* Section Tabs */}
+      <div className="flex items-center gap-1 border-b">
+        {([
+          { key: "articles" as const, label: "Knowledge Articles" },
+          { key: "help" as const, label: "Help Articles" },
+          { key: "faq" as const, label: "FAQ" },
+        ]).map((tab) => (
           <button
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
-            className={`px-3 py-2 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
-              activeCategory === cat
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
+              activeTab === tab.key
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            {cat === "All" ? "All" : CATEGORY_LABELS[cat] ?? cat}
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Article List */}
-      {loading ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">Loading...</p>
-      ) : filtered.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">No articles found</p>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map((article, index) => {
-            const isExpanded = expandedId === article.id
-            const ThumbnailIcon = CATEGORY_ICONS[article.category] ?? BookOpen
-            return (
-              <div key={article.id}>
-                {/* Card */}
-                <div
-                  className={`rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden cursor-pointer ${
-                    isExpanded ? "border-primary/30" : ""
-                  }`}
-                  onClick={() => setExpandedId(isExpanded ? null : article.id)}
-                >
-                  <div className="flex">
-                  {/* Left square thumbnail */}
-                  <div
-                    className="w-20 shrink-0 flex items-center justify-center"
-                    style={{ background: THUMBNAIL_PATTERNS[index % THUMBNAIL_PATTERNS.length] }}
-                  >
-                    <ThumbnailIcon className="size-7 text-white/40" />
-                  </div>
-                  <div className="flex-1 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-semibold truncate">{article.title}</h3>
-                        {article.is_pinned && (
-                          <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500 shrink-0" />
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                        {article.summary}
-                      </p>
-                      <div className="flex items-center gap-2 mt-3 flex-wrap">
-                        <span
-                          className={`border-0 text-xs font-medium px-2 py-0.5 rounded-full ${
-                            CATEGORY_BADGE[article.category] ?? "bg-slate-100 text-slate-600"
-                          }`}
-                        >
-                          {CATEGORY_LABELS[article.category] ?? article.category}
-                        </span>
-                        {article.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="text-xs bg-muted rounded-full px-2 py-0.5 text-muted-foreground"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="shrink-0">
-                      {isExpanded ? (
-                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </div>
-                  </div>
-                  </div>
-                  </div>
-                </div>
+      {/* ============================================================ */}
+      {/*  TAB: Knowledge Articles (original)                           */}
+      {/* ============================================================ */}
+      {activeTab === "articles" && (
+        <>
+          {/* Category Tabs */}
+          <div className="flex items-center gap-1 border-b overflow-x-auto">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-3 py-2 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
+                  activeCategory === cat
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {cat === "All" ? "All" : CATEGORY_LABELS[cat] ?? cat}
+              </button>
+            ))}
+          </div>
 
-                {/* Expanded Content — Modal */}
-                {isExpanded && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={(e) => { e.stopPropagation(); setExpandedId(null) }}>
-                    <div className="bg-card border rounded-lg shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                      {/* Modal header */}
-                      <div className="flex items-center justify-between border-b px-6 py-4 sticky top-0 bg-card z-10">
-                        <h2 className="text-lg font-semibold truncate">{article.title}</h2>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border hover:bg-muted">
-                            <Printer className="size-3" />
-                            Print
-                          </button>
-                          <button onClick={(e) => { e.stopPropagation(); setExpandedId(null) }} className="p-1 rounded hover:bg-muted">
-                            <X className="size-4" />
-                          </button>
+          {/* Article List */}
+          {loading ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">Loading...</p>
+          ) : filtered.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">No articles found</p>
+          ) : (
+            <div className="space-y-3">
+              {filtered.map((article, index) => {
+                const isExpanded = expandedId === article.id
+                const ThumbnailIcon = CATEGORY_ICONS[article.category] ?? BookOpen
+                return (
+                  <div key={article.id}>
+                    {/* Card */}
+                    <div
+                      className={`rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden cursor-pointer ${
+                        isExpanded ? "border-primary/30" : ""
+                      }`}
+                      onClick={() => setExpandedId(isExpanded ? null : article.id)}
+                    >
+                      <div className="flex">
+                      {/* Left square thumbnail */}
+                      <div
+                        className="w-20 shrink-0 flex items-center justify-center"
+                        style={{ background: THUMBNAIL_PATTERNS[index % THUMBNAIL_PATTERNS.length] }}
+                      >
+                        <ThumbnailIcon className="size-7 text-white/40" />
+                      </div>
+                      <div className="flex-1 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-semibold truncate">{article.title}</h3>
+                            {article.is_pinned && (
+                              <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500 shrink-0" />
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            {article.summary}
+                          </p>
+                          <div className="flex items-center gap-2 mt-3 flex-wrap">
+                            <span
+                              className={`border-0 text-xs font-medium px-2 py-0.5 rounded-full ${
+                                CATEGORY_BADGE[article.category] ?? "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {CATEGORY_LABELS[article.category] ?? article.category}
+                            </span>
+                            {article.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="text-xs bg-muted rounded-full px-2 py-0.5 text-muted-foreground"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="shrink-0">
+                          {isExpanded ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          )}
                         </div>
                       </div>
-                      {/* Modal body */}
-                      <div className="px-6 py-5 space-y-4">
-                    <div className="text-sm whitespace-pre-wrap text-foreground leading-relaxed">
-                      {article.full_content}
+                      </div>
+                      </div>
                     </div>
 
-                    {article.bullet_points && article.bullet_points.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-semibold mb-2">Key Takeaways</h4>
-                        <ul className="space-y-1.5">
-                          {article.bullet_points.map((bp, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                              <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                              {bp}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    {/* Expanded Content — Modal */}
+                    {isExpanded && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={(e) => { e.stopPropagation(); setExpandedId(null) }}>
+                        <div className="bg-card border rounded-lg shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                          {/* Modal header */}
+                          <div className="flex items-center justify-between border-b px-6 py-4 sticky top-0 bg-card z-10">
+                            <h2 className="text-lg font-semibold truncate">{article.title}</h2>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border hover:bg-muted">
+                                <Printer className="size-3" />
+                                Print
+                              </button>
+                              <button onClick={(e) => { e.stopPropagation(); setExpandedId(null) }} className="p-1 rounded hover:bg-muted">
+                                <X className="size-4" />
+                              </button>
+                            </div>
+                          </div>
+                          {/* Modal body */}
+                          <div className="px-6 py-5 space-y-4">
+                        <div className="text-sm whitespace-pre-wrap text-foreground leading-relaxed">
+                          {article.full_content}
+                        </div>
 
-                    {article.source_url && (
-                      <a
-                        href={article.source_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        Source
-                      </a>
-                    )}
-
-                    <div className="flex items-center gap-2 pt-2 border-t">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          copySummary(article.id, article.summary)
-                        }}
-                      >
-                        {copiedId === article.id ? (
-                          <Check className="size-3.5" />
-                        ) : (
-                          <Copy className="size-3.5" />
+                        {article.bullet_points && article.bullet_points.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-2">Key Takeaways</h4>
+                            <ul className="space-y-1.5">
+                              {article.bullet_points.map((bp, i) => (
+                                <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                                  {bp}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
                         )}
-                        {copiedId === article.id ? "Copied" : "Copy Summary"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          togglePin(article.id, article.is_pinned)
-                        }}
-                      >
-                        <Star
-                          className={`size-3.5 ${
-                            article.is_pinned ? "text-amber-500 fill-amber-500" : ""
-                          }`}
-                        />
-                        {article.is_pinned ? "Unpin" : "Pin"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setExpandedId(null)
-                        }}
-                      >
-                        Close
-                      </Button>
+
+                        {article.source_url && (
+                          <a
+                            href={article.source_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Source
+                          </a>
+                        )}
+
+                        <div className="flex items-center gap-2 pt-2 border-t">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              copySummary(article.id, article.summary)
+                            }}
+                          >
+                            {copiedId === article.id ? (
+                              <Check className="size-3.5" />
+                            ) : (
+                              <Copy className="size-3.5" />
+                            )}
+                            {copiedId === article.id ? "Copied" : "Copy Summary"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              togglePin(article.id, article.is_pinned)
+                            }}
+                          >
+                            <Star
+                              className={`size-3.5 ${
+                                article.is_pinned ? "text-amber-500 fill-amber-500" : ""
+                              }`}
+                            />
+                            {article.is_pinned ? "Unpin" : "Pin"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setExpandedId(null)
+                            }}
+                          >
+                            Close
+                          </Button>
+                        </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ============================================================ */}
+      {/*  TAB: Help Articles                                           */}
+      {/* ============================================================ */}
+      {activeTab === "help" && (
+        <div className="space-y-8">
+          {Object.keys(helpByCategory).length === 0 ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">No help articles match your search</p>
+          ) : (
+            Object.entries(helpByCategory).map(([category, items]) => {
+              const Icon = HELP_CATEGORY_ICONS[category] ?? HelpCircle
+              return (
+                <div key={category}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${HELP_CATEGORY_BADGE[category] ?? "bg-slate-100 text-slate-600"}`}>
+                      <Icon className="h-4 w-4" />
                     </div>
+                    <h2 className="text-lg font-semibold">{category}</h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {items.map((article) => {
+                      const CatIcon = HELP_CATEGORY_ICONS[article.category] ?? HelpCircle
+                      return (
+                        <div
+                          key={article.id}
+                          className="rounded-lg border border-border/80 bg-card shadow-sm p-5 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${HELP_CATEGORY_BADGE[article.category] ?? "bg-slate-100 text-slate-600"}`}>
+                              <CatIcon className="h-4 w-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-sm font-semibold">{article.title}</h3>
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                {article.description}
+                              </p>
+                              <span className={`inline-block mt-2 text-xs font-medium px-2 py-0.5 rounded-full ${HELP_CATEGORY_BADGE[article.category] ?? "bg-slate-100 text-slate-600"}`}>
+                                {article.category}
+                              </span>
+                            </div>
+                          </div>
+                          <a
+                            href={article.link}
+                            className="inline-flex items-center gap-1 mt-3 text-xs font-medium text-primary hover:underline"
+                          >
+                            Read more
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/*  TAB: FAQ                                                     */}
+      {/* ============================================================ */}
+      {activeTab === "faq" && (
+        <div className="space-y-2">
+          {filteredFaqs.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">No FAQs match your search</p>
+          ) : (
+            filteredFaqs.map((faq) => {
+              const isOpen = expandedFaqId === faq.id
+              return (
+                <div
+                  key={faq.id}
+                  className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden"
+                >
+                  <button
+                    onClick={() => setExpandedFaqId(isOpen ? null : faq.id)}
+                    className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <HelpCircle className="h-4 w-4 text-primary shrink-0" />
+                      <span className="text-sm font-medium">{faq.question}</span>
+                    </div>
+                    {isOpen ? (
+                      <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                    )}
+                  </button>
+                  {isOpen && (
+                    <div className="px-4 pb-4 pt-0">
+                      <div className="pl-7 text-sm text-muted-foreground leading-relaxed">
+                        {faq.answer}
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
+                  )}
+                </div>
+              )
+            })
+          )}
         </div>
       )}
 
