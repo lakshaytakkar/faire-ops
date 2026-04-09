@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useCallback } from "react"
 import { Users, Send, Search, MessageSquare, FileText } from "lucide-react"
 import { supabase } from "@/lib/supabase"
-import EmployeeCVModal, { type EmployeeCVModalProps } from "@/components/shared/employee-cv-modal"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -94,7 +93,7 @@ export default function RemoteTeamPage() {
   const [draft, setDraft] = useState("")
   const [sending, setSending] = useState(false)
   const [search, setSearch] = useState("")
-  const [cvEmployee, setCvEmployee] = useState<EmployeeCVModalProps["employee"] | null>(null)
+  const [cvEmployee, setCvEmployee] = useState<RemoteEmployee | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -333,14 +332,7 @@ export default function RemoteTeamPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      setCvEmployee({
-                        id: emp.id,
-                        name: emp.name,
-                        role: emp.role,
-                        department: "",
-                        avatar_url: emp.avatar_url ?? undefined,
-                        messages_handled: emp.messages_handled ?? 0,
-                      })
+                      setCvEmployee(emp)
                     }}
                     title="View CV"
                     className="shrink-0 p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
@@ -560,9 +552,32 @@ export default function RemoteTeamPage() {
         </div>
       </div>
 
-      {/* CV Modal */}
+      {/* AI Employee Info Panel */}
       {cvEmployee && (
-        <EmployeeCVModal employee={cvEmployee} onClose={() => setCvEmployee(null)} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setCvEmployee(null)}>
+          <div className="bg-card border rounded-lg shadow-xl w-full max-w-md mx-4 p-5 space-y-3" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              {cvEmployee.avatar_url ? (
+                <img src={cvEmployee.avatar_url} alt={cvEmployee.name} className="w-14 h-14 rounded-full object-cover" />
+              ) : (
+                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-lg font-bold text-primary">{cvEmployee.name[0]}</div>
+              )}
+              <div>
+                <h3 className="text-lg font-semibold">{cvEmployee.name}</h3>
+                <p className="text-sm text-muted-foreground">{cvEmployee.role}</p>
+              </div>
+            </div>
+            {cvEmployee.personality && <p className="text-sm text-muted-foreground">{cvEmployee.personality}</p>}
+            {cvEmployee.skills && cvEmployee.skills.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {cvEmployee.skills.map((s: string) => (
+                  <span key={s} className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">{s}</span>
+                ))}
+              </div>
+            )}
+            <button onClick={() => setCvEmployee(null)} className="w-full h-9 rounded-md border text-sm font-medium hover:bg-muted transition-colors cursor-pointer">Close</button>
+          </div>
+        </div>
       )}
     </div>
   )

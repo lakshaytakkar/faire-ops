@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Mail, Phone, Users, UserPlus, MessageCircle, Calendar, Award, Briefcase, ChevronDown, ChevronUp, CheckSquare, Clock, Wifi, FileText } from "lucide-react"
 import { supabase } from "@/lib/supabase"
-import EmployeeCVModal, { type EmployeeCVModalProps } from "@/components/shared/employee-cv-modal"
+import EmployeeCVModal from "@/components/shared/employee-cv-modal"
 
 interface TeamMember {
   id: string
@@ -77,7 +77,9 @@ export default function TeamPage() {
   const [remoteLoading, setRemoteLoading] = useState(false)
   const [memberTasks, setMemberTasks] = useState<Record<string, MemberTask[]>>({})
   const [expandedMember, setExpandedMember] = useState<string | null>(null)
-  const [cvEmployee, setCvEmployee] = useState<EmployeeCVModalProps["employee"] | null>(null)
+  const [cvEmployee, setCvEmployee] = useState<{ id: string; name: string; role: string; department: string; avatar_url?: string; bio?: string; education?: Array<{type: string; name: string; year: string}>; tools_used?: string[]; connectors?: string[]; specializations?: Array<{area: string; detail: string}>; messages_handled: number; joined_at?: string } | null>(null)
+  const [cvMemberId, setCvMemberId] = useState<string | null>(null)
+  const [cvMemberName, setCvMemberName] = useState("")
 
   /* Fetch in-house team on mount */
   useEffect(() => {
@@ -267,7 +269,7 @@ export default function TeamPage() {
                   })()}
 
                   {/* Action buttons */}
-                  <div className="grid grid-cols-3 gap-1 pt-0.5">
+                  <div className="grid grid-cols-4 gap-1 pt-0.5">
                     <a
                       href={`mailto:${member.email}`}
                       className="inline-flex items-center justify-center gap-1 h-7 rounded border border-red-100 bg-red-50 text-[9px] font-medium text-red-600"
@@ -291,6 +293,13 @@ export default function TeamPage() {
                       <MessageCircle className="size-2.5" />
                       WA
                     </a>
+                    <button
+                      onClick={() => { setCvMemberId(member.id); setCvMemberName(member.name) }}
+                      className="inline-flex items-center justify-center gap-1 h-7 rounded border border-violet-100 bg-violet-50 text-[9px] font-medium text-violet-600 hover:bg-violet-100 transition-colors"
+                    >
+                      <FileText className="size-2.5" />
+                      Profile
+                    </button>
                   </div>
                 </div>
               </div>
@@ -427,9 +436,9 @@ export default function TeamPage() {
         )
       )}
 
-      {/* CV Modal */}
-      {cvEmployee && (
-        <EmployeeCVModal employee={cvEmployee} onClose={() => setCvEmployee(null)} />
+      {/* In-House CV Modal */}
+      {cvMemberId && (
+        <EmployeeCVModal memberId={cvMemberId} memberName={cvMemberName} onClose={() => setCvMemberId(null)} />
       )}
     </div>
   )

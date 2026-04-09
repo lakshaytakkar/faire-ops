@@ -1,12 +1,57 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, GraduationCap, Wrench, Star, Briefcase, BarChart3, CheckCircle2, RefreshCw, Clock } from "lucide-react"
+import {
+  X,
+  GraduationCap,
+  Star,
+  Briefcase,
+  BarChart3,
+  Clock,
+  Calendar,
+  MapPin,
+  Building2,
+  User,
+  Award,
+  Globe,
+  BadgeCheck,
+  FolderKanban,
+  TrendingUp,
+  MessageSquareQuote,
+  Target,
+  Lightbulb,
+} from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
+
+export interface EmployeeCVModalProps {
+  memberId: string
+  memberName: string
+  onClose: () => void
+}
+
+interface EmployeeProfile {
+  id: string
+  team_member_id: string
+  bio?: string
+  designation?: string
+  department?: string
+  avatar_url?: string
+  previous_company?: string
+  previous_role?: string
+  years_experience?: number
+  city?: string
+  state?: string
+  date_of_joining?: string
+  status?: string
+  reporting_to?: string
+  education?: Array<{ degree: string; institution: string; year: string | number }>
+  certifications?: string[]
+  languages?: string[]
+}
 
 interface EmployeeSkill {
   id: string
@@ -18,29 +63,39 @@ interface EmployeeSkill {
   use_cases?: string[]
 }
 
-interface EmployeeTask {
+interface EmployeeProject {
+  id: string
+  team_member_id: string
+  name: string
+  role?: string
+  status?: string
+  start_date?: string
+  end_date?: string
+  description?: string
+  outcomes?: string
+  tags?: string[]
+}
+
+interface PerformanceRating {
+  id: string
+  team_member_id: string
+  month: string
+  productivity?: number
+  quality?: number
+  communication?: number
+  initiative?: number
+  overall?: number
+  manager_feedback?: string
+  goals_met?: string
+  areas_of_improvement?: string
+}
+
+interface TaskRow {
   id: string
   title: string
   status: string
   priority: string
-}
-
-export interface EmployeeCVModalProps {
-  employee: {
-    id: string
-    name: string
-    role: string
-    department: string
-    avatar_url?: string
-    bio?: string
-    education?: Array<{ type: string; name: string; year: string }>
-    tools_used?: string[]
-    connectors?: string[]
-    specializations?: Array<{ area: string; detail: string }>
-    messages_handled: number
-    joined_at?: string
-  }
-  onClose: () => void
+  due_date?: string
 }
 
 /* ------------------------------------------------------------------ */
@@ -68,67 +123,136 @@ function proficiencyTextColor(p: number): string {
   return "text-amber-600"
 }
 
-function timeAgo(dateStr: string): string {
+function tenure(dateStr: string): { years: number; months: number; label: string } {
   const now = new Date()
   const then = new Date(dateStr)
-  const months = (now.getFullYear() - then.getFullYear()) * 12 + (now.getMonth() - then.getMonth())
-  if (months < 1) return "less than a month ago"
-  if (months === 1) return "1 month ago"
-  if (months < 12) return `${months} months ago`
-  const years = Math.floor(months / 12)
-  return years === 1 ? "1 year ago" : `${years} years ago`
+  let months = (now.getFullYear() - then.getFullYear()) * 12 + (now.getMonth() - then.getMonth())
+  if (months < 0) months = 0
+  const y = Math.floor(months / 12)
+  const m = months % 12
+  const parts: string[] = []
+  if (y > 0) parts.push(`${y} year${y > 1 ? "s" : ""}`)
+  if (m > 0 || y === 0) parts.push(`${m} month${m !== 1 ? "s" : ""}`)
+  return { years: y, months: m, label: parts.join(", ") }
 }
 
-function formatJoinDate(dateStr: string): string {
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+}
+
+function formatMonth(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-US", { month: "short", year: "numeric" })
 }
 
-const statusIcon: Record<string, { label: string; cls: string }> = {
-  done: { label: "Done", cls: "text-emerald-600" },
-  completed: { label: "Done", cls: "text-emerald-600" },
-  "in-progress": { label: "In Progress", cls: "text-blue-600" },
-  in_progress: { label: "In Progress", cls: "text-blue-600" },
-  todo: { label: "To Do", cls: "text-slate-500" },
-  pending: { label: "Pending", cls: "text-amber-600" },
+const statusBadge: Record<string, { label: string; cls: string }> = {
+  active: { label: "Active", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  completed: { label: "Completed", cls: "bg-blue-50 text-blue-700 border-blue-200" },
+  on_hold: { label: "On Hold", cls: "bg-amber-50 text-amber-700 border-amber-200" },
+}
+
+const memberStatusBadge: Record<string, { label: string; cls: string }> = {
+  active: { label: "Active", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  online: { label: "Online", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  away: { label: "Away", cls: "bg-amber-50 text-amber-700 border-amber-200" },
+  offline: { label: "Offline", cls: "bg-slate-50 text-slate-500 border-slate-200" },
+}
+
+const priorityDot: Record<string, string> = {
+  high: "bg-red-500",
+  medium: "bg-amber-500",
+  low: "bg-slate-400",
+}
+
+const taskStatusBadge: Record<string, { label: string; cls: string }> = {
+  done: { label: "Done", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  completed: { label: "Done", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  "in-progress": { label: "In Progress", cls: "bg-blue-50 text-blue-700 border-blue-200" },
+  in_progress: { label: "In Progress", cls: "bg-blue-50 text-blue-700 border-blue-200" },
+  todo: { label: "To Do", cls: "bg-slate-50 text-slate-500 border-slate-200" },
+  pending: { label: "Pending", cls: "bg-amber-50 text-amber-700 border-amber-200" },
+}
+
+/* ------------------------------------------------------------------ */
+/*  Skeleton                                                           */
+/* ------------------------------------------------------------------ */
+
+function Skeleton({ className = "" }: { className?: string }) {
+  return <div className={`rounded bg-muted animate-pulse ${className}`} />
+}
+
+function CardShell({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border border-border/80 bg-card shadow-sm">
+      <div className="px-5 py-3.5 border-b flex items-center gap-2">
+        {icon}
+        <h3 className="text-[0.9375rem] font-semibold tracking-tight">{title}</h3>
+      </div>
+      <div className="p-5">{children}</div>
+    </div>
+  )
+}
+
+function RatingBar({ value, max = 5 }: { value: number; max?: number }) {
+  return (
+    <div className="flex items-center gap-1">
+      {Array.from({ length: max }).map((_, i) => (
+        <div
+          key={i}
+          className={`h-2.5 w-6 rounded-sm ${i < value ? "bg-amber-400" : "bg-muted"}`}
+        />
+      ))}
+      <span className="ml-1.5 text-xs font-semibold text-muted-foreground">{value}/{max}</span>
+    </div>
+  )
 }
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export default function EmployeeCVModal({ employee, onClose }: EmployeeCVModalProps) {
+export default function EmployeeCVModal({ memberId, memberName, onClose }: EmployeeCVModalProps) {
+  const [profile, setProfile] = useState<EmployeeProfile | null>(null)
   const [skills, setSkills] = useState<EmployeeSkill[]>([])
-  const [tasks, setTasks] = useState<EmployeeTask[]>([])
-  const [expandedSkill, setExpandedSkill] = useState<string | null>(null)
-  const [loadingSkills, setLoadingSkills] = useState(true)
-  const [loadingTasks, setLoadingTasks] = useState(true)
+  const [projects, setProjects] = useState<EmployeeProject[]>([])
+  const [ratings, setRatings] = useState<PerformanceRating[]>([])
+  const [tasks, setTasks] = useState<TaskRow[]>([])
+  const [managerName, setManagerName] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  /* Fetch skills */
+  /* Fetch all data */
   useEffect(() => {
-    supabase
-      .from("employee_skills")
-      .select("*")
-      .eq("employee_id", employee.id)
-      .order("proficiency", { ascending: false })
-      .then(({ data }) => {
-        if (data) setSkills(data as EmployeeSkill[])
-        setLoadingSkills(false)
-      })
-  }, [employee.id])
+    let cancelled = false
 
-  /* Fetch recent tasks */
-  useEffect(() => {
-    supabase
-      .from("tasks")
-      .select("id, title, status, priority")
-      .eq("assignee", employee.name)
-      .order("due_date", { ascending: false })
-      .limit(8)
-      .then(({ data }) => {
-        if (data) setTasks(data as EmployeeTask[])
-        setLoadingTasks(false)
-      })
-  }, [employee.name, employee.id])
+    async function load() {
+      const [profileRes, skillsRes, projectsRes, ratingsRes, tasksRes] = await Promise.all([
+        supabase.from("employee_profiles").select("*").eq("team_member_id", memberId).single(),
+        supabase.from("team_member_skills").select("*").eq("team_member_id", memberId).order("proficiency", { ascending: false }),
+        supabase.from("employee_projects").select("*").eq("team_member_id", memberId),
+        supabase.from("employee_performance_ratings").select("*").eq("team_member_id", memberId).order("month", { ascending: false }),
+        supabase.from("tasks").select("id, title, status, priority, due_date").eq("assignee", memberName).order("due_date", { ascending: false }).limit(10),
+      ])
+
+      if (cancelled) return
+
+      const p = profileRes.data as EmployeeProfile | null
+      setProfile(p)
+      setSkills((skillsRes.data as EmployeeSkill[]) ?? [])
+      setProjects((projectsRes.data as EmployeeProject[]) ?? [])
+      setRatings((ratingsRes.data as PerformanceRating[]) ?? [])
+      setTasks((tasksRes.data as TaskRow[]) ?? [])
+
+      // Fetch manager name
+      if (p?.reporting_to) {
+        const { data: mgr } = await supabase.from("team_members").select("name").eq("id", p.reporting_to).single()
+        if (!cancelled && mgr) setManagerName((mgr as { name: string }).name)
+      }
+
+      setLoading(false)
+    }
+
+    load()
+    return () => { cancelled = true }
+  }, [memberId, memberName])
 
   /* Close on Escape */
   useEffect(() => {
@@ -139,11 +263,15 @@ export default function EmployeeCVModal({ employee, onClose }: EmployeeCVModalPr
     return () => window.removeEventListener("keydown", onKey)
   }, [onClose])
 
-  const joinedAt = employee.joined_at
-  const education = employee.education ?? []
-  const toolsUsed = employee.tools_used ?? []
-  const connectors = employee.connectors ?? []
-  const specializations = employee.specializations ?? []
+  /* Derived */
+  const doneCount = tasks.filter((t) => t.status === "done" || t.status === "completed").length
+  const tenureInfo = profile?.date_of_joining ? tenure(profile.date_of_joining) : null
+  const avgRating =
+    ratings.length > 0
+      ? (ratings.reduce((s, r) => s + (r.overall ?? 0), 0) / ratings.length).toFixed(1)
+      : "-"
+  const latestRating = ratings[0] ?? null
+  const statusInfo = memberStatusBadge[profile?.status ?? "active"] ?? memberStatusBadge.active
 
   return (
     <div
@@ -152,269 +280,431 @@ export default function EmployeeCVModal({ employee, onClose }: EmployeeCVModalPr
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div className="relative w-full max-w-3xl h-[85vh] rounded-md border bg-card shadow-lg flex flex-col overflow-hidden">
-        {/* ── Header ── */}
-        <div className="shrink-0 px-6 py-5 border-b flex items-start gap-4">
-          {/* Avatar */}
-          <div className="shrink-0">
-            {employee.avatar_url ? (
-              <img
-                src={employee.avatar_url}
-                alt={employee.name}
-                className="w-16 h-16 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xl font-bold">
-                {getInitials(employee.name)}
+      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl bg-card shadow-2xl">
+        {loading ? (
+          <div className="p-8 space-y-6">
+            <div className="flex items-start gap-4">
+              <Skeleton className="w-20 h-20 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-7 w-48" />
+                <Skeleton className="h-4 w-64" />
+                <Skeleton className="h-3 w-80" />
               </div>
-            )}
-          </div>
-
-          {/* Name / Role / Meta */}
-          <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-bold font-heading leading-tight">{employee.name}</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {employee.role} &middot; {employee.department}
-            </p>
-            <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-              {joinedAt && <span>Joined: {formatJoinDate(joinedAt)}</span>}
-              <span className="inline-flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                Online
-              </span>
             </div>
+            <div className="grid grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-20" />)}
+            </div>
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-40" />)}
           </div>
+        ) : (
+          <>
+            {/* ── 1. Header ── */}
+            <div className="sticky top-0 z-10 bg-card border-b px-6 py-5">
+              <div className="flex items-start gap-4">
+                {/* Avatar */}
+                {profile?.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt={memberName}
+                    className="w-20 h-20 rounded-full object-cover shrink-0"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-2xl font-bold shrink-0">
+                    {getInitials(memberName)}
+                  </div>
+                )}
 
-          {/* Close */}
-          <button
-            onClick={onClose}
-            className="shrink-0 p-1.5 rounded-md hover:bg-muted text-muted-foreground"
-          >
-            <X className="size-5" />
-          </button>
-        </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-2xl font-bold font-heading leading-tight">{memberName}</h2>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${statusInfo.cls}`}>
+                      {statusInfo.label}
+                    </span>
+                  </div>
+                  {profile?.designation && (
+                    <p className="text-sm text-muted-foreground mt-0.5">{profile.designation}</p>
+                  )}
+                  {profile?.department && (
+                    <span className="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200">
+                      {profile.department}
+                    </span>
+                  )}
+                  <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-muted-foreground">
+                    {managerName && (
+                      <span className="flex items-center gap-1">
+                        <User className="size-3" />
+                        Reports to: {managerName}
+                      </span>
+                    )}
+                    {profile?.date_of_joining && (
+                      <span className="flex items-center gap-1">
+                        <Calendar className="size-3" />
+                        Joined: {formatDate(profile.date_of_joining)}
+                      </span>
+                    )}
+                    {tenureInfo && (
+                      <span className="flex items-center gap-1">
+                        <Clock className="size-3" />
+                        Tenure: {tenureInfo.label}
+                      </span>
+                    )}
+                  </div>
+                </div>
 
-        {/* ── Scrollable body ── */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-          {/* ABOUT */}
-          {employee.bio && (
-            <section>
-              <h3 className="text-xs font-bold font-heading uppercase tracking-wider text-muted-foreground mb-2">
-                About
-              </h3>
-              <p className="text-sm text-foreground leading-relaxed">{employee.bio}</p>
-            </section>
-          )}
-
-          {/* SKILLS */}
-          <section>
-            <h3 className="text-xs font-bold font-heading uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-              <Star className="size-3.5" />
-              Skills
-              <span className="flex-1 h-px bg-border" />
-            </h3>
-            {loadingSkills ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-20 rounded-md bg-muted animate-pulse" />
-                ))}
+                {/* Close */}
+                <button
+                  onClick={onClose}
+                  className="shrink-0 p-1.5 rounded-md hover:bg-muted text-muted-foreground"
+                >
+                  <X className="size-5" />
+                </button>
               </div>
-            ) : skills.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                {skills.map((skill) => {
-                  const isExpanded = expandedSkill === skill.id
-                  return (
-                    <button
-                      key={skill.id}
-                      onClick={() => setExpandedSkill(isExpanded ? null : skill.id)}
-                      className={`text-left rounded-md border bg-card p-3 ${
-                        isExpanded ? "col-span-2 sm:col-span-3" : ""
-                      }`}
-                    >
-                      <div className="text-sm font-semibold leading-tight">{skill.skill_name}</div>
-                      {/* Proficiency bar */}
-                      <div className="mt-1.5 flex items-center gap-2">
-                        <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${proficiencyColor(skill.proficiency)}`}
-                            style={{ width: `${skill.proficiency}%` }}
-                          />
+            </div>
+
+            {/* ── Body ── */}
+            <div className="px-6 py-5 space-y-5">
+              {/* ── 2. Stats Bar ── */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4 text-center">
+                  <p className="text-2xl font-bold font-heading">
+                    {tenureInfo ? `${tenureInfo.years}.${tenureInfo.months}` : "-"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Tenure (yrs)</p>
+                </div>
+                <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4 text-center">
+                  <p className="text-2xl font-bold font-heading">{doneCount}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Tasks Completed</p>
+                </div>
+                <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4 text-center">
+                  <p className="text-2xl font-bold font-heading">{projects.length}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Projects</p>
+                </div>
+                <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4 text-center">
+                  <p className="text-2xl font-bold font-heading">{avgRating}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Avg Rating</p>
+                </div>
+              </div>
+
+              {/* ── 3. About ── */}
+              <CardShell title="About" icon={<User className="size-4 text-muted-foreground" />}>
+                <div className="space-y-4">
+                  {profile?.bio && (
+                    <p className="text-sm text-foreground leading-relaxed">{profile.bio}</p>
+                  )}
+
+                  {/* Info grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                    {profile?.previous_company && (
+                      <div>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Building2 className="size-3" /> Previous Company
+                        </p>
+                        <p className="font-medium mt-0.5">{profile.previous_company}</p>
+                        {profile.previous_role && (
+                          <p className="text-xs text-muted-foreground">{profile.previous_role}</p>
+                        )}
+                      </div>
+                    )}
+                    {profile?.years_experience != null && (
+                      <div>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Briefcase className="size-3" /> Experience
+                        </p>
+                        <p className="font-medium mt-0.5">{profile.years_experience} years</p>
+                      </div>
+                    )}
+                    {(profile?.city || profile?.state) && (
+                      <div>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <MapPin className="size-3" /> Location
+                        </p>
+                        <p className="font-medium mt-0.5">
+                          {[profile.city, profile.state].filter(Boolean).join(", ")}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Education */}
+                  {profile?.education && profile.education.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1 mb-2">
+                        <GraduationCap className="size-3.5" /> Education
+                      </p>
+                      <div className="space-y-1.5">
+                        {profile.education.map((edu, i) => (
+                          <div key={i} className="flex items-center gap-2 text-sm">
+                            <span className="font-medium">{edu.degree}</span>
+                            <span className="text-muted-foreground">&mdash;</span>
+                            <span className="text-muted-foreground">{edu.institution}</span>
+                            <span className="text-xs text-muted-foreground">({edu.year})</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Certifications */}
+                  {profile?.certifications && profile.certifications.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1 mb-2">
+                        <BadgeCheck className="size-3.5" /> Certifications
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {profile.certifications.map((cert) => (
+                          <span
+                            key={cert}
+                            className="text-xs font-medium px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-200"
+                          >
+                            {cert}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Languages */}
+                  {profile?.languages && profile.languages.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1 mb-2">
+                        <Globe className="size-3.5" /> Languages
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {profile.languages.map((lang) => (
+                          <span
+                            key={lang}
+                            className="text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200"
+                          >
+                            {lang}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardShell>
+
+              {/* ── 4. Skills ── */}
+              {skills.length > 0 && (
+                <CardShell title="Skills" icon={<Star className="size-4 text-muted-foreground" />}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {skills.map((skill) => (
+                      <div key={skill.id} className="flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium truncate">{skill.skill_name}</span>
+                            <span className={`text-[10px] font-bold ${proficiencyTextColor(skill.proficiency)}`}>
+                              {skill.proficiency}%
+                            </span>
+                          </div>
+                          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${proficiencyColor(skill.proficiency)}`}
+                              style={{ width: `${skill.proficiency}%` }}
+                            />
+                          </div>
                         </div>
-                        <span className={`text-[10px] font-bold ${proficiencyTextColor(skill.proficiency)}`}>
-                          {skill.proficiency}%
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground shrink-0">
+                          {skill.category}
                         </span>
                       </div>
-                      {/* Category */}
-                      <span className="inline-block mt-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
-                        {skill.category}
-                      </span>
-                      {/* Expanded details */}
-                      {isExpanded && (
-                        <div className="mt-3 border-t pt-3 space-y-2">
-                          {skill.description && (
-                            <p className="text-xs text-muted-foreground leading-relaxed">
-                              {skill.description}
+                    ))}
+                  </div>
+                </CardShell>
+              )}
+
+              {/* ── 5. Projects ── */}
+              {projects.length > 0 && (
+                <CardShell title="Projects" icon={<FolderKanban className="size-4 text-muted-foreground" />}>
+                  <div className="space-y-4">
+                    {projects.map((proj) => {
+                      const sb = statusBadge[proj.status ?? "active"] ?? statusBadge.active
+                      return (
+                        <div key={proj.id} className="rounded-md border border-border/60 p-4 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h4 className="text-sm font-semibold">{proj.name}</h4>
+                              {proj.role && (
+                                <p className="text-xs text-muted-foreground mt-0.5">{proj.role}</p>
+                              )}
+                            </div>
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full border shrink-0 ${sb.cls}`}>
+                              {sb.label}
+                            </span>
+                          </div>
+                          {(proj.start_date || proj.end_date) && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Calendar className="size-3" />
+                              {proj.start_date ? formatDate(proj.start_date) : "?"} &ndash;{" "}
+                              {proj.end_date ? formatDate(proj.end_date) : "Present"}
                             </p>
                           )}
-                          {skill.use_cases && skill.use_cases.length > 0 && (
-                            <div>
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                Use Cases
-                              </span>
-                              <ul className="mt-1 space-y-0.5">
-                                {skill.use_cases.map((uc, i) => (
-                                  <li key={i} className="text-xs text-foreground flex items-start gap-1.5">
-                                    <span className="text-muted-foreground mt-0.5">&bull;</span>
-                                    {uc}
-                                  </li>
-                                ))}
-                              </ul>
+                          {proj.description && (
+                            <p className="text-sm text-foreground leading-relaxed">{proj.description}</p>
+                          )}
+                          {proj.outcomes && (
+                            <p className="text-xs text-muted-foreground">
+                              <span className="font-semibold text-foreground">Outcomes:</span> {proj.outcomes}
+                            </p>
+                          )}
+                          {proj.tags && proj.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {proj.tags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
                             </div>
                           )}
                         </div>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">No skills data available.</p>
-            )}
-          </section>
-
-          {/* EDUCATION & TRAINING */}
-          {education.length > 0 && (
-            <section>
-              <h3 className="text-xs font-bold font-heading uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                <GraduationCap className="size-3.5" />
-                Education & Training
-                <span className="flex-1 h-px bg-border" />
-              </h3>
-              <div className="space-y-1.5">
-                {education.map((edu, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm">
-                    <span className="text-muted-foreground">&#128196;</span>
-                    <span className="font-medium">{edu.name}</span>
-                    <span className="text-muted-foreground">({edu.year})</span>
+                      )
+                    })}
                   </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* TOOLS & CONNECTORS */}
-          {(toolsUsed.length > 0 || connectors.length > 0) && (
-            <section>
-              <h3 className="text-xs font-bold font-heading uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                <Wrench className="size-3.5" />
-                Tools & Connectors
-                <span className="flex-1 h-px bg-border" />
-              </h3>
-              {toolsUsed.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  {toolsUsed.map((tool) => (
-                    <span
-                      key={tool}
-                      className="inline-block text-xs font-medium px-2 py-1 rounded-md border bg-muted/50 text-foreground"
-                    >
-                      {tool}
-                    </span>
-                  ))}
-                </div>
+                </CardShell>
               )}
-              {connectors.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">Connectors:</span>{" "}
-                  {connectors.join(" \u00b7 ")}
-                </p>
-              )}
-            </section>
-          )}
 
-          {/* SPECIALIZATIONS */}
-          {specializations.length > 0 && (
-            <section>
-              <h3 className="text-xs font-bold font-heading uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                <Briefcase className="size-3.5" />
-                Specializations
-                <span className="flex-1 h-px bg-border" />
-              </h3>
-              <div className="space-y-2">
-                {specializations.map((spec, i) => (
-                  <div key={i} className="text-sm">
-                    <span className="font-semibold">{spec.area}</span>
-                    <span className="text-muted-foreground"> &mdash; {spec.detail}</span>
+              {/* ── 6. Performance Ratings ── */}
+              {ratings.length > 0 && (
+                <CardShell title="Performance Ratings" icon={<TrendingUp className="size-4 text-muted-foreground" />}>
+                  <div className="space-y-5">
+                    {/* Latest rating breakdown */}
+                    {latestRating && (
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold text-muted-foreground">
+                          Latest: {formatMonth(latestRating.month)}
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {([
+                            ["Productivity", latestRating.productivity],
+                            ["Quality", latestRating.quality],
+                            ["Communication", latestRating.communication],
+                            ["Initiative", latestRating.initiative],
+                            ["Overall", latestRating.overall],
+                          ] as [string, number | undefined][]).map(([label, val]) => (
+                            <div key={label} className="flex items-center justify-between gap-3">
+                              <span className="text-sm text-foreground w-28 shrink-0">{label}</span>
+                              <RatingBar value={val ?? 0} />
+                            </div>
+                          ))}
+                        </div>
+
+                        {latestRating.manager_feedback && (
+                          <div className="mt-3 rounded-md bg-muted/40 p-3 flex items-start gap-2">
+                            <MessageSquareQuote className="size-4 text-muted-foreground shrink-0 mt-0.5" />
+                            <p className="text-sm italic text-muted-foreground leading-relaxed">
+                              &ldquo;{latestRating.manager_feedback}&rdquo;
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {latestRating.goals_met && (
+                            <div className="flex items-start gap-2">
+                              <Target className="size-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                              <div>
+                                <p className="text-xs font-semibold text-foreground">Goals Met</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">{latestRating.goals_met}</p>
+                              </div>
+                            </div>
+                          )}
+                          {latestRating.areas_of_improvement && (
+                            <div className="flex items-start gap-2">
+                              <Lightbulb className="size-3.5 text-amber-600 mt-0.5 shrink-0" />
+                              <div>
+                                <p className="text-xs font-semibold text-foreground">Areas of Improvement</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">{latestRating.areas_of_improvement}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* History table */}
+                    {ratings.length > 1 && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground mb-2">History</p>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b text-xs text-muted-foreground">
+                                <th className="text-left py-2 pr-3 font-medium">Month</th>
+                                <th className="text-left py-2 pr-3 font-medium">Overall</th>
+                                <th className="text-left py-2 font-medium">Feedback</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {ratings.slice(0, 6).map((r) => (
+                                <tr key={r.id} className="border-b border-border/50">
+                                  <td className="py-2 pr-3 text-xs">{formatMonth(r.month)}</td>
+                                  <td className="py-2 pr-3 text-xs font-semibold">{r.overall ?? "-"}/5</td>
+                                  <td className="py-2 text-xs text-muted-foreground truncate max-w-[300px]">
+                                    {r.manager_feedback
+                                      ? r.manager_feedback.length > 80
+                                        ? r.manager_feedback.slice(0, 80) + "..."
+                                        : r.manager_feedback
+                                      : "-"}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            </section>
-          )}
+                </CardShell>
+              )}
 
-          {/* RECENT PROJECTS */}
-          <section>
-            <h3 className="text-xs font-bold font-heading uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-              <BarChart3 className="size-3.5" />
-              Recent Projects
-              <span className="flex-1 h-px bg-border" />
-            </h3>
-            {loadingTasks ? (
-              <div className="space-y-1.5">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-6 rounded bg-muted animate-pulse" />
-                ))}
-              </div>
-            ) : tasks.length > 0 ? (
-              <div className="space-y-1.5">
-                {tasks.map((task) => {
-                  const s = statusIcon[task.status] ?? statusIcon.todo ?? { label: task.status, cls: "text-slate-500" }
-                  const isDone = task.status === "done" || task.status === "completed"
-                  return (
-                    <div key={task.id} className="flex items-center gap-2 text-sm">
-                      {isDone ? (
-                        <CheckCircle2 className={`size-3.5 shrink-0 ${s.cls}`} />
-                      ) : task.status === "in-progress" || task.status === "in_progress" ? (
-                        <RefreshCw className={`size-3.5 shrink-0 ${s.cls}`} />
-                      ) : (
-                        <Clock className={`size-3.5 shrink-0 ${s.cls}`} />
-                      )}
-                      <span className="truncate">{task.title}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">No recent tasks found.</p>
-            )}
-          </section>
-
-          {/* STATS */}
-          <section>
-            <h3 className="text-xs font-bold font-heading uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-              Stats
-              <span className="flex-1 h-px bg-border" />
-            </h3>
-            <div className="flex flex-wrap gap-4 text-sm">
-              <span>
-                <span className="font-semibold">{employee.messages_handled}</span>{" "}
-                <span className="text-muted-foreground">messages</span>
-              </span>
-              <span className="text-muted-foreground">&middot;</span>
-              <span>
-                <span className="font-semibold">{tasks.length}</span>{" "}
-                <span className="text-muted-foreground">tasks</span>
-              </span>
-              {joinedAt && (
-                <>
-                  <span className="text-muted-foreground">&middot;</span>
-                  <span>
-                    <span className="text-muted-foreground">Joined</span>{" "}
-                    <span className="font-semibold">{timeAgo(joinedAt)}</span>
-                  </span>
-                </>
+              {/* ── 7. Recent Tasks ── */}
+              {tasks.length > 0 && (
+                <CardShell title="Recent Tasks" icon={<BarChart3 className="size-4 text-muted-foreground" />}>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-xs text-muted-foreground">
+                          <th className="text-left py-2 pr-3 font-medium">Title</th>
+                          <th className="text-left py-2 pr-3 font-medium">Status</th>
+                          <th className="text-left py-2 pr-3 font-medium">Priority</th>
+                          <th className="text-left py-2 font-medium">Due Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tasks.map((t) => {
+                          const ts = taskStatusBadge[t.status] ?? taskStatusBadge.todo
+                          const pd = priorityDot[t.priority] ?? priorityDot.low
+                          return (
+                            <tr key={t.id} className="border-b border-border/50">
+                              <td className="py-2 pr-3 text-sm truncate max-w-[250px]">{t.title}</td>
+                              <td className="py-2 pr-3">
+                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${ts.cls}`}>
+                                  {ts.label}
+                                </span>
+                              </td>
+                              <td className="py-2 pr-3">
+                                <span className="flex items-center gap-1.5">
+                                  <span className={`w-2 h-2 rounded-full ${pd}`} />
+                                  <span className="text-xs capitalize">{t.priority}</span>
+                                </span>
+                              </td>
+                              <td className="py-2 text-xs text-muted-foreground">
+                                {t.due_date ? formatDate(t.due_date) : "-"}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardShell>
               )}
             </div>
-          </section>
-        </div>
+          </>
+        )}
       </div>
     </div>
   )

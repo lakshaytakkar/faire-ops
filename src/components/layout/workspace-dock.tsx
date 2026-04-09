@@ -48,24 +48,28 @@ export function WorkspaceDock() {
 
   return (
     <aside className="shrink-0 w-[48px] bg-black flex flex-col items-center py-2 gap-1 border-l border-white/5 overflow-y-auto">
+      {/* Click-outside to close profile menu */}
+      {showProfile && (
+        <div className="fixed inset-0 z-40" onClick={() => setShowProfile(false)} />
+      )}
+
       {/* User profile at top */}
-      <div className="relative">
+      <div className="relative z-50">
         <button
           onClick={() => setShowProfile(!showProfile)}
-          className="flex items-center justify-center w-8 h-8 rounded-md overflow-hidden group"
+          className="flex items-center justify-center w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/30 hover:ring-white/60 transition-all cursor-pointer"
           title="Lakshay — Sr. Manager"
         >
           <img src="https://eeoesllyceegmzfqfbyu.supabase.co/storage/v1/object/public/images/team/lakshay.png" alt="Lakshay" className="w-full h-full object-cover" />
-          <span className="absolute right-full mr-2 px-2 py-1 rounded-md bg-foreground text-background text-[10px] font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
-            Lakshay
-          </span>
         </button>
         {showProfile && (
           <div className="absolute right-full mr-2 top-0 w-48 rounded-lg border bg-card shadow-xl z-50 overflow-hidden">
-            <div className="p-3 border-b bg-muted/30">
-              <p className="text-sm font-semibold">Lakshay</p>
-              <p className="text-[11px] text-muted-foreground">Sr. Manager</p>
-              <p className="text-[10px] text-muted-foreground">lakshay@suprans.in</p>
+            <div className="p-3 border-b bg-muted/30 flex items-center gap-2.5">
+              <img src="https://eeoesllyceegmzfqfbyu.supabase.co/storage/v1/object/public/images/team/lakshay.png" alt="Lakshay" className="w-9 h-9 rounded-full object-cover" />
+              <div>
+                <p className="text-sm font-semibold">Lakshay</p>
+                <p className="text-[11px] text-muted-foreground">Sr. Manager</p>
+              </div>
             </div>
             <div className="py-1">
               <Link href="/workspace/account" onClick={() => setShowProfile(false)} className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-muted transition-colors">

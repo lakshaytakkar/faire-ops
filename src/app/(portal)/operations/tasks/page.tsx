@@ -33,6 +33,9 @@ interface Task {
   assignee: string
   due_date: string
   tags?: string[]
+  parent_id?: string | null
+  depth?: number
+  sort_order?: number
   brand_store_id?: string
   created_at: string
   updated_at: string
@@ -134,7 +137,7 @@ export default function TasksPage() {
         due_date: t.due_date,
         tags: t.tags,
         depth: 0,
-        parent_id: (t as any).parent_id ?? null,
+        parent_id: t.parent_id ?? null,
         task_number: t.task_number,
         children: [],
       })
@@ -142,7 +145,7 @@ export default function TasksPage() {
 
     for (const t of tasks) {
       const node = map.get(t.id)!
-      const parentId = (t as any).parent_id
+      const parentId = t.parent_id
       if (parentId && map.has(parentId)) {
         const parent = map.get(parentId)!
         node.depth = parent.depth + 1
@@ -242,6 +245,7 @@ export default function TasksPage() {
       const { data, error } = await supabase
         .from("tasks")
         .select("*")
+        .order("sort_order")
         .order("due_date")
       if (!error && data) {
         setTasks(data as Task[])
