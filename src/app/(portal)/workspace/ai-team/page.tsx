@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
-import { Users, Send, Search, MessageSquare } from "lucide-react"
+import { Users, Send, Search, MessageSquare, FileText } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import EmployeeCVModal, { type EmployeeCVModalProps } from "@/components/shared/employee-cv-modal"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -93,6 +94,7 @@ export default function RemoteTeamPage() {
   const [draft, setDraft] = useState("")
   const [sending, setSending] = useState(false)
   const [search, setSearch] = useState("")
+  const [cvEmployee, setCvEmployee] = useState<EmployeeCVModalProps["employee"] | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -165,6 +167,8 @@ export default function RemoteTeamPage() {
   }, [activeConversationId])
 
   /* ---- Send message ---- */
+  const [showTyping, setShowTyping] = useState(false)
+
   async function handleSend() {
     const text = draft.trim()
     if (!text || !selectedEmployee || sending) return
@@ -180,6 +184,11 @@ export default function RemoteTeamPage() {
       created_at: new Date().toISOString(),
     }
     setMessages((prev) => [...prev, tempUserMsg])
+
+    // Random delay before showing "typing" — feels like a real person reading the message
+    const readDelay = 1500 + Math.random() * 2500 // 1.5s to 4s
+    await new Promise(r => setTimeout(r, readDelay))
+    setShowTyping(true)
 
     try {
       const res = await fetch("/api/ai-chat", {
@@ -232,6 +241,7 @@ export default function RemoteTeamPage() {
         },
       ])
     } finally {
+      setShowTyping(false)
       setSending(false)
       inputRef.current?.focus()
     }
@@ -293,14 +303,14 @@ export default function RemoteTeamPage() {
             {filteredEmployees.map((emp) => {
               const isSelected = selectedEmployee?.id === emp.id
               return (
-                <button
+                <div
                   key={emp.id}
-                  onClick={() => startNewChat(emp)}
                   className={`flex items-center gap-2.5 w-full px-3 py-2 text-left text-sm rounded-md transition-colors cursor-pointer ${
                     isSelected
                       ? "bg-primary/10 text-primary font-semibold"
                       : "text-foreground hover:bg-muted/50"
                   }`}
+                  onClick={() => startNewChat(emp)}
                 >
                   <div className="relative shrink-0">
                     {emp.avatar_url ? (
@@ -320,7 +330,24 @@ export default function RemoteTeamPage() {
                     <span className="block text-sm truncate">{emp.name}</span>
                     <span className="block text-[11px] text-muted-foreground truncate">{emp.role}</span>
                   </div>
-                </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setCvEmployee({
+                        id: emp.id,
+                        name: emp.name,
+                        role: emp.role,
+                        department: "",
+                        avatar_url: emp.avatar_url ?? undefined,
+                        messages_handled: emp.messages_handled ?? 0,
+                      })
+                    }}
+                    title="View CV"
+                    className="shrink-0 p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <FileText className="size-3.5" />
+                  </button>
+                </div>
               )
             })}
 
@@ -459,7 +486,7 @@ export default function RemoteTeamPage() {
                 })}
 
                 {/* Typing indicator */}
-                {sending && (
+                {showTyping && (
                   <div className="relative flex gap-3 items-start py-2">
                     <div className="shrink-0">
                       {selectedEmployee.avatar_url ? (
@@ -532,6 +559,11 @@ export default function RemoteTeamPage() {
           )}
         </div>
       </div>
+
+      {/* CV Modal */}
+      {cvEmployee && (
+        <EmployeeCVModal employee={cvEmployee} onClose={() => setCvEmployee(null)} />
+      )}
     </div>
   )
 }

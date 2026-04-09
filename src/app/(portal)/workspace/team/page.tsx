@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Mail, Phone, Users, UserPlus, MessageCircle, Calendar, Award, Briefcase, ChevronDown, ChevronUp, CheckSquare, Clock, Wifi } from "lucide-react"
+import { Mail, Phone, Users, UserPlus, MessageCircle, Calendar, Award, Briefcase, ChevronDown, ChevronUp, CheckSquare, Clock, Wifi, FileText } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import EmployeeCVModal, { type EmployeeCVModalProps } from "@/components/shared/employee-cv-modal"
 
 interface TeamMember {
   id: string
@@ -23,9 +24,14 @@ interface AIEmployee {
   role: string
   department: string
   avatar_url?: string
-  photo_url?: string
   skills: string[]
   messages_handled: number
+  bio?: string
+  education?: Array<{type: string; name: string; year: string}>
+  tools_used?: string[]
+  connectors?: string[]
+  specializations?: Array<{area: string; detail: string}>
+  joined_at?: string
 }
 
 const statusConfig: Record<string, { label: string; dot: string; badge: string }> = {
@@ -71,6 +77,7 @@ export default function TeamPage() {
   const [remoteLoading, setRemoteLoading] = useState(false)
   const [memberTasks, setMemberTasks] = useState<Record<string, MemberTask[]>>({})
   const [expandedMember, setExpandedMember] = useState<string | null>(null)
+  const [cvEmployee, setCvEmployee] = useState<EmployeeCVModalProps["employee"] | null>(null)
 
   /* Fetch in-house team on mount */
   useEffect(() => {
@@ -98,7 +105,7 @@ export default function TeamPage() {
       setRemoteLoading(true)
       supabase
         .from("ai_employees")
-        .select("id, name, role, department, avatar_url, skills, messages_handled")
+        .select("id, name, role, department, avatar_url, skills, messages_handled, bio, education, tools_used, connectors, specializations, joined_at")
         .order("name")
         .then(({ data }) => {
           if (data) setAiEmployees(data as AIEmployee[])
@@ -380,15 +387,37 @@ export default function TeamPage() {
                       </span>
                     </div>
 
-                    {/* Chat button */}
-                    <div className="pt-0.5">
+                    {/* Chat + CV buttons */}
+                    <div className="grid grid-cols-2 gap-1 pt-0.5">
                       <Link
                         href="/workspace/ai-team"
-                        className="w-full inline-flex items-center justify-center gap-1 h-7 rounded border border-indigo-100 bg-indigo-50 text-[9px] font-medium text-indigo-600 hover:bg-indigo-100 transition-colors"
+                        className="inline-flex items-center justify-center gap-1 h-7 rounded border border-indigo-100 bg-indigo-50 text-[9px] font-medium text-indigo-600 hover:bg-indigo-100 transition-colors"
                       >
                         <MessageCircle className="size-2.5" />
                         Chat
                       </Link>
+                      <button
+                        onClick={() =>
+                          setCvEmployee({
+                            id: emp.id,
+                            name: emp.name,
+                            role: emp.role,
+                            department: emp.department || "Operations",
+                            avatar_url: emp.avatar_url ?? undefined,
+                            bio: emp.bio,
+                            education: emp.education,
+                            tools_used: emp.tools_used,
+                            connectors: emp.connectors,
+                            specializations: emp.specializations,
+                            messages_handled: emp.messages_handled ?? 0,
+                            joined_at: emp.joined_at,
+                          })
+                        }
+                        className="inline-flex items-center justify-center gap-1 h-7 rounded border border-violet-100 bg-violet-50 text-[9px] font-medium text-violet-600 hover:bg-violet-100 transition-colors"
+                      >
+                        <FileText className="size-2.5" />
+                        View CV
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -396,6 +425,11 @@ export default function TeamPage() {
             })}
           </div>
         )
+      )}
+
+      {/* CV Modal */}
+      {cvEmployee && (
+        <EmployeeCVModal employee={cvEmployee} onClose={() => setCvEmployee(null)} />
       )}
     </div>
   )
