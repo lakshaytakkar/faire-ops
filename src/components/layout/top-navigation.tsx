@@ -10,12 +10,11 @@ import {
   Users,
   BarChart2,
   Wallet,
-  ClipboardList,
   Blocks,
   Megaphone,
   Sparkles,
-  Zap,
   FileBarChart,
+  Target,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useBrandFilter } from "@/lib/brand-filter-context"
@@ -127,16 +126,6 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    title: "Ops",
-    url: "/operations",
-    icon: ClipboardList,
-    centralOnly: true,
-    subItems: [
-      { title: "Tasks", url: "/operations/tasks" },
-      { title: "My Tasks", url: "/operations/my-tasks" },
-    ],
-  },
-  {
     title: "Finance",
     url: "/finance",
     icon: Wallet,
@@ -159,6 +148,20 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
+    title: "Marketing",
+    url: "/marketing",
+    icon: Target,
+    centralOnly: true,
+    subItems: [
+      { title: "Dashboard", url: "/marketing/dashboard" },
+      { title: "Campaigns", url: "/marketing/campaigns" },
+      { title: "Ad Sets", url: "/marketing/ad-sets" },
+      { title: "Ads", url: "/marketing/ads" },
+      { title: "Creatives", url: "/marketing/creatives" },
+      { title: "Reports", url: "/marketing/reports" },
+    ],
+  },
+  {
     title: "Reports",
     url: "/reports",
     icon: FileBarChart,
@@ -166,35 +169,6 @@ const NAV_ITEMS: NavItem[] = [
     subItems: [
       { title: "All Reports", url: "/reports/all" },
       { title: "Day Close", url: "/reports/day-close" },
-      { title: "Targets", url: "/operations/targets" },
-    ],
-  },
-  {
-    title: "Automations",
-    url: "/automations",
-    icon: Zap,
-    centralOnly: true,
-    subItems: [
-      { title: "Overview", url: "/automations/overview" },
-      { title: "Sync", url: "/automations/sync" },
-      { title: "Notifications", url: "/automations/notifications" },
-      { title: "History", url: "/automations/history" },
-    ],
-  },
-  {
-    title: "More",
-    url: "/workspace",
-    icon: Blocks,
-    centralOnly: true,
-    subItems: [
-      { title: "Vendors", url: "/workspace/vendors" },
-      { title: "Knowledge", url: "/workspace/knowledge" },
-      { title: "Calendar", url: "/workspace/calendar" },
-      { title: "Training", url: "/workspace/training" },
-      { title: "SOPs", url: "/workspace/sops" },
-      { title: "Links", url: "/workspace/links" },
-      { title: "Settings", url: "/workspace/settings" },
-      { title: "Account", url: "/workspace/account" },
     ],
   },
 ]
@@ -235,24 +209,29 @@ export function TopNavigation() {
   const { activeBrand } = useBrandFilter()
   const [counts, setCounts] = useState<Record<string, number>>({})
 
-  // Fetch notification counts
+  // Fetch notification counts — deferred so nav renders instantly
   useEffect(() => {
-    async function fetchCounts() {
-      const [pendingRes, processingRes, scrapedRes, appsRes] = await Promise.all([
-        supabase.from("faire_orders").select("*", { count: "exact", head: true }).eq("state", "NEW"),
-        supabase.from("faire_orders").select("*", { count: "exact", head: true }).eq("state", "PROCESSING"),
-        supabase.from("scraped_products").select("*", { count: "exact", head: true }).eq("status", "new"),
-        supabase.from("faire_seller_applications").select("*", { count: "exact", head: true }).eq("status", "drafting"),
+    const timer = setTimeout(async () => {
+      const filterByStore = activeBrand !== "all"
+
+      let pendingQuery = supabase.from("faire_orders").select("*", { count: "exact", head: true }).eq("state", "NEW")
+      let processingQuery = supabase.from("faire_orders").select("*", { count: "exact", head: true }).eq("state", "PROCESSING")
+      if (filterByStore) {
+        pendingQuery = pendingQuery.eq("store_id", activeBrand)
+        processingQuery = processingQuery.eq("store_id", activeBrand)
+      }
+
+      const [pendingRes, processingRes] = await Promise.all([
+        pendingQuery,
+        processingQuery,
       ])
       setCounts({
         pendingOrders: pendingRes.count ?? 0,
         processingOrders: processingRes.count ?? 0,
-        newScraped: scrapedRes.count ?? 0,
-        draftApps: appsRes.count ?? 0,
       })
-    }
-    fetchCounts()
-  }, [])
+    }, 500) // Defer 500ms so page renders first
+    return () => clearTimeout(timer)
+  }, [activeBrand])
 
   const visibleItems = activeBrand === "all"
     ? NAV_ITEMS
@@ -265,7 +244,7 @@ export function TopNavigation() {
     <div className="shrink-0">
       {/* Primary nav bar */}
       <nav
-        className="grid bg-[hsl(225,47%,15%)]"
+        className="grid bg-black"
         style={{ gridTemplateColumns: `repeat(${visibleItems.length}, 1fr)` }}
       >
         {visibleItems.map((item) => {
