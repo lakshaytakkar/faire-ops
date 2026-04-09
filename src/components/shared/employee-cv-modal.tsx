@@ -39,23 +39,21 @@ interface EmployeeProfile {
   bio?: string
   designation?: string
   department?: string
-  avatar_url?: string
   previous_company?: string
   previous_role?: string
   years_experience?: number
-  city?: string
-  state?: string
-  date_of_joining?: string
-  status?: string
+  address_city?: string
+  address_state?: string
+  joining_date?: string
   reporting_to?: string
-  education?: Array<{ degree: string; institution: string; year: string | number }>
-  certifications?: string[]
+  education?: Array<{ degree: string; institution: string; year: string | number; grade?: string }>
+  certifications?: Array<{ name: string; issuer: string; year: string | number }>
   languages?: string[]
 }
 
 interface EmployeeSkill {
   id: string
-  employee_id: string
+  team_member_id: string
   skill_name: string
   proficiency: number
   category: string
@@ -66,8 +64,8 @@ interface EmployeeSkill {
 interface EmployeeProject {
   id: string
   team_member_id: string
-  name: string
-  role?: string
+  project_name: string
+  role_in_project?: string
   status?: string
   start_date?: string
   end_date?: string
@@ -80,12 +78,12 @@ interface PerformanceRating {
   id: string
   team_member_id: string
   month: string
-  productivity?: number
-  quality?: number
-  communication?: number
-  initiative?: number
-  overall?: number
-  manager_feedback?: string
+  productivity_rating?: number
+  quality_rating?: number
+  communication_rating?: number
+  initiative_rating?: number
+  overall_rating?: number
+  feedback?: string
   goals_met?: string
   areas_of_improvement?: string
 }
@@ -217,6 +215,7 @@ export default function EmployeeCVModal({ memberId, memberName, onClose }: Emplo
   const [ratings, setRatings] = useState<PerformanceRating[]>([])
   const [tasks, setTasks] = useState<TaskRow[]>([])
   const [managerName, setManagerName] = useState<string | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   /* Fetch all data */
@@ -241,7 +240,10 @@ export default function EmployeeCVModal({ memberId, memberName, onClose }: Emplo
       setRatings((ratingsRes.data as PerformanceRating[]) ?? [])
       setTasks((tasksRes.data as TaskRow[]) ?? [])
 
-      // Fetch manager name
+      // Fetch team member avatar + manager name
+      const { data: memberData } = await supabase.from("team_members").select("avatar_url").eq("id", memberId).single()
+      if (!cancelled && memberData?.avatar_url) setAvatarUrl(memberData.avatar_url)
+
       if (p?.reporting_to) {
         const { data: mgr } = await supabase.from("team_members").select("name").eq("id", p.reporting_to).single()
         if (!cancelled && mgr) setManagerName((mgr as { name: string }).name)
@@ -265,13 +267,13 @@ export default function EmployeeCVModal({ memberId, memberName, onClose }: Emplo
 
   /* Derived */
   const doneCount = tasks.filter((t) => t.status === "done" || t.status === "completed").length
-  const tenureInfo = profile?.date_of_joining ? tenure(profile.date_of_joining) : null
+  const tenureInfo = profile?.joining_date ? tenure(profile.joining_date) : null
   const avgRating =
     ratings.length > 0
-      ? (ratings.reduce((s, r) => s + (r.overall ?? 0), 0) / ratings.length).toFixed(1)
+      ? (ratings.reduce((s, r) => s + (r.overall_rating ?? 0), 0) / ratings.length).toFixed(1)
       : "-"
   const latestRating = ratings[0] ?? null
-  const statusInfo = memberStatusBadge[profile?.status ?? "active"] ?? memberStatusBadge.active
+  const statusInfo = memberStatusBadge["active"]
 
   return (
     <div
@@ -302,9 +304,9 @@ export default function EmployeeCVModal({ memberId, memberName, onClose }: Emplo
             <div className="sticky top-0 z-10 bg-card border-b px-6 py-5">
               <div className="flex items-start gap-4">
                 {/* Avatar */}
-                {profile?.avatar_url ? (
+                {avatarUrl ? (
                   <img
-                    src={profile.avatar_url}
+                    src={avatarUrl}
                     alt={memberName}
                     className="w-20 h-20 rounded-full object-cover shrink-0"
                   />
@@ -337,10 +339,10 @@ export default function EmployeeCVModal({ memberId, memberName, onClose }: Emplo
                         Reports to: {managerName}
                       </span>
                     )}
-                    {profile?.date_of_joining && (
+                    {profile?.joining_date && (
                       <span className="flex items-center gap-1">
                         <Calendar className="size-3" />
-                        Joined: {formatDate(profile.date_of_joining)}
+                        Joined: {formatDate(profile.joining_date)}
                       </span>
                     )}
                     {tenureInfo && (
@@ -414,13 +416,13 @@ export default function EmployeeCVModal({ memberId, memberName, onClose }: Emplo
                         <p className="font-medium mt-0.5">{profile.years_experience} years</p>
                       </div>
                     )}
-                    {(profile?.city || profile?.state) && (
+                    {(profile?.address_city || profile?.address_state) && (
                       <div>
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                           <MapPin className="size-3" /> Location
                         </p>
                         <p className="font-medium mt-0.5">
-                          {[profile.city, profile.state].filter(Boolean).join(", ")}
+                          {[profile.address_city, profile.address_state].filter(Boolean).join(", ")}
                         </p>
                       </div>
                     )}
@@ -452,12 +454,12 @@ export default function EmployeeCVModal({ memberId, memberName, onClose }: Emplo
                         <BadgeCheck className="size-3.5" /> Certifications
                       </p>
                       <div className="flex flex-wrap gap-1.5">
-                        {profile.certifications.map((cert) => (
+                        {profile.certifications.map((cert, ci) => (
                           <span
-                            key={cert}
+                            key={ci}
                             className="text-xs font-medium px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-200"
                           >
-                            {cert}
+                            {typeof cert === "string" ? cert : `${cert.name} — ${cert.issuer} (${cert.year})`}
                           </span>
                         ))}
                       </div>
@@ -524,9 +526,9 @@ export default function EmployeeCVModal({ memberId, memberName, onClose }: Emplo
                         <div key={proj.id} className="rounded-md border border-border/60 p-4 space-y-2">
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <h4 className="text-sm font-semibold">{proj.name}</h4>
-                              {proj.role && (
-                                <p className="text-xs text-muted-foreground mt-0.5">{proj.role}</p>
+                              <h4 className="text-sm font-semibold">{proj.project_name}</h4>
+                              {proj.role_in_project && (
+                                <p className="text-xs text-muted-foreground mt-0.5">{proj.role_in_project}</p>
                               )}
                             </div>
                             <span className={`text-xs font-medium px-2 py-0.5 rounded-full border shrink-0 ${sb.cls}`}>
@@ -579,11 +581,11 @@ export default function EmployeeCVModal({ memberId, memberName, onClose }: Emplo
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {([
-                            ["Productivity", latestRating.productivity],
-                            ["Quality", latestRating.quality],
-                            ["Communication", latestRating.communication],
-                            ["Initiative", latestRating.initiative],
-                            ["Overall", latestRating.overall],
+                            ["Productivity", latestRating.productivity_rating],
+                            ["Quality", latestRating.quality_rating],
+                            ["Communication", latestRating.communication_rating],
+                            ["Initiative", latestRating.initiative_rating],
+                            ["Overall", latestRating.overall_rating],
                           ] as [string, number | undefined][]).map(([label, val]) => (
                             <div key={label} className="flex items-center justify-between gap-3">
                               <span className="text-sm text-foreground w-28 shrink-0">{label}</span>
@@ -592,11 +594,11 @@ export default function EmployeeCVModal({ memberId, memberName, onClose }: Emplo
                           ))}
                         </div>
 
-                        {latestRating.manager_feedback && (
+                        {latestRating.feedback && (
                           <div className="mt-3 rounded-md bg-muted/40 p-3 flex items-start gap-2">
                             <MessageSquareQuote className="size-4 text-muted-foreground shrink-0 mt-0.5" />
                             <p className="text-sm italic text-muted-foreground leading-relaxed">
-                              &ldquo;{latestRating.manager_feedback}&rdquo;
+                              &ldquo;{latestRating.feedback}&rdquo;
                             </p>
                           </div>
                         )}
@@ -641,12 +643,12 @@ export default function EmployeeCVModal({ memberId, memberName, onClose }: Emplo
                               {ratings.slice(0, 6).map((r) => (
                                 <tr key={r.id} className="border-b border-border/50">
                                   <td className="py-2 pr-3 text-xs">{formatMonth(r.month)}</td>
-                                  <td className="py-2 pr-3 text-xs font-semibold">{r.overall ?? "-"}/5</td>
+                                  <td className="py-2 pr-3 text-xs font-semibold">{r.overall_rating ?? "-"}/5</td>
                                   <td className="py-2 text-xs text-muted-foreground truncate max-w-[300px]">
-                                    {r.manager_feedback
-                                      ? r.manager_feedback.length > 80
-                                        ? r.manager_feedback.slice(0, 80) + "..."
-                                        : r.manager_feedback
+                                    {r.feedback
+                                      ? r.feedback.length > 80
+                                        ? r.feedback.slice(0, 80) + "..."
+                                        : r.feedback
                                       : "-"}
                                   </td>
                                 </tr>
