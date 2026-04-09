@@ -158,6 +158,15 @@ export default function RetailerDetailPage() {
     return ids.map((id: string) => stores.find((s) => s.id === id)).filter(Boolean)
   }, [retailer, stores])
 
+  /* Derive email from shipping address on orders — must be before early returns */
+  const retailerEmail = useMemo(() => {
+    for (const o of orders) {
+      const addr = o.shipping_address as Record<string, unknown> | null
+      if (addr?.email) return addr.email as string
+    }
+    return ""
+  }, [orders])
+
   /* ---------------------------------------------------------------- */
 
   if (loading) {
@@ -211,16 +220,7 @@ export default function RetailerDetailPage() {
     return stores.find((s) => s.id === storeId)
   }
 
-  /* retailerStores computed above (before early returns) */
-
-  /* Derive email from shipping address on orders */
-  const retailerEmail = useMemo(() => {
-    for (const o of orders) {
-      const addr = o.shipping_address as Record<string, unknown> | null
-      if (addr?.email) return addr.email as string
-    }
-    return ""
-  }, [orders])
+  /* retailerStores + retailerEmail computed above (before early returns) */
 
   /* Derive phone for WhatsApp */
   const retailerPhone = retailer.phone ?? ""
