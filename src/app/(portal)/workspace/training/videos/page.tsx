@@ -120,7 +120,7 @@ export default function TrainingVideosPage() {
   const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`
 
   return (
-    <div className="max-w-[1440px] mx-auto w-full space-y-5 px-6 pt-6">
+    <div className="max-w-[1440px] mx-auto w-full space-y-5">
       <SubNav
         items={[
           { title: "Training Videos", href: "/workspace/training/videos" },

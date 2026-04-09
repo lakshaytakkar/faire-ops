@@ -51,7 +51,7 @@ export default function KnowledgeFaqPage() {
   })
 
   return (
-    <div className="max-w-[1440px] mx-auto w-full space-y-5 px-6 pt-6">
+    <div className="max-w-[1440px] mx-auto w-full space-y-5">
       <SubNav items={[
         { title: "Articles", href: "/workspace/knowledge/articles" },
         { title: "FAQ", href: "/workspace/knowledge/faq" },

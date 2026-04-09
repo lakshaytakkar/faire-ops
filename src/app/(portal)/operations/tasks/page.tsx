@@ -17,8 +17,11 @@ import {
   ExternalLink,
   CheckCircle2,
   Circle,
+  LayoutGrid,
+  List,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import { TreeExplorer, type TreeNode } from "@/components/shared/tree-explorer"
 
 interface Task {
   id: string
@@ -115,6 +118,51 @@ export default function TasksPage() {
   const [createStep, setCreateStep] = useState<1 | 2>(1)
   const [newTask, setNewTask] = useState({ title: "", description: "", priority: "medium" as Task["priority"], assignee: "", due_date: "", tags: "" })
   const [creating, setCreating] = useState(false)
+  const [viewMode, setViewMode] = useState<"board" | "explorer">("board")
+
+  function buildTree(tasks: Task[]): TreeNode[] {
+    const map = new Map<string, TreeNode>()
+    const roots: TreeNode[] = []
+
+    for (const t of tasks) {
+      map.set(t.id, {
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        priority: t.priority,
+        assignee: t.assignee,
+        due_date: t.due_date,
+        tags: t.tags,
+        depth: 0,
+        parent_id: (t as any).parent_id ?? null,
+        task_number: t.task_number,
+        children: [],
+      })
+    }
+
+    for (const t of tasks) {
+      const node = map.get(t.id)!
+      const parentId = (t as any).parent_id
+      if (parentId && map.has(parentId)) {
+        const parent = map.get(parentId)!
+        node.depth = parent.depth + 1
+        parent.children!.push(node)
+      } else {
+        roots.push(node)
+      }
+    }
+
+    // Fix depths recursively
+    function setDepths(nodes: TreeNode[], d: number) {
+      for (const n of nodes) {
+        n.depth = d
+        if (n.children?.length) setDepths(n.children, d + 1)
+      }
+    }
+    setDepths(roots, 0)
+
+    return roots
+  }
 
   async function handleCreateTask() {
     if (!newTask.title.trim()) return
@@ -269,10 +317,38 @@ export default function TasksPage() {
             Manage team tasks and backlog
           </p>
         </div>
-        <button onClick={() => { setShowCreateTask(true); setCreateStep(1) }} className="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-          <Plus className="size-4" />
-          Add Task
-        </button>
+        <div className="flex items-center gap-2">
+          {/* View switcher */}
+          <div className="flex items-center border rounded-md overflow-hidden">
+            <button
+              onClick={() => setViewMode("board")}
+              className={`inline-flex items-center gap-1.5 h-9 px-3 text-xs font-medium transition-colors ${
+                viewMode === "board"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-card text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <LayoutGrid className="size-3.5" />
+              Board
+            </button>
+            <button
+              onClick={() => setViewMode("explorer")}
+              className={`inline-flex items-center gap-1.5 h-9 px-3 text-xs font-medium transition-colors ${
+                viewMode === "explorer"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-card text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <List className="size-3.5" />
+              Explorer
+            </button>
+          </div>
+
+          <button onClick={() => { setShowCreateTask(true); setCreateStep(1) }} className="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
+            <Plus className="size-4" />
+            Add Task
+          </button>
+        </div>
       </div>
 
       {/* Stat Cards */}
@@ -302,8 +378,20 @@ export default function TasksPage() {
         })}
       </div>
 
+      {/* Explorer View */}
+      {viewMode === "explorer" && (
+        <TreeExplorer
+          nodes={buildTree(tasks)}
+          onStatusChange={(id, status) => updateTaskStatus(id, status as Task["status"])}
+          onNodeClick={(node) => {
+            const task = tasks.find((t) => t.id === node.id)
+            if (task) setSelectedTask(task)
+          }}
+        />
+      )}
+
       {/* Kanban Board — Drag & Drop */}
-      <div className="grid grid-cols-5 gap-4">
+      {viewMode === "board" && <div className="grid grid-cols-5 gap-4">
         {COLUMNS.map((col) => {
           const columnTasks = tasks.filter((t) => t.status === col.key)
           const isDragOver = dragOverCol === col.key
@@ -413,7 +501,7 @@ export default function TasksPage() {
             </div>
           )
         })}
-      </div>
+      </div>}
       {/* Create Task Modal — 2 steps */}
       {showCreateTask && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowCreateTask(false)}>

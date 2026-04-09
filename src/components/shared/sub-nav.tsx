@@ -14,7 +14,7 @@ export function SubNav({ items }: { items: SubNavItem[] }) {
 
   return (
     <div
-      className="grid border-b border-border bg-background -mx-6 -mt-6 mb-5"
+      className="grid border-b border-border bg-background -mx-4 md:-mx-6 lg:-mx-8 -mt-5 mb-5"
       style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}
     >
       {items.map((item, i) => {

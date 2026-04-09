@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, useMemo } from "react"
+import { useEffect, useState, useCallback, useMemo, type ReactNode } from "react"
 import {
   Search,
   Upload,
@@ -16,6 +16,12 @@ import {
   Code,
   File,
   ArrowUpDown,
+  FolderOpen,
+  FolderClosed,
+  ChevronRight,
+  ChevronDown,
+  ChevronsUpDown,
+  TreePine,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { supabase } from "@/lib/supabase"
@@ -40,11 +46,14 @@ interface FileRecord {
   folder: string
   is_starred: boolean
   created_at: string
+  parent_id: string | null
+  is_folder: boolean | null
+  depth: number | null
 }
 
 type FileCategory = "all" | "documents" | "images" | "exports" | "reports" | "templates"
 type SortField = "name" | "created_at" | "size_bytes"
-type ViewMode = "grid" | "list"
+type ViewMode = "grid" | "list" | "explorer"
 
 /* ------------------------------------------------------------------ */
 /*  File type icon mapping                                             */
@@ -100,6 +109,48 @@ const CATEGORY_LABELS: Record<FileCategory, string> = {
 const CATEGORIES: FileCategory[] = ["all", "documents", "images", "exports", "reports", "templates"]
 
 /* ------------------------------------------------------------------ */
+/*  Tree node type                                                     */
+/* ------------------------------------------------------------------ */
+
+interface TreeNode {
+  file: FileRecord
+  children: TreeNode[]
+}
+
+function buildTree(files: FileRecord[]): TreeNode[] {
+  const map = new Map<string, TreeNode>()
+  const roots: TreeNode[] = []
+
+  // Create nodes for every file
+  for (const f of files) {
+    map.set(f.id, { file: f, children: [] })
+  }
+
+  // Link children to parents
+  for (const f of files) {
+    const node = map.get(f.id)!
+    if (f.parent_id && map.has(f.parent_id)) {
+      map.get(f.parent_id)!.children.push(node)
+    } else {
+      roots.push(node)
+    }
+  }
+
+  // Sort: folders first, then alphabetical
+  const sortNodes = (nodes: TreeNode[]) => {
+    nodes.sort((a, b) => {
+      if (a.file.is_folder && !b.file.is_folder) return -1
+      if (!a.file.is_folder && b.file.is_folder) return 1
+      return a.file.name.localeCompare(b.file.name)
+    })
+    for (const n of nodes) sortNodes(n.children)
+  }
+  sortNodes(roots)
+
+  return roots
+}
+
+/* ------------------------------------------------------------------ */
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
@@ -111,6 +162,26 @@ export default function FilesPage() {
   const [sortField, setSortField] = useState<SortField>("created_at")
   const [sortAsc, setSortAsc] = useState(false)
   const [view, setView] = useState<ViewMode>("grid")
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+
+  /* ---- explorer helpers ---- */
+  function toggleExpand(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function expandAll() {
+    const folderIds = files.filter((f) => f.is_folder).map((f) => f.id)
+    setExpanded(new Set(folderIds))
+  }
+
+  function collapseAll() {
+    setExpanded(new Set())
+  }
 
   /* ---- fetch ---- */
   const fetchFiles = useCallback(async () => {
@@ -251,6 +322,16 @@ export default function FilesPage() {
             >
               <List className="h-4 w-4" />
             </button>
+            <button
+              onClick={() => setView("explorer")}
+              className={`p-1.5 rounded-md transition-colors ${
+                view === "explorer"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <TreePine className="h-4 w-4" />
+            </button>
           </div>
           <Button>
             <Upload className="h-4 w-4" data-icon="inline-start" />
@@ -310,6 +391,156 @@ export default function FilesPage() {
               : "No files match the current filters."}
           </p>
         </div>
+      ) : view === "explorer" ? (
+        /* ---- Explorer View ---- */
+        (() => {
+          const tree = buildTree(filtered)
+
+          function countDescendants(node: TreeNode): number {
+            let count = 0
+            for (const child of node.children) {
+              count += 1
+              if (child.file.is_folder) count += countDescendants(child)
+            }
+            return count
+          }
+
+          function renderNode(node: TreeNode, depth: number): ReactNode {
+            const { file } = node
+            const isFolder = !!file.is_folder
+            const isOpen = expanded.has(file.id)
+            const fi = getFileIcon(file.file_type)
+            const Icon = fi.icon
+            const childCount = isFolder ? countDescendants(node) : 0
+
+            return (
+              <div key={file.id}>
+                <div
+                  className="group flex items-center gap-2 py-1.5 px-3 hover:bg-muted/30 rounded-md transition-colors"
+                  style={{ paddingLeft: `${depth * 24 + 12}px` }}
+                >
+                  {/* Expand/collapse toggle */}
+                  {isFolder ? (
+                    <button
+                      onClick={() => toggleExpand(file.id)}
+                      className="p-0.5 rounded hover:bg-muted transition-colors shrink-0"
+                    >
+                      {isOpen ? (
+                        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                      )}
+                    </button>
+                  ) : (
+                    <span className="w-[22px] shrink-0" />
+                  )}
+
+                  {/* Icon */}
+                  {isFolder ? (
+                    <div className="w-7 h-7 rounded flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(245,158,11,0.1)" }}>
+                      {isOpen ? (
+                        <FolderOpen className="h-4 w-4 text-amber-500" />
+                      ) : (
+                        <FolderClosed className="h-4 w-4 text-amber-500" />
+                      )}
+                    </div>
+                  ) : (
+                    <div
+                      className="w-7 h-7 rounded flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: fi.bg }}
+                    >
+                      <Icon className="h-3.5 w-3.5" style={{ color: fi.color }} />
+                    </div>
+                  )}
+
+                  {/* Name */}
+                  <span className={`text-sm truncate ${isFolder ? "font-semibold text-foreground" : "font-medium text-foreground"}`}>
+                    {file.name}
+                  </span>
+
+                  {/* Folder item count badge */}
+                  {isFolder && (
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground shrink-0">
+                      {childCount} item{childCount !== 1 ? "s" : ""}
+                    </span>
+                  )}
+
+                  {/* Spacer */}
+                  <span className="flex-1" />
+
+                  {/* Size (files only) */}
+                  {!isFolder && (
+                    <span className="text-[11px] text-muted-foreground shrink-0 w-16 text-right">
+                      {formatSize(file.size_bytes)}
+                    </span>
+                  )}
+
+                  {/* Date */}
+                  <span className="text-[11px] text-muted-foreground shrink-0 w-24 text-right">
+                    {formatDate(file.created_at)}
+                  </span>
+
+                  {/* Category badge */}
+                  <span
+                    className="text-[10px] font-medium px-2 py-0.5 rounded-full capitalize shrink-0"
+                    style={{
+                      backgroundColor: isFolder ? "rgba(245,158,11,0.1)" : fi.bg,
+                      color: isFolder ? "#F59E0B" : fi.color,
+                    }}
+                  >
+                    {file.category}
+                  </span>
+
+                  {/* Star toggle */}
+                  {!isFolder && (
+                    <button
+                      onClick={() => toggleStar(file)}
+                      className={`p-1 rounded-md hover:bg-muted transition-colors shrink-0 ${
+                        file.is_starred ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                      }`}
+                    >
+                      <Star
+                        className={`h-3.5 w-3.5 ${
+                          file.is_starred
+                            ? "fill-amber-400 text-amber-400"
+                            : "fill-none text-muted-foreground"
+                        }`}
+                      />
+                    </button>
+                  )}
+                </div>
+
+                {/* Render children if expanded */}
+                {isFolder && isOpen && node.children.map((child) => renderNode(child, depth + 1))}
+              </div>
+            )
+          }
+
+          return (
+            <div className="rounded-md border bg-card">
+              {/* Expand/Collapse toolbar */}
+              <div className="flex items-center gap-2 px-4 py-2 border-b bg-muted/20">
+                <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <button
+                  onClick={expandAll}
+                  className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Expand All
+                </button>
+                <span className="text-muted-foreground/30">|</span>
+                <button
+                  onClick={collapseAll}
+                  className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Collapse All
+                </button>
+              </div>
+              <div className="py-1">
+                {tree.map((node) => renderNode(node, 0))}
+              </div>
+            </div>
+          )
+        })()
       ) : view === "grid" ? (
         /* ---- Grid View ---- */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
