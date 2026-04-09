@@ -177,7 +177,7 @@ export default function TargetsPage() {
       </div>
 
       {/* April Snapshot Card */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="border-b px-5 py-3.5">
           <h2 className="text-sm font-semibold flex items-center gap-2">
             <Target className="h-4 w-4 text-muted-foreground" />
@@ -233,7 +233,7 @@ export default function TargetsPage() {
 
           {/* Mini stat cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-            <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">GMV Progress</p>
                 <p className="text-2xl font-bold font-heading mt-2">{portfolioPct}%</p>
@@ -242,7 +242,7 @@ export default function TargetsPage() {
                 <TrendingUp className="h-4 w-4" style={{ color: "#10b981" }} />
               </div>
             </div>
-            <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">New Retailers</p>
                 <p className="text-2xl font-bold font-heading mt-2">{totalRetActual}/{totalRetTarget}</p>
@@ -251,7 +251,7 @@ export default function TargetsPage() {
                 <Users className="h-4 w-4" style={{ color: "#3b82f6" }} />
               </div>
             </div>
-            <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Faire Direct</p>
                 <p className="text-2xl font-bold font-heading mt-2">{totalFdActual}/{totalFdTarget}</p>
@@ -260,7 +260,7 @@ export default function TargetsPage() {
                 <Award className="h-4 w-4" style={{ color: "#8b5cf6" }} />
               </div>
             </div>
-            <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Avg Late Ship</p>
                 <p className={`text-2xl font-bold font-heading mt-2 ${avgLateShipActual > 10 ? "text-red-600" : avgLateShipActual > 5 ? "text-amber-600" : "text-emerald-600"}`}>
@@ -276,7 +276,7 @@ export default function TargetsPage() {
       </div>
 
       {/* Brand Targets Table */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="border-b px-5 py-3.5">
           <h2 className="text-sm font-semibold">Brand Targets</h2>
         </div>

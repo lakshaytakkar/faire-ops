@@ -115,7 +115,7 @@ export default function FulfillmentPage() {
             <div key={i} className="h-28 rounded-md border bg-muted animate-pulse" />
           ))}
         </div>
-        <div className="rounded-md border bg-card p-8 space-y-3">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-8 space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-12 rounded bg-muted animate-pulse" />
           ))}
@@ -135,7 +135,7 @@ export default function FulfillmentPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {STATS.map((s) => (
-          <div key={s.label} className="rounded-md border bg-card p-5 flex items-start justify-between">
+          <div key={s.label} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
               <p className="text-2xl font-bold font-heading mt-2">{s.value}</p>
@@ -149,7 +149,7 @@ export default function FulfillmentPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

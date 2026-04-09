@@ -14,6 +14,18 @@ import {
   ChevronUp,
   ExternalLink,
   Check,
+  Image,
+  DollarSign,
+  Lightbulb,
+  Megaphone,
+  Truck,
+  Users,
+  Package,
+  Palette,
+  BarChart3,
+  Rocket,
+  Printer,
+  type LucideIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -78,6 +90,33 @@ const CATEGORY_BADGE: Record<string, string> = {
   branding: "bg-indigo-50 text-indigo-700",
   analytics: "bg-rose-50 text-rose-700",
   onboarding: "bg-teal-50 text-teal-700",
+}
+
+const THUMBNAIL_PATTERNS = [
+  "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+  "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+  "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+  "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+  "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+  "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)",
+  "linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)",
+  "linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)",
+  "linear-gradient(135deg, #f5576c 0%, #ff9a9e 100%)",
+  "linear-gradient(135deg, #667eea 0%, #00f2fe 100%)",
+]
+
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  listings: BookOpen,
+  images: Image,
+  pricing: DollarSign,
+  finance: Lightbulb,
+  marketing: Megaphone,
+  fulfillment: Truck,
+  crm: Users,
+  inventory: Package,
+  branding: Palette,
+  analytics: BarChart3,
+  onboarding: Rocket,
 }
 
 /* ------------------------------------------------------------------ */
@@ -780,7 +819,7 @@ export default function KnowledgePage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Total Articles</p>
             <p className="text-2xl font-bold font-heading mt-2">{totalArticles}</p>
@@ -789,7 +828,7 @@ export default function KnowledgePage() {
             <BookOpen className="h-4 w-4 text-primary" />
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Categories</p>
             <p className="text-2xl font-bold font-heading mt-2">{categoryCount}</p>
@@ -798,7 +837,7 @@ export default function KnowledgePage() {
             <FolderOpen className="h-4 w-4 text-blue-600" />
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Pinned</p>
             <p className="text-2xl font-bold font-heading mt-2 text-amber-600">{pinnedCount}</p>
@@ -844,17 +883,27 @@ export default function KnowledgePage() {
         <p className="text-sm text-muted-foreground py-8 text-center">No articles found</p>
       ) : (
         <div className="space-y-3">
-          {filtered.map((article) => {
+          {filtered.map((article, index) => {
             const isExpanded = expandedId === article.id
+            const ThumbnailIcon = CATEGORY_ICONS[article.category] ?? BookOpen
             return (
               <div key={article.id}>
                 {/* Card */}
                 <div
-                  className={`rounded-md border bg-card p-5 hover:shadow-sm transition-shadow cursor-pointer ${
-                    isExpanded ? "shadow-sm border-primary/30" : ""
+                  className={`rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden cursor-pointer ${
+                    isExpanded ? "border-primary/30" : ""
                   }`}
                   onClick={() => setExpandedId(isExpanded ? null : article.id)}
                 >
+                  <div className="flex">
+                  {/* Left square thumbnail */}
+                  <div
+                    className="w-20 shrink-0 flex items-center justify-center"
+                    style={{ background: THUMBNAIL_PATTERNS[index % THUMBNAIL_PATTERNS.length] }}
+                  >
+                    <ThumbnailIcon className="size-7 text-white/40" />
+                  </div>
+                  <div className="flex-1 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -892,11 +941,29 @@ export default function KnowledgePage() {
                       )}
                     </div>
                   </div>
+                  </div>
+                  </div>
                 </div>
 
-                {/* Expanded Content */}
+                {/* Expanded Content — Modal */}
                 {isExpanded && (
-                  <div className="rounded-b-md border border-t-0 bg-card px-5 pb-5 pt-3 space-y-4">
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={(e) => { e.stopPropagation(); setExpandedId(null) }}>
+                    <div className="bg-card border rounded-lg shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                      {/* Modal header */}
+                      <div className="flex items-center justify-between border-b px-6 py-4 sticky top-0 bg-card z-10">
+                        <h2 className="text-lg font-semibold truncate">{article.title}</h2>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border hover:bg-muted">
+                            <Printer className="size-3" />
+                            Print
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); setExpandedId(null) }} className="p-1 rounded hover:bg-muted">
+                            <X className="size-4" />
+                          </button>
+                        </div>
+                      </div>
+                      {/* Modal body */}
+                      <div className="px-6 py-5 space-y-4">
                     <div className="text-sm whitespace-pre-wrap text-foreground leading-relaxed">
                       {article.full_content}
                     </div>
@@ -968,6 +1035,8 @@ export default function KnowledgePage() {
                       >
                         Close
                       </Button>
+                    </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1041,7 +1110,7 @@ function AddArticleDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="rounded-md border bg-card p-6 w-full max-w-2xl shadow-lg max-h-[90vh] overflow-y-auto">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm p-6 w-full max-w-2xl shadow-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold font-heading">Add Article</h2>
           <Button variant="ghost" size="icon-xs" onClick={onClose}>

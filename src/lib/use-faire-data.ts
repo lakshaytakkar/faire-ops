@@ -31,30 +31,40 @@ export function useStores() {
 /*  Orders                                                             */
 /* ------------------------------------------------------------------ */
 
-export function useOrders(storeId?: string, state?: string, limit = 10000) {
+export function useOrders(storeId?: string, state?: string, limit = 50) {
   const [orders, setOrders] = useState<FaireOrder[]>([])
+  const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   const refetch = useCallback(() => {
     setLoading(true)
     async function fetchAll() {
-      const pageSize = 1000
+      // Fetch total count separately
+      let countQuery = supabase.from("faire_orders").select("*", { count: "exact", head: true })
+      if (storeId) countQuery = countQuery.eq("store_id", storeId)
+      if (state) countQuery = countQuery.eq("state", state)
+      const { count } = await countQuery
+      setTotalCount(count ?? 0)
+
+      // Fetch only the requested number of rows
+      const pageSize = Math.min(limit, 1000)
       const all: FaireOrder[] = []
       let from = 0
       let hasMore = true
       while (hasMore && from < limit) {
+        const batchSize = Math.min(pageSize, limit - from)
         let query = supabase
           .from("faire_orders")
           .select("*")
           .order("faire_created_at", { ascending: false })
-          .range(from, from + pageSize - 1)
+          .range(from, from + batchSize - 1)
         if (storeId) query = query.eq("store_id", storeId)
         if (state) query = query.eq("state", state)
         const { data } = await query
         if (data && data.length > 0) {
           all.push(...data)
-          from += pageSize
-          if (data.length < pageSize) hasMore = false
+          from += batchSize
+          if (data.length < batchSize) hasMore = false
         } else {
           hasMore = false
         }
@@ -67,14 +77,33 @@ export function useOrders(storeId?: string, state?: string, limit = 10000) {
 
   useEffect(() => { refetch() }, [refetch])
 
-  return { orders, loading, refetch }
+  return { orders, totalCount, loading, refetch }
 }
 
 /* ------------------------------------------------------------------ */
 /*  Order Stats                                                        */
 /* ------------------------------------------------------------------ */
 
-export function useOrderStats(storeId?: string) {
+/** Compute the ISO date string for the start of a date-filter period */
+function getDateFilterStart(dateFilter: string): string | null {
+  if (dateFilter === "All Time") return null
+  const now = new Date()
+  if (dateFilter === "Today") {
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    return start.toISOString()
+  }
+  if (dateFilter === "This Month") {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1)
+    return start.toISOString()
+  }
+  if (dateFilter === "3 Months") {
+    const start = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate())
+    return start.toISOString()
+  }
+  return null
+}
+
+export function useOrderStats(storeId?: string, dateFilter: string = "All Time") {
   const [stats, setStats] = useState({
     total: 0,
     newOrders: 0,
@@ -88,6 +117,8 @@ export function useOrderStats(storeId?: string) {
 
   useEffect(() => {
     async function fetchStats() {
+      setLoading(true)
+      const dateStart = getDateFilterStart(dateFilter)
       // Fetch all in batches to avoid 1000-row limit
       const pageSize = 1000
       const all: { state: string; total_cents: number }[] = []
@@ -96,6 +127,7 @@ export function useOrderStats(storeId?: string) {
       while (hasMore) {
         let query = supabase.from("faire_orders").select("state, total_cents").range(from, from + pageSize - 1)
         if (storeId) query = query.eq("store_id", storeId)
+        if (dateStart) query = query.gte("faire_created_at", dateStart)
         const { data } = await query
         if (data && data.length > 0) {
           all.push(...data)
@@ -117,7 +149,7 @@ export function useOrderStats(storeId?: string) {
       setLoading(false)
     }
     fetchStats()
-  }, [storeId])
+  }, [storeId, dateFilter])
 
   return { stats, loading }
 }
@@ -126,29 +158,38 @@ export function useOrderStats(storeId?: string) {
 /*  Products                                                           */
 /* ------------------------------------------------------------------ */
 
-export function useProducts(storeId?: string, limit = 10000) {
+export function useProducts(storeId?: string, limit = 50) {
   const [products, setProducts] = useState<FaireProduct[]>([])
+  const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   const refetch = useCallback(() => {
     setLoading(true)
     async function fetchAll() {
-      const pageSize = 1000
+      // Fetch total count separately
+      let countQuery = supabase.from("faire_products").select("*", { count: "exact", head: true })
+      if (storeId) countQuery = countQuery.eq("store_id", storeId)
+      const { count } = await countQuery
+      setTotalCount(count ?? 0)
+
+      // Fetch only the requested number of rows
+      const pageSize = Math.min(limit, 1000)
       const all: FaireProduct[] = []
       let from = 0
       let hasMore = true
       while (hasMore && from < limit) {
+        const batchSize = Math.min(pageSize, limit - from)
         let query = supabase
           .from("faire_products")
           .select("*")
           .order("faire_updated_at", { ascending: false })
-          .range(from, from + pageSize - 1)
+          .range(from, from + batchSize - 1)
         if (storeId) query = query.eq("store_id", storeId)
         const { data } = await query
         if (data && data.length > 0) {
           all.push(...data)
-          from += pageSize
-          if (data.length < pageSize) hasMore = false
+          from += batchSize
+          if (data.length < batchSize) hasMore = false
         } else {
           hasMore = false
         }
@@ -161,26 +202,27 @@ export function useProducts(storeId?: string, limit = 10000) {
 
   useEffect(() => { refetch() }, [refetch])
 
-  return { products, loading, refetch }
+  return { products, totalCount, loading, refetch }
 }
 
 /* ------------------------------------------------------------------ */
 /*  Retailers                                                          */
 /* ------------------------------------------------------------------ */
 
-export function useRetailers(limit = 5000) {
+export function useRetailers(limit = 5000, faireStoreId?: string) {
   const [retailers, setRetailers] = useState<FaireRetailer[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     // Fetch count separately (not affected by row limit)
-    supabase
+    let countQuery = supabase
       .from("faire_retailers")
       .select("*", { count: "exact", head: true })
-      .then(({ count }) => {
-        setTotalCount(count ?? 0)
-      })
+    if (faireStoreId) countQuery = countQuery.contains("store_ids", [faireStoreId])
+    countQuery.then(({ count }) => {
+      setTotalCount(count ?? 0)
+    })
 
     // Fetch data in batches if needed
     async function fetchAll() {
@@ -191,11 +233,14 @@ export function useRetailers(limit = 5000) {
 
       while (hasMore && from < limit) {
         const to = Math.min(from + pageSize - 1, limit - 1)
-        const { data } = await supabase
+        let query = supabase
           .from("faire_retailers")
           .select("*")
           .order("total_orders", { ascending: false })
           .range(from, to)
+        if (faireStoreId) query = query.contains("store_ids", [faireStoreId])
+
+        const { data } = await query
 
         if (data && data.length > 0) {
           allRetailers.push(...data)
@@ -211,7 +256,7 @@ export function useRetailers(limit = 5000) {
     }
 
     fetchAll()
-  }, [limit])
+  }, [limit, faireStoreId])
 
   return { retailers, totalCount, loading }
 }

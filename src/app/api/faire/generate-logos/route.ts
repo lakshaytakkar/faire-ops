@@ -5,10 +5,12 @@ import { generateImage, generateLogoPrompt } from "@/lib/gemini"
 // We import from gemini.ts not faire-api — let me use direct imports
 const { GoogleGenerativeAI } = require("@google/generative-ai")
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+  )
+}
 
 const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY ?? ""
 
@@ -100,7 +102,7 @@ Requirements: Square format, clean background, scalable, professional wholesale 
     const ext = mimeType.includes("png") ? "png" : mimeType.includes("webp") ? "webp" : "jpg"
     const fileName = `stores/logos/${storeName.toLowerCase().replace(/\s+/g, "-")}_${Date.now()}.${ext}`
 
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await getSupabase().storage
       .from("images")
       .upload(fileName, buffer, {
         contentType: mimeType,
@@ -123,7 +125,7 @@ Requirements: Square format, clean background, scalable, professional wholesale 
 
 export async function POST() {
   try {
-    const { data: stores } = await supabase
+    const { data: stores } = await getSupabase()
       .from("faire_stores")
       .select("id, name, short, color, category")
       .eq("active", true)
@@ -146,13 +148,13 @@ export async function POST() {
       })
 
       if (logoUrl) {
-        await supabase
+        await getSupabase()
           .from("faire_stores")
           .update({ logo_url: logoUrl })
           .eq("id", store.id)
 
         // Also save as store asset
-        await supabase.from("store_assets").insert({
+        await getSupabase().from("store_assets").insert({
           store_id: store.id,
           asset_type: "logo",
           storage_path: logoUrl.split("/images/")[1] ?? "",

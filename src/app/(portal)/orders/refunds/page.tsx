@@ -103,8 +103,9 @@ export default function RefundsPage() {
     supabase
       .from("faire_orders")
       .select("*")
-      .range(0, 4999)
+      .eq("state", "CANCELED")
       .order("faire_created_at", { ascending: false })
+      .limit(200)
       .then(({ data, error }) => {
         if (error) {
           console.error("refunds fetch error:", error)
@@ -204,7 +205,7 @@ export default function RefundsPage() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Total Issues</p>
             <p className="text-2xl font-bold font-heading mt-2">{totalIssues}</p>
@@ -215,7 +216,7 @@ export default function RefundsPage() {
           </div>
         </div>
 
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Returned Items</p>
             <p className="text-2xl font-bold font-heading mt-2">{returnedCount}</p>
@@ -226,7 +227,7 @@ export default function RefundsPage() {
           </div>
         </div>
 
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Damaged Items</p>
             <p className="text-2xl font-bold font-heading mt-2">{damagedCount}</p>
@@ -237,7 +238,7 @@ export default function RefundsPage() {
           </div>
         </div>
 
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Canceled Orders</p>
             <p className="text-2xl font-bold font-heading mt-2">{canceledCount}</p>
@@ -250,7 +251,7 @@ export default function RefundsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         {/* Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
           <div className="relative">
@@ -427,7 +428,7 @@ function IssueRow({
       {isExpanded && (
         <tr className="border-b bg-muted/10">
           <td colSpan={9} className="px-6 py-5">
-            <div className="rounded-md border bg-card overflow-hidden">
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
               <div className="px-5 py-3.5 border-b text-sm font-semibold">Affected Items</div>
               <div className="p-5">
                 {affectedItems.length === 0 ? (

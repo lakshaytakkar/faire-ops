@@ -96,7 +96,7 @@ export default function RolesPermissionsPage() {
       {/* Role Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {ROLES.map((role) => (
-          <div key={role.name} className="rounded-md border bg-card p-5">
+          <div key={role.name} className="rounded-lg border border-border/80 bg-card shadow-sm p-5">
             <div className="flex items-center gap-3">
               <div
                 className={`h-9 w-9 rounded-lg flex items-center justify-center ${role.iconBg}`}
@@ -119,7 +119,7 @@ export default function RolesPermissionsPage() {
       </div>
 
       {/* Permissions Matrix */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="px-5 py-3.5 border-b">
           <h2 className="text-sm font-semibold">Permissions Matrix</h2>
         </div>

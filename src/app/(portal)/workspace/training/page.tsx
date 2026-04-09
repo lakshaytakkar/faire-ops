@@ -42,6 +42,17 @@ const CATEGORY_BADGE: Record<string, string> = {
   Analytics: "bg-pink-50 text-pink-700",
 }
 
+const GRADIENTS = [
+  "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+  "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+  "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+  "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+  "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+  "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)",
+  "linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)",
+  "linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)",
+]
+
 const SEED_VIDEOS = [
   { title: "Faire Dashboard", description: "Complete walkthrough of the Faire dashboard, navigation, and key features for new team members.", video_url: "https://example.com/faire-dashboard", category: "Onboarding", duration_minutes: 15, is_required: true, sort_order: 1 },
   { title: "Accept Orders", description: "How to review, accept, and process incoming Faire orders efficiently.", video_url: "https://example.com/accept-orders", category: "Orders", duration_minutes: 8, is_required: true, sort_order: 2 },
@@ -125,7 +136,7 @@ export default function TrainingPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Total Videos</p>
             <p className="text-2xl font-bold font-heading mt-2">{totalVideos}</p>
@@ -134,7 +145,7 @@ export default function TrainingPage() {
             <Video className="h-4 w-4 text-primary" />
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Required</p>
             <p className="text-2xl font-bold font-heading mt-2 text-amber-600">
@@ -145,7 +156,7 @@ export default function TrainingPage() {
             <CheckCircle className="h-4 w-4 text-amber-600" />
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Total Duration</p>
             <p className="text-2xl font-bold font-heading mt-2">{durationStr}</p>
@@ -180,15 +191,18 @@ export default function TrainingPage() {
         <p className="text-sm text-muted-foreground py-8 text-center">No videos found</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map((video) => (
+          {filtered.map((video, index) => (
             <div
               key={video.id}
-              className="rounded-md border bg-card overflow-hidden hover:shadow-sm transition-shadow group relative cursor-pointer"
+              className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden hover:shadow-sm transition-shadow group relative cursor-pointer"
               onClick={() => window.open(video.video_url, "_blank")}
             >
               {/* Thumbnail */}
-              <div className="h-36 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                <PlayCircle className="size-12 text-primary/40 group-hover:text-primary/60 transition-colors" />
+              <div
+                className="h-36 flex items-center justify-center"
+                style={{ background: GRADIENTS[index % GRADIENTS.length] }}
+              >
+                <PlayCircle className="size-12 text-white/25 group-hover:text-white/40 transition-colors" />
               </div>
 
               {/* Delete button (hover) */}
@@ -290,7 +304,7 @@ function AddVideoDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="rounded-md border bg-card p-6 w-full max-w-lg shadow-lg">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm p-6 w-full max-w-lg shadow-lg">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold font-heading">Add Video</h2>
           <Button variant="ghost" size="icon-xs" onClick={onClose}>

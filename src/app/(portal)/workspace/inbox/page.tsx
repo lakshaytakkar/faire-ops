@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   ShoppingCart,
   AlertTriangle,
@@ -15,244 +15,48 @@ import {
   CalendarDays,
   Hash,
 } from "lucide-react"
+import { supabase } from "@/lib/supabase"
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type NotificationType = "order" | "system" | "mention" | "alert"
+type NotificationType = "order" | "system" | "mention" | "alert" | "success" | "info" | "warning"
 
 interface Notification {
   id: string
   type: NotificationType
   title: string
   description: string
-  timestamp: string
-  read: boolean
-  icon: "ShoppingCart" | "AlertTriangle" | "Bell" | "Users" | "Package" | "TrendingUp" | "MessageCircle"
+  category?: string
+  created_at: string
+  is_read: boolean
   link?: string
+  store_id?: string
 }
-
-// ---------------------------------------------------------------------------
-// Mock data (20 notifications)
-// ---------------------------------------------------------------------------
-
-const INITIAL_NOTIFICATIONS: Notification[] = [
-  {
-    id: "n1",
-    type: "order",
-    title: "New order from Twilight House",
-    description: "Order #TH-4491 placed for 12 units across 3 SKUs. Review and confirm shipment.",
-    timestamp: "5 min ago",
-    read: false,
-    icon: "ShoppingCart",
-    link: "/orders/TH-4491",
-  },
-  {
-    id: "n2",
-    type: "alert",
-    title: "Buddha Ayurveda late ship critical",
-    description: "Late ship rate has exceeded 15% threshold. Immediate action required to avoid penalties.",
-    timestamp: "12 min ago",
-    read: false,
-    icon: "AlertTriangle",
-    link: "/orders?brand=buddha-ayurveda",
-  },
-  {
-    id: "n3",
-    type: "system",
-    title: "Low stock alert: Toy Nest (4 SKUs)",
-    description: "Wooden Train Set, Puzzle Cube, Stacking Rings, and Animal Blocks are below reorder point.",
-    timestamp: "30 min ago",
-    read: false,
-    icon: "Package",
-  },
-  {
-    id: "n4",
-    type: "mention",
-    title: "@Lakshay assigned task: Review product listing",
-    description: "You were assigned to review the new Enchanted Shire candle collection listing before publish.",
-    timestamp: "45 min ago",
-    read: false,
-    icon: "Users",
-    link: "/tasks/review-listing-42",
-  },
-  {
-    id: "n5",
-    type: "order",
-    title: "Order VXTKE5DRYW shipped",
-    description: "Shipment confirmed via FedEx Ground. Tracking number provided to retailer.",
-    timestamp: "1 hour ago",
-    read: false,
-    icon: "Package",
-    link: "/orders/VXTKE5DRYW",
-  },
-  {
-    id: "n6",
-    type: "system",
-    title: "Scheduled maintenance tonight",
-    description: "Faire platform will undergo scheduled maintenance from 2:00 AM to 4:00 AM EST.",
-    timestamp: "2 hours ago",
-    read: true,
-    icon: "Bell",
-  },
-  {
-    id: "n7",
-    type: "order",
-    title: "Order accepted for Enchanted Shire",
-    description: "Retailer Bloom & Vine accepted order #ES-2287. Prepare for shipment within 3 days.",
-    timestamp: "2 hours ago",
-    read: false,
-    icon: "ShoppingCart",
-    link: "/orders/ES-2287",
-  },
-  {
-    id: "n8",
-    type: "mention",
-    title: "@Lakshay mentioned in CRM note",
-    description: "Sarah added a note on Coast & Craft account: \"@Lakshay please follow up on return request.\"",
-    timestamp: "3 hours ago",
-    read: true,
-    icon: "MessageCircle",
-    link: "/crm/coast-craft",
-  },
-  {
-    id: "n9",
-    type: "alert",
-    title: "New retailer application from Portland",
-    description: "Evergreen Boutique submitted a new retailer application. Review within 48 hours.",
-    timestamp: "4 hours ago",
-    read: true,
-    icon: "TrendingUp",
-    link: "/pipeline",
-  },
-  {
-    id: "n10",
-    type: "order",
-    title: "Return requested by Coast & Craft",
-    description: "Return request for order #CC-1893 — 3 items, reason: damaged in transit.",
-    timestamp: "5 hours ago",
-    read: false,
-    icon: "ShoppingCart",
-    link: "/orders/CC-1893",
-  },
-  {
-    id: "n11",
-    type: "system",
-    title: "New Faire platform update",
-    description: "Faire has released v4.12 with improved analytics dashboard and bulk order management.",
-    timestamp: "6 hours ago",
-    read: true,
-    icon: "Bell",
-  },
-  {
-    id: "n12",
-    type: "order",
-    title: "Bulk order inquiry from Meadow & Stone",
-    description: "Retailer is interested in a 200-unit wholesale order for Q3. Respond with pricing.",
-    timestamp: "8 hours ago",
-    read: true,
-    icon: "ShoppingCart",
-    link: "/orders/inquiry/MS-001",
-  },
-  {
-    id: "n13",
-    type: "system",
-    title: "Commission rate change notice",
-    description: "Effective May 1st, Faire commission on new retailer orders will decrease from 25% to 20%.",
-    timestamp: "Yesterday",
-    read: true,
-    icon: "TrendingUp",
-  },
-  {
-    id: "n14",
-    type: "mention",
-    title: "@Lakshay tagged in product review",
-    description: "New 5-star review on Wooden Train Set — customer mentioned gift packaging quality.",
-    timestamp: "Yesterday",
-    read: true,
-    icon: "MessageCircle",
-    link: "/products/reviews",
-  },
-  {
-    id: "n15",
-    type: "order",
-    title: "Order #TN-7812 delivered",
-    description: "All 8 items confirmed delivered to Sunshine Home Goods. No issues reported.",
-    timestamp: "Yesterday",
-    read: true,
-    icon: "Package",
-    link: "/orders/TN-7812",
-  },
-  {
-    id: "n16",
-    type: "alert",
-    title: "Payment processing delay",
-    description: "Faire payout for March cycle delayed by 2 business days. Expected April 5th.",
-    timestamp: "2 days ago",
-    read: true,
-    icon: "AlertTriangle",
-  },
-  {
-    id: "n17",
-    type: "system",
-    title: "Inventory sync completed",
-    description: "All 6 brand inventories successfully synced with Faire catalog. 1,247 SKUs updated.",
-    timestamp: "2 days ago",
-    read: true,
-    icon: "Package",
-  },
-  {
-    id: "n18",
-    type: "order",
-    title: "Reorder from The Craft Collective",
-    description: "Repeat order #CC-3021 for top-selling items. Auto-confirmed based on existing terms.",
-    timestamp: "2 days ago",
-    read: true,
-    icon: "ShoppingCart",
-    link: "/orders/CC-3021",
-  },
-  {
-    id: "n19",
-    type: "mention",
-    title: "@Lakshay assigned to onboard new brand",
-    description: "You have been assigned to onboard \"Willow & Sage\" — complete brand setup by April 10.",
-    timestamp: "3 days ago",
-    read: true,
-    icon: "Users",
-    link: "/tasks/onboard-willow-sage",
-  },
-  {
-    id: "n20",
-    type: "alert",
-    title: "Quality flag: product listing issue",
-    description: "Faire flagged 2 listings from Enchanted Shire for missing weight/dimensions data.",
-    timestamp: "3 days ago",
-    read: true,
-    icon: "AlertTriangle",
-    link: "/products?brand=enchanted-shire",
-  },
-]
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-const ICON_MAP = {
-  ShoppingCart,
-  AlertTriangle,
-  Bell,
-  Users,
-  Package,
-  TrendingUp,
-  MessageCircle,
-} as const
+const TYPE_ICON_MAP: Record<string, typeof ShoppingCart> = {
+  order: ShoppingCart,
+  system: Bell,
+  mention: MessageCircle,
+  alert: AlertTriangle,
+  success: Package,
+  info: Bell,
+  warning: AlertTriangle,
+}
 
-const TYPE_STYLES: Record<NotificationType, { bg: string; text: string }> = {
+const TYPE_STYLES: Record<string, { bg: string; text: string }> = {
   order: { bg: "bg-blue-50", text: "text-blue-600" },
   system: { bg: "bg-amber-50", text: "text-amber-600" },
   mention: { bg: "bg-purple-50", text: "text-purple-600" },
   alert: { bg: "bg-red-50", text: "text-red-600" },
+  success: { bg: "bg-emerald-50", text: "text-emerald-600" },
+  info: { bg: "bg-sky-50", text: "text-sky-600" },
+  warning: { bg: "bg-amber-50", text: "text-amber-600" },
 }
 
 type FilterTab = "all" | "order" | "system" | "mention"
@@ -261,22 +65,58 @@ type FilterTab = "all" | "order" | "system" | "mention"
 // Component
 // ---------------------------------------------------------------------------
 
+function formatTimestamp(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMin = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMin < 1) return "Just now"
+  if (diffMin < 60) return `${diffMin} min ago`
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`
+  if (diffDays === 1) return "Yesterday"
+  return `${diffDays} days ago`
+}
+
 export default function InboxPage() {
-  const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS)
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const [activeTab, setActiveTab] = useState<FilterTab>("all")
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchNotifications() {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50)
+      if (!error && data) {
+        setNotifications(data as Notification[])
+      }
+      setLoading(false)
+    }
+    fetchNotifications()
+  }, [])
 
   // Derived counts
-  const unreadCount = notifications.filter((n) => !n.read).length
-  const todayCount = notifications.filter((n) =>
-    ["min ago", "hour ago", "hours ago"].some((k) => n.timestamp.includes(k))
-  ).length
-  const weekCount = notifications.filter((n) => !n.timestamp.includes("days ago")).length
+  const unreadCount = notifications.filter((n) => !n.is_read).length
+  const now = new Date()
+  const todayCount = notifications.filter((n) => {
+    const diff = now.getTime() - new Date(n.created_at).getTime()
+    return diff < 86400000
+  }).length
+  const weekCount = notifications.filter((n) => {
+    const diff = now.getTime() - new Date(n.created_at).getTime()
+    return diff < 7 * 86400000
+  }).length
   const totalCount = notifications.length
 
   const tabCounts: Record<FilterTab, number> = {
     all: notifications.length,
     order: notifications.filter((n) => n.type === "order").length,
-    system: notifications.filter((n) => n.type === "system" || n.type === "alert").length,
+    system: notifications.filter((n) => ["system", "alert", "success", "info", "warning"].includes(n.type)).length,
     mention: notifications.filter((n) => n.type === "mention").length,
   }
 
@@ -284,15 +124,34 @@ export default function InboxPage() {
     activeTab === "all"
       ? notifications
       : activeTab === "system"
-        ? notifications.filter((n) => n.type === "system" || n.type === "alert")
+        ? notifications.filter((n) => ["system", "alert", "success", "info", "warning"].includes(n.type))
         : notifications.filter((n) => n.type === activeTab)
 
-  function markAllRead() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+  async function markAllRead() {
+    const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id)
+    if (unreadIds.length === 0) return
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .in("id", unreadIds)
+    if (!error) {
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
+    }
   }
 
-  function toggleRead(id: string) {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n)))
+  async function toggleRead(id: string) {
+    const notification = notifications.find((n) => n.id === id)
+    if (!notification) return
+    const newReadState = !notification.is_read
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: newReadState })
+      .eq("id", id)
+    if (!error) {
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: newReadState } : n))
+      )
+    }
   }
 
   // Stat cards data
@@ -309,6 +168,14 @@ export default function InboxPage() {
     { key: "system", label: "System" },
     { key: "mention", label: "Mentions" },
   ]
+
+  if (loading) {
+    return (
+      <div className="max-w-[1440px] mx-auto w-full py-10 text-center text-sm text-muted-foreground">
+        Loading notifications...
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
@@ -330,7 +197,7 @@ export default function InboxPage() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-md border bg-card p-5 flex items-start justify-between">
+          <div key={s.label} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
             <div>
               <p className="text-sm text-muted-foreground">{s.label}</p>
               <p className="text-2xl font-bold font-heading mt-2">{s.value}</p>
@@ -360,7 +227,7 @@ export default function InboxPage() {
       </div>
 
       {/* Notification list */}
-      <div className="rounded-md border bg-card overflow-hidden divide-y">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden divide-y">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Inbox className="h-10 w-10 text-muted-foreground/40 mb-3" />
@@ -371,8 +238,8 @@ export default function InboxPage() {
           </div>
         ) : (
           filtered.map((n) => {
-            const IconComp = ICON_MAP[n.icon]
-            const style = TYPE_STYLES[n.type]
+            const IconComp = TYPE_ICON_MAP[n.type] ?? Bell
+            const style = TYPE_STYLES[n.type] ?? { bg: "bg-slate-50", text: "text-slate-600" }
             return (
               <div
                 key={n.id}
@@ -386,14 +253,14 @@ export default function InboxPage() {
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium ${!n.read ? "font-semibold" : ""}`}>{n.title}</p>
+                  <p className={`text-sm font-medium ${!n.is_read ? "font-semibold" : ""}`}>{n.title}</p>
                   <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{n.description}</p>
                 </div>
 
                 {/* Right */}
                 <div className="flex flex-col items-end shrink-0">
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">{n.timestamp}</span>
-                  {!n.read && <span className="w-2 h-2 rounded-full bg-primary mt-1" />}
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{formatTimestamp(n.created_at)}</span>
+                  {!n.is_read && <span className="w-2 h-2 rounded-full bg-primary mt-1" />}
                 </div>
               </div>
             )

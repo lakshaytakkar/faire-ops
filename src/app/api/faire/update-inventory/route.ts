@@ -2,10 +2,12 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { updateVariantInventory } from "@/lib/faire-api"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+  )
+}
 
 const TARGET_QUANTITY = 10000
 const DELAY_MS = 250 // delay between API calls to avoid rate limiting
@@ -17,7 +19,7 @@ function delay(ms: number) {
 export async function POST() {
   try {
     // Get all active stores
-    const { data: stores } = await supabase
+    const { data: stores } = await getSupabase()
       .from("faire_stores")
       .select("id, name, oauth_token, app_credentials")
       .eq("active", true)
@@ -38,7 +40,7 @@ export async function POST() {
       let from = 0
       let hasMore = true
       while (hasMore) {
-        const { data } = await supabase
+        const { data } = await getSupabase()
           .from("faire_products")
           .select("faire_product_id, raw_data, variant_count")
           .eq("store_id", store.id)
@@ -90,7 +92,7 @@ export async function POST() {
         }
 
         // Update local DB inventory
-        await supabase
+        await getSupabase()
           .from("faire_products")
           .update({ total_inventory: TARGET_QUANTITY * variants.length })
           .eq("faire_product_id", product.faire_product_id)

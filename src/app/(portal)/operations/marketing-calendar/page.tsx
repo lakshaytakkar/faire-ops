@@ -399,7 +399,7 @@ export default function MarketingCalendarPage() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Total Events</p>
             <p className="text-2xl font-bold font-heading mt-2">{stats.total}</p>
@@ -408,7 +408,7 @@ export default function MarketingCalendarPage() {
             <Calendar className="h-4 w-4 text-blue-600" />
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Active Campaigns</p>
             <p className="text-2xl font-bold font-heading mt-2">{stats.active}</p>
@@ -417,7 +417,7 @@ export default function MarketingCalendarPage() {
             <Megaphone className="h-4 w-4 text-emerald-600" />
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Upcoming (30d)</p>
             <p className="text-2xl font-bold font-heading mt-2">{stats.upcoming}</p>
@@ -426,7 +426,7 @@ export default function MarketingCalendarPage() {
             <Clock className="h-4 w-4 text-amber-600" />
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Completed</p>
             <p className="text-2xl font-bold font-heading mt-2">{stats.completed}</p>
@@ -471,7 +471,7 @@ export default function MarketingCalendarPage() {
           {QUARTERS.map((q, qi) => {
             const qEvents = eventsByQuarter[qi]
             return (
-              <div key={q.label} className="rounded-md border bg-card overflow-hidden">
+              <div key={q.label} className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
                 <div className="border-b px-5 py-3.5 flex items-center justify-between">
                   <h2 className="text-sm font-semibold flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -586,7 +586,7 @@ export default function MarketingCalendarPage() {
       {/*  List View                                                        */}
       {/* ================================================================ */}
       {view === "list" && (
-        <div className="rounded-md border bg-card overflow-hidden">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -673,7 +673,7 @@ export default function MarketingCalendarPage() {
       {/*  What's Coming Up                                                 */}
       {/* ================================================================ */}
       {upcomingEvents.length > 0 && (
-        <div className="rounded-md border bg-card overflow-hidden">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
           <div className="border-b px-5 py-3.5">
             <h2 className="text-sm font-semibold flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-muted-foreground" />

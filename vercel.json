@@ -1,0 +1,37 @@
+{
+  "installCommand": "npm install --legacy-peer-deps",
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/cron/sync-faire",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/sync-banking",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/sync-tracking",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/auto-reconcile",
+      "schedule": "0 2 * * *"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=10, s-maxage=60, stale-while-revalidate=120" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" }
+      ]
+    }
+  ]
+}

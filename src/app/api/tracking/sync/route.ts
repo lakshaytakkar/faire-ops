@@ -3,15 +3,17 @@ import { createClient } from "@supabase/supabase-js"
 import { getTrackingStatus, registerTracking, CARRIER_CODES } from "@/lib/track17"
 import { sendWhatsApp, isTwilioConfigured } from "@/lib/twilio"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+  )
+}
 
 export async function POST() {
   try {
     // Step 1: Find all shipped orders with tracking codes that need monitoring
-    const { data: activeTracking } = await supabase
+    const { data: activeTracking } = await getSupabase()
       .from("shipment_tracking")
       .select("id, order_id, tracking_code, carrier, status, delivery_notification_sent")
       .in("status", ["pending", "in_transit"])
@@ -20,7 +22,7 @@ export async function POST() {
 
     if (!activeTracking || activeTracking.length === 0) {
       // Check for new shipped orders without tracking entries
-      const { data: shippedOrders } = await supabase
+      const { data: shippedOrders } = await getSupabase()
         .from("vendor_quotes")
         .select("order_id, tracking_code, carrier, shipped_at")
         .eq("status", "shipped")
@@ -28,7 +30,7 @@ export async function POST() {
 
       if (shippedOrders && shippedOrders.length > 0) {
         // Check which don't have tracking entries yet
-        const { data: existingTracking } = await supabase
+        const { data: existingTracking } = await getSupabase()
           .from("shipment_tracking")
           .select("order_id")
 
@@ -51,7 +53,7 @@ export async function POST() {
             shipped_at: s.shipped_at,
             status: "pending",
           }))
-          await supabase.from("shipment_tracking").insert(rows)
+          await getSupabase().from("shipment_tracking").insert(rows)
 
           return NextResponse.json({ success: true, registered: newShipments.length, updated: 0, delivered: 0 })
         }
@@ -92,14 +94,14 @@ export async function POST() {
         delivered++
 
         // Update order state to DELIVERED
-        await supabase
+        await getSupabase()
           .from("faire_orders")
           .update({ state: "DELIVERED" })
           .eq("faire_order_id", tracking.order_id)
 
         // Send delivery WhatsApp notification if not already sent
         if (!tracking.delivery_notification_sent && isTwilioConfigured()) {
-          const { data: order } = await supabase
+          const { data: order } = await getSupabase()
             .from("faire_orders")
             .select("shipping_address, store_id, display_id")
             .eq("faire_order_id", tracking.order_id)
@@ -110,7 +112,7 @@ export async function POST() {
             const phone = addr?.phone_number as string
             const name = (addr?.company_name as string) || (addr?.name as string) || "Retailer"
 
-            const { data: store } = await supabase
+            const { data: store } = await getSupabase()
               .from("faire_stores")
               .select("name, faire_store_id")
               .eq("id", order.store_id)
@@ -129,7 +131,7 @@ export async function POST() {
 
       if (isDelayed) delayed++
 
-      await supabase.from("shipment_tracking").update(updates).eq("id", tracking.id)
+      await getSupabase().from("shipment_tracking").update(updates).eq("id", tracking.id)
       updated++
     }
 

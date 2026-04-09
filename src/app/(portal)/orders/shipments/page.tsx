@@ -348,7 +348,7 @@ export default function ShipmentsPage() {
             <div key={i} className="h-28 rounded-md border bg-muted animate-pulse" />
           ))}
         </div>
-        <div className="rounded-md border bg-card p-8 space-y-3">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-8 space-y-3">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-14 rounded bg-muted animate-pulse" />
           ))}
@@ -379,7 +379,7 @@ export default function ShipmentsPage() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Total Shipments</p>
             <p className="text-2xl font-bold font-heading mt-2">{totalShipments}</p>
@@ -388,7 +388,7 @@ export default function ShipmentsPage() {
             <Package className="h-4 w-4 text-blue-600" />
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">In Transit</p>
             <p className="text-2xl font-bold font-heading mt-2">{inTransitCount}</p>
@@ -397,7 +397,7 @@ export default function ShipmentsPage() {
             <Truck className="h-4 w-4 text-sky-600" />
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Delivered</p>
             <p className="text-2xl font-bold font-heading mt-2">{deliveredCount}</p>
@@ -406,7 +406,7 @@ export default function ShipmentsPage() {
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Delayed</p>
             <p className="text-2xl font-bold font-heading mt-2">{delayedCount}</p>
@@ -415,7 +415,7 @@ export default function ShipmentsPage() {
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Avg Transit</p>
             <p className="text-2xl font-bold font-heading mt-2">{avgTransitDays}d</p>
@@ -427,7 +427,7 @@ export default function ShipmentsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         {/* Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
           <div className="relative">

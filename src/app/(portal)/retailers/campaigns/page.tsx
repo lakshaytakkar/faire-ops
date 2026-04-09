@@ -146,7 +146,7 @@ export default function OutreachPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {STATS.map((s) => (
-          <div key={s.label} className="rounded-md border bg-card p-5 flex items-start justify-between">
+          <div key={s.label} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
               <p className="text-2xl font-bold font-heading mt-2">{s.value}</p>
@@ -160,7 +160,7 @@ export default function OutreachPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

@@ -1,5 +1,10 @@
-import { redirect } from "next/navigation"
+"use client"
 
-export default function AutomationsIndexPage() {
-  redirect("/automations/overview")
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+
+export default function RedirectPage() {
+  const router = useRouter()
+  useEffect(() => { router.replace("/automations/overview") }, [router])
+  return null
 }

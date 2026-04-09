@@ -2,10 +2,12 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { sendSMS, sendWhatsApp, renderTemplate, isTwilioConfigured } from "@/lib/twilio"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+  )
+}
 
 export async function POST(request: Request) {
   try {
@@ -25,7 +27,7 @@ export async function POST(request: Request) {
     let messageBody: string
 
     if (template_id) {
-      const { data: template } = await supabase.from("sms_templates").select("*").eq("id", template_id).single()
+      const { data: template } = await getSupabase().from("sms_templates").select("*").eq("id", template_id).single()
       if (!template) return NextResponse.json({ error: "Template not found" }, { status: 404 })
       messageBody = renderTemplate(template.body, variables ?? {})
     } else if (body_override) {
@@ -35,7 +37,7 @@ export async function POST(request: Request) {
     }
 
     if (!isTwilioConfigured()) {
-      await supabase.from("sms_logs").insert({
+      await getSupabase().from("sms_logs").insert({
         template_id: template_id ?? null,
         channel,
         to_number,
@@ -51,7 +53,7 @@ export async function POST(request: Request) {
       ? await sendWhatsApp({ to: to_number, body: messageBody })
       : await sendSMS({ to: to_number, body: messageBody })
 
-    await supabase.from("sms_logs").insert({
+    await getSupabase().from("sms_logs").insert({
       template_id: template_id ?? null,
       channel,
       to_number,

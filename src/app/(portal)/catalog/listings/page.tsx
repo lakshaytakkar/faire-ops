@@ -74,10 +74,10 @@ function Skeleton() {
       <div className="h-8 w-48 rounded bg-muted" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-md border bg-card p-5 h-[108px]" />
+          <div key={i} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 h-[108px]" />
         ))}
       </div>
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b h-14" />
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="px-4 py-4 border-b flex gap-4">
@@ -100,7 +100,7 @@ function Skeleton() {
 export default function ListingsPage() {
   const router = useRouter()
   const { activeBrand, stores } = useBrandFilter()
-  const { products, loading } = useProducts(activeBrand === "all" ? undefined : activeBrand)
+  const { products, totalCount, loading } = useProducts(activeBrand === "all" ? undefined : activeBrand)
 
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<FilterTab>("all")
@@ -216,7 +216,7 @@ export default function ListingsPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((card) => (
-          <div key={card.label} className="rounded-md border bg-card p-5 flex items-start justify-between">
+          <div key={card.label} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-muted-foreground">{card.label}</p>
               <p className="text-2xl font-bold font-heading mt-2">{card.value}</p>
@@ -230,7 +230,7 @@ export default function ListingsPage() {
       </div>
 
       {/* Products Table */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-3 border-b px-4 py-3">
           <div className="relative">
@@ -421,7 +421,7 @@ export default function ListingsPage() {
         {/* Pagination Footer */}
         <div className="border-t px-4 py-3 flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
-            Showing {totalFiltered === 0 ? 0 : ((page - 1) * PAGE_SIZE) + 1}&ndash;{Math.min(page * PAGE_SIZE, totalFiltered)} of {totalFiltered} products
+            Showing {totalFiltered === 0 ? 0 : ((page - 1) * PAGE_SIZE) + 1}&ndash;{Math.min(page * PAGE_SIZE, totalFiltered)} of {totalFiltered} products{totalCount > totalFiltered ? ` (${totalCount.toLocaleString()} total)` : ""}
           </p>
           <div className="flex items-center gap-1">
             <button

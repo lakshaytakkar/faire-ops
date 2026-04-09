@@ -235,7 +235,7 @@ export default function PublishingQueuePage() {
         .from("faire_products")
         .select("id, name, wholesale_price_cents, retail_price_cents, primary_image_url, category, store_id, total_inventory, faire_product_id")
         .order("faire_updated_at", { ascending: false })
-        .limit(50)
+        .limit(10)
 
       if (activeBrand !== "all") {
         query = query.eq("store_id", activeBrand)
@@ -399,7 +399,7 @@ export default function PublishingQueuePage() {
         {STAT_CARD_META.map((card) => (
           <div
             key={card.key}
-            className="rounded-md border bg-card p-5 flex items-start justify-between"
+            className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between"
           >
             <div>
               <p className="text-xs font-medium text-muted-foreground">{card.label}</p>
@@ -427,7 +427,7 @@ export default function PublishingQueuePage() {
           const empty = EMPTY_STATE[col.key]
 
           return (
-            <div key={col.key} className="rounded-md border bg-card overflow-hidden">
+            <div key={col.key} className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
               {/* Column Header */}
               <div className="px-4 py-3 border-b bg-muted/40 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
@@ -461,7 +461,7 @@ export default function PublishingQueuePage() {
                       return (
                         <div
                           key={lp.id}
-                          className="rounded-md border bg-card p-3 space-y-2 hover:shadow-sm transition-shadow"
+                          className="rounded-lg border border-border/80 bg-card shadow-sm p-3 space-y-2 hover:shadow-sm transition-shadow"
                         >
                           {/* Row 1: Thumbnail + Name */}
                           <div className="flex items-center gap-2">
@@ -470,6 +470,7 @@ export default function PublishingQueuePage() {
                                 src={lp.primary_image_url}
                                 alt={lp.name}
                                 className="w-8 h-8 rounded object-cover shrink-0"
+                                loading="lazy"
                               />
                             ) : (
                               <div className="w-8 h-8 rounded bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shrink-0">
@@ -874,7 +875,7 @@ function ProductCard({
 
   return (
     <div
-      className="rounded-md border bg-card p-3 space-y-2 hover:shadow-sm cursor-pointer transition-shadow"
+      className="rounded-lg border border-border/80 bg-card shadow-sm p-3 space-y-2 hover:shadow-sm cursor-pointer transition-shadow"
       onClick={onClick}
     >
       {/* Row 1: Thumbnail + Name + isNew badge */}

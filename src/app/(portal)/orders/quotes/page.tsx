@@ -267,7 +267,7 @@ export default function QuotesPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {STATS.map((s) => (
-          <div key={s.label} className="rounded-md border bg-card p-5 flex items-start justify-between">
+          <div key={s.label} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
               <p className="text-2xl font-bold font-heading mt-2">{s.value}</p>
@@ -299,7 +299,7 @@ export default function QuotesPage() {
 
       {/* Grouped Orders + Quotes */}
       {pagedGroups.length === 0 ? (
-        <div className="rounded-md border bg-card p-12 text-center">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-12 text-center">
           <p className="text-sm text-muted-foreground">No quotes found{activeTab !== "all" ? ` with status "${activeTab}"` : ""}.</p>
         </div>
       ) : (
@@ -315,7 +315,7 @@ export default function QuotesPage() {
             }, 0)
 
             return (
-              <div key={orderId} className="rounded-md border bg-card overflow-hidden">
+              <div key={orderId} className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
                 {/* Order Header */}
                 <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
                   <div className="flex items-center gap-3">

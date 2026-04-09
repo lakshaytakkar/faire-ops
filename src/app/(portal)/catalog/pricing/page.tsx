@@ -62,7 +62,7 @@ function PricingSkeleton() {
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="rounded-md border bg-card p-5 h-28" />
+          <div key={i} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 h-28" />
         ))}
       </div>
       <div className="rounded-md border bg-card h-96" />
@@ -256,7 +256,7 @@ export default function PricingPage() {
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="rounded-md border bg-card p-5 flex items-start justify-between"
+            className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between"
           >
             <div>
               <p className="text-xs font-medium text-muted-foreground">{card.label}</p>
@@ -273,7 +273,7 @@ export default function PricingPage() {
         ))}
       </div>
 
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="overflow-auto">
           <table className="w-full">
             <thead>
@@ -409,7 +409,7 @@ export default function PricingPage() {
       </div>
 
       {aiVisible && (
-        <div className="rounded-md border bg-card p-5">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-sm font-semibold text-foreground">AI Pricing Recommendations</h3>
@@ -434,7 +434,7 @@ export default function PricingPage() {
         </div>
       )}
 
-      <div className="rounded-md border bg-card p-5">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5">
         <h3 className="text-xs font-medium text-muted-foreground tracking-wide uppercase mb-4">
           Margin Distribution
         </h3>

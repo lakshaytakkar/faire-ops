@@ -2,10 +2,12 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { updateVariantInventory } from "@/lib/faire-api"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+  )
+}
 
 const TARGET = 10000
 const DELAY = 200
@@ -13,7 +15,7 @@ const DELAY = 200
 export async function POST(_req: Request, { params }: { params: Promise<{ storeId: string }> }) {
   const { storeId } = await params
   try {
-    const { data: store } = await supabase
+    const { data: store } = await getSupabase()
       .from("faire_stores")
       .select("id, name, oauth_token, app_credentials")
       .eq("id", storeId)
@@ -24,7 +26,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ storeI
     const creds = { oauth_token: store.oauth_token, app_credentials: store.app_credentials }
 
     // Only fetch products NOT yet updated
-    const { data: products } = await supabase
+    const { data: products } = await getSupabase()
       .from("faire_products")
       .select("faire_product_id, raw_data, variant_count")
       .eq("store_id", store.id)
@@ -57,7 +59,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ storeI
         }
         await new Promise(r => setTimeout(r, DELAY))
       }
-      await supabase.from("faire_products").update({ total_inventory: TARGET * variants.length }).eq("faire_product_id", product.faire_product_id)
+      await getSupabase().from("faire_products").update({ total_inventory: TARGET * variants.length }).eq("faire_product_id", product.faire_product_id)
     }
 
     return NextResponse.json({

@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+  )
+}
 
 export async function POST() {
   try {
     // Only process positive (incoming) transactions mentioning "FAIRE"
-    const { data: txns } = await supabase
+    const { data: txns } = await getSupabase()
       .from("bank_transactions_v2")
       .select("id, amount_cents, description, reference, transaction_date")
       .eq("is_reconciled", false)
@@ -25,7 +27,7 @@ export async function POST() {
     )
 
     // Get orders already matched (globally) to prevent duplicates
-    const { data: alreadyMatched } = await supabase
+    const { data: alreadyMatched } = await getSupabase()
       .from("bank_transactions_v2")
       .select("matched_order_id")
       .eq("is_reconciled", true)
@@ -33,7 +35,7 @@ export async function POST() {
     const matchedSet = new Set((alreadyMatched ?? []).map(r => r.matched_order_id))
 
     // Get delivered orders
-    const { data: orders } = await supabase
+    const { data: orders } = await getSupabase()
       .from("faire_orders")
       .select("faire_order_id, display_id, total_cents, faire_created_at")
       .eq("state", "DELIVERED")
@@ -75,7 +77,7 @@ export async function POST() {
       )[0]
 
       usedThisRun.add(best.faire_order_id)
-      await supabase.from("bank_transactions_v2")
+      await getSupabase().from("bank_transactions_v2")
         .update({ is_reconciled: true, matched_order_id: best.faire_order_id })
         .eq("id", txn.id)
       autoMatched++

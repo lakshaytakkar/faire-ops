@@ -78,7 +78,8 @@ function syncStatus(lastSynced: string | null): "synced" | "stale" | "never" {
 export default function StoreComparisonPage() {
   const router = useRouter()
   const { activeBrand, stores, storesLoading } = useBrandFilter()
-  const { stats: orderStats, loading: orderStatsLoading } = useOrderStats()
+  const storeFilter = activeBrand === "all" ? undefined : activeBrand
+  const { stats: orderStats, loading: orderStatsLoading } = useOrderStats(storeFilter)
 
   const [period, setPeriod] = useState<PeriodKey>("all")
   const [sortField, setSortField] = useState<SortField>("orders")
@@ -266,7 +267,7 @@ export default function StoreComparisonPage() {
       {/* ---- Stats Row ---- */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {STATS.map((s) => (
-          <div key={s.label} className="rounded-md border bg-card p-5 flex items-start justify-between">
+          <div key={s.label} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
               <p className="text-2xl font-bold font-heading mt-2">{s.value}</p>
@@ -297,7 +298,7 @@ export default function StoreComparisonPage() {
       </div>
 
       {/* ---- Store Performance Table ---- */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="px-5 py-3.5 border-b">
           <h2 className="text-sm font-semibold">Store Performance</h2>
         </div>
@@ -377,7 +378,7 @@ export default function StoreComparisonPage() {
       </div>
 
       {/* ---- Orders Distribution Chart ---- */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="px-5 py-3.5 border-b">
           <h2 className="text-sm font-semibold">Orders by Store</h2>
         </div>
@@ -415,7 +416,7 @@ export default function StoreComparisonPage() {
       </div>
 
       {/* ---- Products Distribution Chart ---- */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="px-5 py-3.5 border-b">
           <h2 className="text-sm font-semibold">Products by Store</h2>
         </div>
@@ -453,7 +454,7 @@ export default function StoreComparisonPage() {
       </div>
 
       {/* ---- Store Health Grid ---- */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="px-5 py-3.5 border-b">
           <h2 className="text-sm font-semibold">Store Health Overview</h2>
         </div>
@@ -462,7 +463,7 @@ export default function StoreComparisonPage() {
             {storeData.map((store) => {
               const status = syncStatus(store.last_synced_at)
               return (
-                <div key={store.id} className="rounded-md border overflow-hidden">
+                <div key={store.id} className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
                   <div className="h-1" style={{ backgroundColor: store.color }} />
                   <div className="p-4 space-y-3">
                     <div className="flex items-center justify-between">
@@ -503,7 +504,7 @@ export default function StoreComparisonPage() {
       </div>
 
       {/* ---- Sync History ---- */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3.5 border-b">
           <div>
             <h2 className="text-sm font-semibold">Sync History</h2>

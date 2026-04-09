@@ -115,7 +115,7 @@ export default function PendingOrdersPage() {
             <div key={i} className="h-28 rounded-md border bg-muted animate-pulse" />
           ))}
         </div>
-        <div className="rounded-md border bg-card p-8 space-y-3">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-8 space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-12 rounded bg-muted animate-pulse" />
           ))}
@@ -132,7 +132,7 @@ export default function PendingOrdersPage() {
           <p className="mt-0.5 text-sm text-muted-foreground">0 orders awaiting action</p>
         </div>
         <div className="flex items-center justify-center py-20">
-          <div className="rounded-md border bg-card p-10 text-center max-w-md">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm p-10 text-center max-w-md">
             <div className="mx-auto h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center mb-4">
               <CheckCircle className="h-6 w-6 text-emerald-600" />
             </div>
@@ -158,7 +158,7 @@ export default function PendingOrdersPage() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Pending Count</p>
             <p className="text-2xl font-bold font-heading mt-2">{pendingCount}</p>
@@ -169,7 +169,7 @@ export default function PendingOrdersPage() {
           </div>
         </div>
 
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Total Pending Value</p>
             <p className="text-2xl font-bold font-heading mt-2">${formatCents(totalValueCents)}</p>
@@ -180,7 +180,7 @@ export default function PendingOrdersPage() {
           </div>
         </div>
 
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Days Since Oldest</p>
             <p className="text-2xl font-bold font-heading mt-2">{daysSinceOldest}d</p>
@@ -191,7 +191,7 @@ export default function PendingOrdersPage() {
           </div>
         </div>
 
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Avg Items per Order</p>
             <p className="text-2xl font-bold font-heading mt-2">{avgItems}</p>
@@ -204,7 +204,7 @@ export default function PendingOrdersPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
           <p className="text-sm font-medium text-foreground">
             {pendingCount} pending {pendingCount === 1 ? "order" : "orders"}

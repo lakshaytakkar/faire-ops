@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { Users, DollarSign, Percent, Building2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { useBrandFilter } from "@/lib/brand-filter-context"
 
 /* ------------------------------------------------------------------ */
 /*  Mock data                                                          */
@@ -29,6 +30,8 @@ const STATUS_BADGE: Record<string, string> = {
 /* ------------------------------------------------------------------ */
 
 export default function FaireDirectPage() {
+  const { activeBrand, activeStore } = useBrandFilter()
+
   type SortKey = "revenue" | "orders"
   type SortDir = "asc" | "desc"
   const [sortKey, setSortKey] = useState<SortKey>("revenue")
@@ -44,8 +47,14 @@ export default function FaireDirectPage() {
     return sortDir === "asc" ? <ArrowUp className="size-3 text-primary ml-1" /> : <ArrowDown className="size-3 text-primary ml-1" />
   }
 
+  // Filter entries by active brand (matching store name)
+  const filteredEntries = useMemo(() => {
+    if (activeBrand === "all" || !activeStore) return FD_ENTRIES
+    return FD_ENTRIES.filter((e) => e.brand === activeStore.name)
+  }, [activeBrand, activeStore])
+
   const sortedEntries = useMemo(() => {
-    return [...FD_ENTRIES].sort((a, b) => {
+    return [...filteredEntries].sort((a, b) => {
       const dir = sortDir === "asc" ? 1 : -1
       switch (sortKey) {
         case "revenue":
@@ -56,9 +65,9 @@ export default function FaireDirectPage() {
           return 0
       }
     })
-  }, [sortKey, sortDir])
+  }, [filteredEntries, sortKey, sortDir])
 
-  const activeEntries = FD_ENTRIES.filter((e) => e.status === "active")
+  const activeEntries = filteredEntries.filter((e) => e.status === "active")
   const fdRetailers = activeEntries.length
   const fdRevenue = activeEntries.reduce((s, e) => s + e.fdRevenue, 0)
   const totalRevenue = 36170 // mock total marketplace revenue
@@ -66,7 +75,7 @@ export default function FaireDirectPage() {
   const brandsWithFd = new Set(activeEntries.map((e) => e.brand)).size
 
   const STATS = [
-    { label: "FD Retailers",  value: String(fdRetailers), trend: `${FD_ENTRIES.length} total invited`, icon: Users,     iconBg: "bg-emerald-50", iconColor: "text-emerald-600" },
+    { label: "FD Retailers",  value: String(fdRetailers), trend: `${filteredEntries.length} total invited`, icon: Users,     iconBg: "bg-emerald-50", iconColor: "text-emerald-600" },
     { label: "FD Revenue",    value: `$${fdRevenue.toLocaleString()}`, trend: "From active FD links",  icon: DollarSign, iconBg: "bg-blue-50",    iconColor: "text-blue-600" },
     { label: "Avg FD %",      value: `${avgFdPct}%`,      trend: "Of total revenue",                  icon: Percent,   iconBg: "bg-purple-50",  iconColor: "text-purple-600" },
     { label: "Brands with FD",value: String(brandsWithFd), trend: "Active FD programs",                icon: Building2, iconBg: "bg-amber-50",   iconColor: "text-amber-600" },
@@ -83,7 +92,7 @@ export default function FaireDirectPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {STATS.map((s) => (
-          <div key={s.label} className="rounded-md border bg-card p-5 flex items-start justify-between">
+          <div key={s.label} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
               <p className="text-2xl font-bold font-heading mt-2">{s.value}</p>
@@ -97,7 +106,7 @@ export default function FaireDirectPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

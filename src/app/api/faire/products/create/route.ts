@@ -2,10 +2,12 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createProduct } from "@/lib/faire-api"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+  )
+}
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +18,7 @@ export async function POST(request: Request) {
     }
 
     // Get store credentials
-    const { data: store } = await supabase
+    const { data: store } = await getSupabase()
       .from("faire_stores")
       .select("oauth_token, app_credentials")
       .eq("id", store_id)

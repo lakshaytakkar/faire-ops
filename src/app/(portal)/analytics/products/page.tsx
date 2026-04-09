@@ -98,8 +98,8 @@ export default function ProductAnalyticsPage() {
   const router = useRouter()
   const { activeBrand, stores, storesLoading } = useBrandFilter()
   const storeFilter = activeBrand === "all" ? undefined : activeBrand
-  const { products, loading: productsLoading } = useProducts(storeFilter)
-  const { orders, loading: ordersLoading } = useOrders(storeFilter)
+  const { products, loading: productsLoading } = useProducts(storeFilter, 200)
+  const { orders, loading: ordersLoading } = useOrders(storeFilter, undefined, 200)
 
   const [sortMode, setSortMode] = useState<SortMode>("orders")
   const [zeroOrdersOpen, setZeroOrdersOpen] = useState(false)
@@ -280,7 +280,7 @@ export default function ProductAnalyticsPage() {
       {/* ---- Stats Row ---- */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {STATS.map((s) => (
-          <div key={s.label} className="rounded-md border bg-card p-5 flex items-start justify-between">
+          <div key={s.label} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
               <p className="text-2xl font-bold font-heading mt-2">{s.value}</p>
@@ -311,7 +311,7 @@ export default function ProductAnalyticsPage() {
       </div>
 
       {/* ---- Bestseller Products Table ---- */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="px-5 py-3.5 border-b">
           <h2 className="text-sm font-semibold">Top Selling Products (by orders)</h2>
         </div>
@@ -395,7 +395,7 @@ export default function ProductAnalyticsPage() {
       </div>
 
       {/* ---- Category Performance ---- */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="px-5 py-3.5 border-b">
           <h2 className="text-sm font-semibold">Performance by Category</h2>
         </div>
@@ -471,7 +471,7 @@ export default function ProductAnalyticsPage() {
       </div>
 
       {/* ---- Zero-Order Products (collapsible) ---- */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <button
           onClick={() => setZeroOrdersOpen((o) => !o)}
           className="w-full flex items-center justify-between px-5 py-3.5 border-b hover:bg-muted/20 transition-colors cursor-pointer"
@@ -567,7 +567,7 @@ export default function ProductAnalyticsPage() {
       </div>
 
       {/* ---- Store-wise Product Performance ---- */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="px-5 py-3.5 border-b">
           <h2 className="text-sm font-semibold">Products per Store</h2>
         </div>

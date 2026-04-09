@@ -187,10 +187,14 @@ export function extractRetailerFromOrder(order: Record<string, unknown>) {
 
 // --- WRITE OPERATIONS ---
 
-async function fairePost(creds: FaireCreds, path: string, body?: unknown): Promise<unknown> {
+async function fairePost(creds: FaireCreds, path: string, body?: unknown, idempotencyToken?: string): Promise<unknown> {
+  const headers: Record<string, string> = makeHeaders(creds) as Record<string, string>
+  if (idempotencyToken) {
+    headers["X-FAIRE-IDEMPOTENCY-TOKEN"] = idempotencyToken
+  }
   const res = await fetch(`${BASE_URL}${path}`, {
     method: "POST",
-    headers: makeHeaders(creds),
+    headers,
     body: body ? JSON.stringify(body) : undefined,
   })
   if (!res.ok) {
@@ -256,8 +260,8 @@ export async function updateVariantInventory(creds: FaireCreds, productId: strin
   })
 }
 
-export async function createProduct(creds: FaireCreds, productData: Record<string, unknown>): Promise<unknown> {
-  return fairePost(creds, "/products", productData)
+export async function createProduct(creds: FaireCreds, productData: Record<string, unknown>, idempotencyToken?: string): Promise<unknown> {
+  return fairePost(creds, "/products", productData, idempotencyToken)
 }
 
 export async function updateProduct(creds: FaireCreds, productId: string, data: Record<string, unknown>): Promise<unknown> {

@@ -1,5 +1,6 @@
 import { TopNavigation } from "@/components/layout/top-navigation"
 import { BrandDock } from "@/components/layout/brand-dock"
+import { WorkspaceDock } from "@/components/layout/workspace-dock"
 import { BrandFilterProvider } from "@/lib/brand-filter-context"
 
 export default function PortalLayout({
@@ -17,6 +18,7 @@ export default function PortalLayout({
             {children}
           </main>
         </div>
+        <WorkspaceDock />
       </div>
     </BrandFilterProvider>
   )

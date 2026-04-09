@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
   CheckCircle2,
   Circle,
@@ -16,6 +16,26 @@ import {
   ArrowUp,
   ArrowDown,
 } from "lucide-react"
+import { supabase } from "@/lib/supabase"
+
+interface DailyReportRow {
+  id: string
+  report_date: string
+  orders_data: { received: number; accepted: number; shipped: number; late: number }
+  catalog_data: { added: number; ready: number; published: number; images: number }
+  outreach_data: { whatsapp: number; email: number; followups: number; faire_direct: number }
+  submitted_by: string
+  submitted_at: string
+}
+
+interface HistoryRow {
+  date: string
+  submittedBy: string
+  orders: number
+  listings: number
+  messages: number
+  time: string
+}
 
 const today = new Date()
 const todayLabel = today.toLocaleDateString("en-US", {
@@ -107,13 +127,7 @@ function getDayStatuses(): number[] {
 /*  Daily Report History                                               */
 /* ------------------------------------------------------------------ */
 
-const HISTORY = [
-  { date: "Apr 2, 2026", submittedBy: "Aditya", orders: 14, listings: 22, messages: 85, time: "5:48pm" },
-  { date: "Apr 1, 2026", submittedBy: "Bharti", orders: 18, listings: 31, messages: 92, time: "6:02pm" },
-  { date: "Mar 31, 2026", submittedBy: "Allen", orders: 11, listings: 19, messages: 78, time: "5:31pm" },
-  { date: "Mar 28, 2026", submittedBy: "Aditya", orders: 21, listings: 27, messages: 103, time: "5:55pm" },
-  { date: "Mar 27, 2026", submittedBy: "Bharti", orders: 16, listings: 24, messages: 88, time: "6:10pm" },
-]
+/* HISTORY is now fetched dynamically from Supabase — see fetchHistory below */
 
 /* ------------------------------------------------------------------ */
 /*  Shared components                                                  */
@@ -178,6 +192,35 @@ export default function DayClosePage() {
   const [submittedTime, setSubmittedTime] = useState("")
   const [sortKey, setSortKey] = useState("date")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
+  const [history, setHistory] = useState<HistoryRow[]>([])
+  const [historyLoading, setHistoryLoading] = useState(true)
+
+  const fetchHistory = useCallback(async () => {
+    setHistoryLoading(true)
+    const { data, error } = await supabase
+      .from("daily_reports")
+      .select("*")
+      .order("report_date", { ascending: false })
+      .limit(14)
+    if (error) {
+      console.error("fetchHistory error:", error)
+      setHistory([])
+    } else {
+      setHistory(
+        (data as DailyReportRow[]).map((row) => ({
+          date: new Date(row.report_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+          submittedBy: row.submitted_by,
+          orders: row.orders_data.received,
+          listings: row.catalog_data.added,
+          messages: (row.outreach_data.whatsapp ?? 0) + (row.outreach_data.email ?? 0),
+          time: new Date(row.submitted_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase(),
+        }))
+      )
+    }
+    setHistoryLoading(false)
+  }, [])
+
+  useEffect(() => { fetchHistory() }, [fetchHistory])
 
   // Metrics
   const [ordersReceived, setOrdersReceived] = useState(0)
@@ -216,11 +259,27 @@ export default function DayClosePage() {
     setClosed(true)
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const now = new Date()
     const timeStr = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase()
+
+    const { error } = await supabase.from("daily_reports").insert({
+      report_date: now.toISOString().slice(0, 10),
+      orders_data: { received: ordersReceived, accepted: ordersAccepted, shipped: ordersShipped, late: lateOrdersActioned },
+      catalog_data: { added: newListings, ready: movedToReady, published: publishedToFaire, images: imagesProcessed },
+      outreach_data: { whatsapp: whatsappSent, email: emailCampaigns, followups: followUpsCreated, faire_direct: faireDirectInvites },
+      submitted_by: "Current User",
+      submitted_at: now.toISOString(),
+    })
+
+    if (error) {
+      console.error("Submit error:", error)
+      return
+    }
+
     setSubmittedTime(timeStr)
     setSubmitted(true)
+    fetchHistory()
   }
 
   function toggleSort(key: string) {
@@ -287,7 +346,7 @@ export default function DayClosePage() {
       {activeTab === "checklist" && (
         <>
           {/* Progress bar */}
-          <div className="rounded-md border bg-card p-5">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-muted-foreground">
                 Checklist progress: {checkedCount} of {TOTAL_ITEMS} items
@@ -308,7 +367,7 @@ export default function DayClosePage() {
               const Icon = section.icon
               const sectionChecked = section.items.filter((item) => checked.has(`${section.title}-${item}`)).length
               return (
-                <div key={section.title} className="rounded-md border bg-card overflow-hidden">
+                <div key={section.title} className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
                   <div className="flex items-center justify-between border-b px-5 py-3.5">
                     <div className="flex items-center gap-2">
                       <Icon className="h-4 w-4 text-muted-foreground" />
@@ -374,7 +433,7 @@ export default function DayClosePage() {
           )}
 
           {/* Calendar History */}
-          <div className="rounded-md border bg-card overflow-hidden">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
             <div className="flex items-center justify-between border-b px-5 py-3.5">
               <h2 className="text-sm font-semibold flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
@@ -432,7 +491,7 @@ export default function DayClosePage() {
           {/* Form Section Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Orders */}
-            <div className="rounded-md border bg-card overflow-hidden">
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
               <div className="flex items-center justify-between border-b px-5 py-3.5">
                 <div className="flex items-center gap-2">
                   <ShoppingCart className="h-4 w-4 text-muted-foreground" />
@@ -450,7 +509,7 @@ export default function DayClosePage() {
             </div>
 
             {/* Catalog */}
-            <div className="rounded-md border bg-card overflow-hidden">
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
               <div className="flex items-center justify-between border-b px-5 py-3.5">
                 <div className="flex items-center gap-2">
                   <Layers className="h-4 w-4 text-muted-foreground" />
@@ -468,7 +527,7 @@ export default function DayClosePage() {
             </div>
 
             {/* Outreach */}
-            <div className="rounded-md border bg-card overflow-hidden">
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
               <div className="flex items-center justify-between border-b px-5 py-3.5">
                 <div className="flex items-center gap-2">
                   <MessageSquare className="h-4 w-4 text-muted-foreground" />
@@ -486,7 +545,7 @@ export default function DayClosePage() {
             </div>
 
             {/* Summary */}
-            <div className="rounded-md border bg-card overflow-hidden">
+            <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
               <div className="flex items-center justify-between border-b px-5 py-3.5">
                 <div className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -551,7 +610,7 @@ export default function DayClosePage() {
           </div>
 
           {/* History Table */}
-          <div className="rounded-md border bg-card overflow-hidden">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
             <div className="border-b px-5 py-3.5">
               <h2 className="text-sm font-semibold flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
@@ -571,7 +630,11 @@ export default function DayClosePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {[...HISTORY].sort((a, b) => {
+                  {historyLoading ? (
+                    <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">Loading...</td></tr>
+                  ) : history.length === 0 ? (
+                    <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">No reports yet</td></tr>
+                  ) : [...history].sort((a, b) => {
                     const dir = sortDir === "asc" ? 1 : -1
                     if (sortKey === "date") return (new Date(a.date).getTime() - new Date(b.date).getTime()) * dir
                     if (sortKey === "orders") return (a.orders - b.orders) * dir

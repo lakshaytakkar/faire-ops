@@ -1,5 +1,10 @@
-import { redirect } from "next/navigation"
+"use client"
 
-export default function AIToolsIndexPage() {
-  redirect("/workspace/ai-tools/all")
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+
+export default function RedirectPage() {
+  const router = useRouter()
+  useEffect(() => { router.replace("/workspace/ai-tools/all") }, [router])
+  return null
 }

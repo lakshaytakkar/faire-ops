@@ -357,7 +357,7 @@ export default function NotificationsPage() {
         {statCards.map((stat) => {
           const Icon = stat.icon
           return (
-            <div key={stat.label} className="rounded-md border bg-card p-5 flex items-start justify-between">
+            <div key={stat.label} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
                 <p className="text-2xl font-bold font-heading mt-2">{stat.value}</p>
@@ -377,13 +377,13 @@ export default function NotificationsPage() {
           Active Notification Rules
         </h2>
         {automations.length === 0 ? (
-          <div className="rounded-md border bg-card p-8 text-center text-sm text-muted-foreground">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm p-8 text-center text-sm text-muted-foreground">
             No notification automations configured yet.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {automations.map((auto) => (
-              <div key={auto.id} className="rounded-md border bg-card p-5 space-y-3">
+              <div key={auto.id} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <h3 className="text-sm font-semibold">{auto.name}</h3>
@@ -460,7 +460,7 @@ export default function NotificationsPage() {
       </div>
 
       {/* Section 2: Scheduled Emails */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CalendarClock className="size-4 text-blue-500" />
@@ -538,7 +538,7 @@ export default function NotificationsPage() {
         <div className="grid grid-cols-3 gap-4">
           <button
             onClick={() => setShowQuickSend(true)}
-            className="rounded-md border bg-card p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors text-left"
+            className="rounded-lg border border-border/80 bg-card shadow-sm p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors text-left"
           >
             <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <Send className="size-4" />
@@ -551,7 +551,7 @@ export default function NotificationsPage() {
           </button>
           <Link
             href="/workspace/emails/templates"
-            className="rounded-md border bg-card p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors"
+            className="rounded-lg border border-border/80 bg-card shadow-sm p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors"
           >
             <div className="h-9 w-9 rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <FileText className="size-4" />
@@ -564,7 +564,7 @@ export default function NotificationsPage() {
           </Link>
           <Link
             href="/workspace/emails/logs"
-            className="rounded-md border bg-card p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors"
+            className="rounded-lg border border-border/80 bg-card shadow-sm p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors"
           >
             <div className="h-9 w-9 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400 flex items-center justify-center shrink-0">
               <Mail className="size-4" />

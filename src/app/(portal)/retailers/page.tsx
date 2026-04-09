@@ -1,2 +1,10 @@
-import { redirect } from "next/navigation"
-export default function Page() { redirect("/retailers/directory") }
+"use client"
+
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+
+export default function RedirectPage() {
+  const router = useRouter()
+  useEffect(() => { router.replace("/retailers/directory") }, [router])
+  return null
+}

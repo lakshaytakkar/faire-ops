@@ -3,20 +3,20 @@
 import { useEffect, useState, useCallback } from "react"
 import {
   Zap,
-  Server,
+  Activity,
+  Clock,
+  AlertTriangle,
+  Play,
+  Loader2,
+  CheckCircle2,
+  RefreshCw,
   Bell,
   Plug,
-  Play,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Loader2,
-  Activity,
-  AlertTriangle,
+  Mail,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -43,9 +43,9 @@ interface Automation {
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-function timeAgo(dateStr: string | null): string {
-  if (!dateStr) return "Never"
-  const diff = Date.now() - new Date(dateStr).getTime()
+function timeAgo(date: string | null): string {
+  if (!date) return "Never"
+  const diff = Date.now() - new Date(date).getTime()
   const mins = Math.floor(diff / 60000)
   if (mins < 1) return "Just now"
   if (mins < 60) return `${mins}m ago`
@@ -53,143 +53,51 @@ function timeAgo(dateStr: string | null): string {
   if (hrs < 24) return `${hrs}h ago`
   const days = Math.floor(hrs / 24)
   if (days < 7) return `${days}d ago`
-  return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
-function cronLabel(cron: string | null): string {
-  if (!cron) return "Manual"
-  if (cron.includes("*/5")) return "Every 5m"
-  if (cron.includes("*/15")) return "Every 15m"
-  if (cron.includes("*/30")) return "Every 30m"
-  if (cron === "0 * * * *") return "Every hour"
-  if (cron === "0 */2 * * *") return "Every 2h"
-  if (cron === "0 */4 * * *") return "Every 4h"
-  if (cron === "0 */6 * * *") return "Every 6h"
-  if (cron === "0 */12 * * *") return "Every 12h"
-  if (cron === "0 0 * * *") return "Daily"
-  if (cron === "0 9 * * *") return "Daily 9am"
-  if (cron === "0 9 * * 1") return "Mon 9am"
-  if (cron === "0 8 * * 1-5") return "Weekdays 8am"
-  return cron
-}
+function humanCron(expr: string | null): string {
+  if (!expr) return "Manual"
+  const parts = expr.trim().split(/\s+/)
+  if (parts.length < 5) return expr
 
-function StatusDot({ status }: { status: string | null }) {
-  if (status === "success") return <span className="size-2 shrink-0 rounded-full bg-emerald-500" />
-  if (status === "failed") return <span className="size-2 shrink-0 rounded-full bg-red-500" />
-  if (status === "running") return <span className="size-2 shrink-0 rounded-full bg-amber-500 animate-pulse" />
-  return <span className="size-2 shrink-0 rounded-full bg-gray-300" />
-}
+  const [min, hour, dom, , dow] = parts
 
-function TriggerBadge({ triggerType, cron }: { triggerType: string; cron: string | null }) {
-  if (triggerType === "cron") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700">
-        {cronLabel(cron)}
-      </span>
-    )
+  // Every N minutes
+  if (min.startsWith("*/")) {
+    const n = min.slice(2)
+    return `Every ${n} minutes`
   }
-  if (triggerType === "event") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
-        On event
-      </span>
-    )
+
+  // Every hour at :MM
+  if (hour === "*" && !min.startsWith("*")) {
+    return min === "0" ? "Every hour" : `Every hour at :${min.padStart(2, "0")}`
   }
-  return (
-    <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
-      Manual
-    </span>
-  )
-}
 
-/* ------------------------------------------------------------------ */
-/*  Category Card                                                      */
-/* ------------------------------------------------------------------ */
+  // Every N hours
+  if (hour.startsWith("*/")) {
+    const n = hour.slice(2)
+    return `Every ${n} hours`
+  }
 
-function CategoryCard({
-  title,
-  description,
-  icon: Icon,
-  automations,
-  onToggle,
-  onRun,
-  runningIds,
-}: {
-  title: string
-  description: string
-  icon: React.ElementType
-  automations: Automation[]
-  onToggle: (id: string, active: boolean) => void
-  onRun: (automation: Automation) => void
-  runningIds: Set<string>
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
-            <Icon className="size-4 text-primary" />
-          </div>
-          <div>
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="px-0">
-        {automations.length === 0 && (
-          <p className="px-4 text-xs text-muted-foreground">No automations in this category.</p>
-        )}
-        {automations.map((a) => (
-          <div key={a.id} className="flex items-center justify-between border-b px-4 py-3 last:border-b-0">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <StatusDot status={a.last_status} />
-                <span className="text-sm font-medium truncate">{a.name}</span>
-              </div>
-              {a.description && (
-                <p className="mt-0.5 text-xs text-muted-foreground truncate pl-4">{a.description}</p>
-              )}
-              <div className="mt-1 flex items-center gap-2 pl-4">
-                <TriggerBadge triggerType={a.trigger_type} cron={a.cron_expression} />
-                {a.last_run_at && (
-                  <span className="text-[10px] text-muted-foreground">{timeAgo(a.last_run_at)}</span>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0 ml-3">
-              {/* Active toggle */}
-              <button
-                onClick={() => onToggle(a.id, !a.is_active)}
-                className="relative flex h-5 w-9 cursor-pointer items-center rounded-full transition-colors"
-                style={{ backgroundColor: a.is_active ? "var(--color-primary)" : "var(--color-muted)" }}
-                title={a.is_active ? "Active" : "Inactive"}
-              >
-                <span
-                  className="absolute size-3.5 rounded-full bg-white shadow-sm transition-transform"
-                  style={{ transform: a.is_active ? "translateX(17px)" : "translateX(3px)" }}
-                />
-              </button>
-              {/* Run button */}
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                onClick={() => onRun(a)}
-                disabled={runningIds.has(a.id)}
-                title="Run Now"
-              >
-                {runningIds.has(a.id) ? (
-                  <Loader2 className="size-3 animate-spin" />
-                ) : (
-                  <Play className="size-3" />
-                )}
-              </Button>
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  )
+  // Specific hour
+  if (hour !== "*" && !hour.includes("/")) {
+    const h = parseInt(hour, 10)
+    const period = h >= 12 ? "pm" : "am"
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h
+
+    // Weekdays
+    if (dow === "1-5") return `Weekdays at ${h12}${period}`
+    // Specific day
+    const dayNames: Record<string, string> = { "0": "Sun", "1": "Mon", "2": "Tue", "3": "Wed", "4": "Thu", "5": "Fri", "6": "Sat", "7": "Sun" }
+    if (dow !== "*" && dayNames[dow]) return `${dayNames[dow]} at ${h12}${period}`
+    // Specific day of month
+    if (dom !== "*") return `Day ${dom} at ${h12}${period}`
+    // Daily
+    return `Every day at ${h12}${period}`
+  }
+
+  return expr
 }
 
 /* ------------------------------------------------------------------ */
@@ -215,13 +123,11 @@ export default function AutomationsPage() {
 
   useEffect(() => { fetchAutomations() }, [fetchAutomations])
 
-  // Show toast then auto-dismiss
   function showToast(msg: string) {
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
   }
 
-  // Toggle active state
   async function handleToggle(id: string, active: boolean) {
     const { error } = await supabase.from("automations").update({ is_active: active }).eq("id", id)
     if (error) {
@@ -233,7 +139,6 @@ export default function AutomationsPage() {
     showToast(active ? "Automation enabled" : "Automation disabled")
   }
 
-  // Run automation
   async function handleRun(automation: Automation) {
     setRunningIds((prev) => new Set(prev).add(automation.id))
     try {
@@ -241,7 +146,6 @@ export default function AutomationsPage() {
       if (endpoint) {
         await fetch(endpoint, { method: "POST" }).catch(() => {})
       }
-      // Log the run
       await supabase.from("automation_runs").insert({
         automation_id: automation.id,
         status: "success",
@@ -250,7 +154,6 @@ export default function AutomationsPage() {
         duration_ms: 0,
         triggered_by: "manual",
       })
-      // Update last_run_at
       await supabase.from("automations").update({
         last_run_at: new Date().toISOString(),
         last_status: "success",
@@ -269,25 +172,67 @@ export default function AutomationsPage() {
     }
   }
 
-  // Stats
+  /* Stats */
   const total = automations.length
   const active = automations.filter((a) => a.is_active).length
-  const failed = automations.filter((a) => a.last_status === "failed").length
-  const lastRun = automations
+  const lastRunEntry = automations
     .filter((a) => a.last_run_at)
     .sort((a, b) => new Date(b.last_run_at!).getTime() - new Date(a.last_run_at!).getTime())[0]
+  const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000
+  const failed24h = automations.filter(
+    (a) => a.last_status === "failed" && a.last_run_at && new Date(a.last_run_at).getTime() > twentyFourHoursAgo
+  ).length
 
-  // Group by category
-  const background = automations.filter((a) => a.category === "background")
-  const notifications = automations.filter((a) => a.category === "notification")
-  const integrations = automations.filter((a) => a.category === "integration")
+  /* Type icon for Name column */
+  const typeIcon = (type: string) => {
+    switch (type) {
+      case "sync":
+        return { Icon: RefreshCw, bg: "bg-blue-50", color: "text-blue-600" }
+      case "notification":
+        return { Icon: Bell, bg: "bg-amber-50", color: "text-amber-600" }
+      case "integration":
+        return { Icon: Plug, bg: "bg-purple-50", color: "text-purple-600" }
+      case "email":
+        return { Icon: Mail, bg: "bg-red-50", color: "text-red-600" }
+      default:
+        return { Icon: Zap, bg: "bg-muted", color: "text-muted-foreground" }
+    }
+  }
+
+  /* Type badge styles */
+  const typeBadge = (type: string) => {
+    switch (type) {
+      case "sync":
+        return "bg-blue-50 text-blue-700"
+      case "notification":
+        return "bg-amber-50 text-amber-700"
+      case "integration":
+        return "bg-purple-50 text-purple-700"
+      default:
+        return "bg-muted text-muted-foreground"
+    }
+  }
+
+  /* Status badge styles */
+  const statusBadge = (status: string | null) => {
+    switch (status) {
+      case "success":
+        return "bg-emerald-50 text-emerald-700"
+      case "failed":
+        return "bg-red-50 text-red-700"
+      case "running":
+        return "bg-blue-50 text-blue-700"
+      default:
+        return "bg-muted text-muted-foreground"
+    }
+  }
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Automations</h1>
-        <p className="text-sm text-muted-foreground">Manage background tasks, notifications, and integrations</p>
+        <h1 className="text-2xl font-bold font-heading text-foreground">Automations</h1>
+        <p className="text-sm text-muted-foreground">Manage automated workflows and scheduled tasks</p>
       </div>
 
       {/* Stats */}
@@ -298,7 +243,7 @@ export default function AutomationsPage() {
               <Zap className="size-4 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="text-xs text-muted-foreground">Total Automations</p>
               <p className="text-xl font-bold">{loading ? "-" : total}</p>
             </div>
           </CardContent>
@@ -321,7 +266,7 @@ export default function AutomationsPage() {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Last Run</p>
-              <p className="text-sm font-semibold">{loading ? "-" : lastRun ? timeAgo(lastRun.last_run_at) : "Never"}</p>
+              <p className="text-sm font-semibold">{loading ? "-" : lastRunEntry ? timeAgo(lastRunEntry.last_run_at) : "Never"}</p>
             </div>
           </CardContent>
         </Card>
@@ -331,50 +276,121 @@ export default function AutomationsPage() {
               <AlertTriangle className="size-4 text-red-600" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Failed</p>
-              <p className="text-xl font-bold">{loading ? "-" : failed}</p>
+              <p className="text-xs text-muted-foreground">Failed (24h)</p>
+              <p className="text-xl font-bold">{loading ? "-" : failed24h}</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Loading state */}
-      {loading && (
+      {/* Table */}
+      {loading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
-      )}
-
-      {/* Category Cards */}
-      {!loading && (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <CategoryCard
-            title="Background Tasks"
-            description="Scheduled jobs and processors"
-            icon={Server}
-            automations={background}
-            onToggle={handleToggle}
-            onRun={handleRun}
-            runningIds={runningIds}
-          />
-          <CategoryCard
-            title="Notifications"
-            description="Email and alert automations"
-            icon={Bell}
-            automations={notifications}
-            onToggle={handleToggle}
-            onRun={handleRun}
-            runningIds={runningIds}
-          />
-          <CategoryCard
-            title="Integrations"
-            description="Sync with external services"
-            icon={Plug}
-            automations={integrations}
-            onToggle={handleToggle}
-            onRun={handleRun}
-            runningIds={runningIds}
-          />
+      ) : (
+        <div className="rounded-lg border bg-card overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b bg-muted/40">
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground tracking-wide uppercase text-left">Name</th>
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground tracking-wide uppercase text-left">Type</th>
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground tracking-wide uppercase text-left">Schedule</th>
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground tracking-wide uppercase text-left">Status</th>
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground tracking-wide uppercase text-left">Last Run</th>
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground tracking-wide uppercase text-left">Last Status</th>
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground tracking-wide uppercase text-right">Run Count</th>
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground tracking-wide uppercase text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {automations.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                    No automations found
+                  </td>
+                </tr>
+              ) : automations.map((a) => (
+                <tr key={a.id} className="border-b last:border-b-0 hover:bg-muted/20 transition-colors">
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center gap-3">
+                      {(() => {
+                        const { Icon, bg, color } = typeIcon(a.type)
+                        return (
+                          <div className={`flex size-8 shrink-0 items-center justify-center rounded-full ${bg}`}>
+                            <Icon className={`size-4 ${color}`} />
+                          </div>
+                        )
+                      })()}
+                      <div>
+                        <div className="text-sm font-medium">{a.name}</div>
+                        {a.description && (
+                          <div className="text-xs text-muted-foreground truncate max-w-[240px]">{a.description}</div>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${typeBadge(a.type)}`}>
+                      {a.type}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3.5 text-sm text-muted-foreground">
+                    {humanCron(a.cron_expression)}
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <span className="flex items-center gap-2 text-sm">
+                      <span className={`size-2 shrink-0 rounded-full ${a.is_active ? "bg-emerald-500" : "bg-gray-300"}`} />
+                      {a.is_active ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3.5 text-sm text-muted-foreground">
+                    {timeAgo(a.last_run_at)}
+                  </td>
+                  <td className="px-4 py-3.5">
+                    {a.last_status ? (
+                      <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${statusBadge(a.last_status)}`}>
+                        {a.last_status}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">-</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3.5 text-sm text-right tabular-nums">
+                    {a.run_count}
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        onClick={() => handleRun(a)}
+                        disabled={runningIds.has(a.id)}
+                        title="Run Now"
+                      >
+                        {runningIds.has(a.id) ? (
+                          <Loader2 className="size-3 animate-spin" />
+                        ) : (
+                          <Play className="size-3" />
+                        )}
+                      </Button>
+                      <button
+                        onClick={() => handleToggle(a.id, !a.is_active)}
+                        className="relative flex h-5 w-9 cursor-pointer items-center rounded-full transition-colors"
+                        style={{ backgroundColor: a.is_active ? "var(--color-primary)" : "var(--color-muted)" }}
+                        title={a.is_active ? "Disable" : "Enable"}
+                      >
+                        <span
+                          className="absolute size-3.5 rounded-full bg-white shadow-sm transition-transform"
+                          style={{ transform: a.is_active ? "translateX(17px)" : "translateX(3px)" }}
+                        />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

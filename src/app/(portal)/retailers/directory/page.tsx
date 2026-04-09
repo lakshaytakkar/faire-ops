@@ -422,8 +422,10 @@ function BulkEnrichModal({ open, onClose, retailers, onSaved }: {
 
 export default function RetailersDirectoryPage() {
   const router = useRouter()
-  const { activeBrand, stores } = useBrandFilter()
-  const { retailers, totalCount, loading } = useRetailers()
+  const { activeBrand, stores, activeStore } = useBrandFilter()
+  // When a brand is selected, filter retailers server-side by faire_store_id
+  const activeFaireStoreId = activeStore?.faire_store_id
+  const { retailers, totalCount, loading } = useRetailers(5000, activeFaireStoreId)
 
   // State
   const [searchQuery, setSearchQuery] = useState("")
@@ -453,11 +455,17 @@ export default function RetailersDirectoryPage() {
   const filtered = useMemo(() => {
     let result = retailersWithStatus
 
-    // Brand filter (store)
+    // Brand filter (store) — store_ids contains faire_store_id values, not UUIDs,
+    // so we must resolve the UUID to the faire_store_id before filtering.
     if (storeFilter !== "all") {
-      result = result.filter((r) => r.store_ids && r.store_ids.includes(storeFilter))
-    } else if (activeBrand !== "all") {
-      result = result.filter((r) => r.store_ids && r.store_ids.includes(activeBrand))
+      const storeObj = stores.find((s) => s.id === storeFilter)
+      const faireStoreId = storeObj?.faire_store_id
+      if (faireStoreId) {
+        result = result.filter((r) => r.store_ids && r.store_ids.includes(faireStoreId))
+      }
+    } else if (activeBrand !== "all" && activeStore) {
+      const faireStoreId = activeStore.faire_store_id
+      result = result.filter((r) => r.store_ids && r.store_ids.includes(faireStoreId))
     }
 
     // Status filter
@@ -621,7 +629,7 @@ export default function RetailersDirectoryPage() {
       {/* Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {STAT_CARDS.map((s) => (
-          <div key={s.label} className="rounded-md border bg-card p-5 flex items-start justify-between">
+          <div key={s.label} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
               <p className="text-2xl font-bold font-heading mt-2">{s.value}</p>
@@ -706,7 +714,7 @@ export default function RetailersDirectoryPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

@@ -197,27 +197,27 @@ export default function FinanceDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="rounded-md border bg-card p-4">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4">
           <p className="text-xs text-muted-foreground">USD Balance</p>
           <p className="text-xl font-bold mt-1">{fmtMoney(usdBalance)}</p>
         </div>
-        <div className="rounded-md border bg-card p-4">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4">
           <p className="text-xs text-muted-foreground">Total Balance (USD equiv.)</p>
           <p className="text-xl font-bold mt-1">{fmtMoney(totalBalanceUSD)}</p>
         </div>
-        <div className="rounded-md border bg-card p-4">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4">
           <p className="text-xs text-muted-foreground">Reconciled</p>
           <p className="text-xl font-bold mt-1 text-emerald-600">{reconciledPct}%</p>
           <p className="text-xs text-muted-foreground">{reconciledCount}/{totalCount}</p>
         </div>
-        <div className="rounded-md border bg-card p-4">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4">
           <p className="text-xs text-muted-foreground">Pending Review</p>
           <p className="text-xl font-bold mt-1 text-amber-600">{unreconciledCount}</p>
         </div>
       </div>
 
       {/* Accounts */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-4 py-2.5 border-b bg-muted/40">
           <h3 className="text-sm font-semibold">Accounts</h3>
           <span className="text-xs text-muted-foreground">{accounts.length} account{accounts.length !== 1 ? "s" : ""}</span>
@@ -248,7 +248,7 @@ export default function FinanceDashboard() {
       </div>
 
       {/* Recent Transactions */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-4 py-2.5 border-b bg-muted/40">
           <h3 className="text-sm font-semibold">Recent Transactions</h3>
           <Link href="/finance/banking/transactions" className="text-xs font-medium text-primary hover:underline">View All &rarr;</Link>
@@ -296,7 +296,7 @@ export default function FinanceDashboard() {
       </div>
 
       {/* Reconciliation Summary */}
-      <div className="rounded-md border bg-card p-4">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold">Reconciliation</h3>
           <Link href="/finance/banking/reconciliation" className="text-xs font-medium text-primary hover:underline">View &rarr;</Link>

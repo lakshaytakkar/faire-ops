@@ -37,7 +37,7 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Profile Card */}
         <div className="lg:col-span-1">
-          <div className="rounded-md border bg-card p-6 text-center">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm p-6 text-center">
             <div className="h-16 w-16 rounded-full bg-primary text-white text-xl font-bold flex items-center justify-center mx-auto">
               LK
             </div>
@@ -61,7 +61,7 @@ export default function SettingsPage() {
         {/* Right Column - Business Info + Preferences */}
         <div className="lg:col-span-2 space-y-6">
           {/* Business Information */}
-          <div className="rounded-md border bg-card overflow-hidden">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
             <div className="flex items-center justify-between border-b px-5 py-3.5">
               <h3 className="text-sm font-semibold">Business Information</h3>
               <Button variant="outline" size="sm">Edit</Button>
@@ -79,7 +79,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Preferences */}
-          <div className="rounded-md border bg-card overflow-hidden">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
             <div className="flex items-center justify-between border-b px-5 py-3.5">
               <h3 className="text-sm font-semibold">Preferences</h3>
             </div>

@@ -8,10 +8,12 @@ import {
   isWiseConfigured,
 } from "@/lib/wise-api"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+  )
+}
 
 export async function POST() {
   try {
@@ -53,7 +55,7 @@ export async function POST() {
       const name = `Wise ${balance.currency}`
       const balanceCents = Math.round(balance.amount.value * 100)
 
-      const { data: existing } = await supabase
+      const { data: existing } = await getSupabase()
         .from("bank_accounts")
         .select("id")
         .eq("name", name)
@@ -61,13 +63,13 @@ export async function POST() {
 
       let accountId: string
       if (existing) {
-        await supabase
+        await getSupabase()
           .from("bank_accounts")
           .update({ balance_cents: balanceCents, last_synced_at: new Date().toISOString() })
           .eq("id", existing.id)
         accountId = existing.id
       } else {
-        const { data: inserted } = await supabase
+        const { data: inserted } = await getSupabase()
           .from("bank_accounts")
           .insert({
             name,
@@ -111,12 +113,12 @@ export async function POST() {
         // Upsert by reference to avoid duplicates
         for (const row of txnRows) {
           if (row.reference) {
-            await supabase
+            await getSupabase()
               .from("bank_transactions_v2")
               .upsert(row, { onConflict: "id" })
               .select()
           } else {
-            await supabase.from("bank_transactions_v2").insert(row)
+            await getSupabase().from("bank_transactions_v2").insert(row)
           }
           results.transactions_synced++
         }

@@ -1,105 +1,28 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   ShoppingCart,
   Package,
   Inbox,
 } from "lucide-react"
+import { supabase } from "@/lib/supabase"
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type NotificationType = "order" | "system" | "mention" | "alert"
-
 interface Notification {
   id: string
-  type: NotificationType
+  type: string
   title: string
   description: string
-  timestamp: string
-  read: boolean
-  icon: "ShoppingCart" | "AlertTriangle" | "Bell" | "Users" | "Package" | "TrendingUp" | "MessageCircle"
+  category?: string
+  created_at: string
+  is_read: boolean
   link?: string
+  store_id?: string
 }
-
-// ---------------------------------------------------------------------------
-// Order notifications subset
-// ---------------------------------------------------------------------------
-
-const INITIAL_NOTIFICATIONS: Notification[] = [
-  {
-    id: "n1",
-    type: "order",
-    title: "New order from Twilight House",
-    description: "Order #TH-4491 placed for 12 units across 3 SKUs. Review and confirm shipment.",
-    timestamp: "5 min ago",
-    read: false,
-    icon: "ShoppingCart",
-    link: "/orders/TH-4491",
-  },
-  {
-    id: "n5",
-    type: "order",
-    title: "Order VXTKE5DRYW shipped",
-    description: "Shipment confirmed via FedEx Ground. Tracking number provided to retailer.",
-    timestamp: "1 hour ago",
-    read: false,
-    icon: "Package",
-    link: "/orders/VXTKE5DRYW",
-  },
-  {
-    id: "n7",
-    type: "order",
-    title: "Order accepted for Enchanted Shire",
-    description: "Retailer Bloom & Vine accepted order #ES-2287. Prepare for shipment within 3 days.",
-    timestamp: "2 hours ago",
-    read: false,
-    icon: "ShoppingCart",
-    link: "/orders/ES-2287",
-  },
-  {
-    id: "n10",
-    type: "order",
-    title: "Return requested by Coast & Craft",
-    description: "Return request for order #CC-1893 — 3 items, reason: damaged in transit.",
-    timestamp: "5 hours ago",
-    read: false,
-    icon: "ShoppingCart",
-    link: "/orders/CC-1893",
-  },
-  {
-    id: "n12",
-    type: "order",
-    title: "Bulk order inquiry from Meadow & Stone",
-    description: "Retailer is interested in a 200-unit wholesale order for Q3. Respond with pricing.",
-    timestamp: "8 hours ago",
-    read: true,
-    icon: "ShoppingCart",
-    link: "/orders/inquiry/MS-001",
-  },
-  {
-    id: "n15",
-    type: "order",
-    title: "Order #TN-7812 delivered",
-    description: "All 8 items confirmed delivered to Sunshine Home Goods. No issues reported.",
-    timestamp: "Yesterday",
-    read: true,
-    icon: "Package",
-    link: "/orders/TN-7812",
-  },
-  {
-    id: "n18",
-    type: "order",
-    title: "Reorder from The Craft Collective",
-    description: "Repeat order #CC-3021 for top-selling items. Auto-confirmed based on existing terms.",
-    timestamp: "2 days ago",
-    read: true,
-    icon: "ShoppingCart",
-    link: "/orders/CC-3021",
-  },
-]
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -112,15 +35,66 @@ const ICON_MAP: Record<string, typeof ShoppingCart> = {
 
 const STYLE = { bg: "bg-blue-50", text: "text-blue-600" }
 
+function formatTimestamp(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMin = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMin < 1) return "Just now"
+  if (diffMin < 60) return `${diffMin} min ago`
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`
+  if (diffDays === 1) return "Yesterday"
+  return `${diffDays} days ago`
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export default function OrderNotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [loading, setLoading] = useState(true)
 
-  function toggleRead(id: string) {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n)))
+  useEffect(() => {
+    async function fetchNotifications() {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("type", "order")
+        .order("created_at", { ascending: false })
+        .limit(50)
+      if (!error && data) {
+        setNotifications(data as Notification[])
+      }
+      setLoading(false)
+    }
+    fetchNotifications()
+  }, [])
+
+  async function toggleRead(id: string) {
+    const notification = notifications.find((n) => n.id === id)
+    if (!notification) return
+    const newReadState = !notification.is_read
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: newReadState })
+      .eq("id", id)
+    if (!error) {
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: newReadState } : n))
+      )
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="max-w-[1440px] mx-auto w-full py-10 text-center text-sm text-muted-foreground">
+        Loading order notifications...
+      </div>
+    )
   }
 
   return (
@@ -145,7 +119,6 @@ export default function OrderNotificationsPage() {
           </div>
         ) : (
           notifications.map((n) => {
-            const IconComp = ICON_MAP[n.icon] ?? ShoppingCart
             return (
               <div
                 key={n.id}
@@ -154,19 +127,19 @@ export default function OrderNotificationsPage() {
               >
                 {/* Icon */}
                 <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${STYLE.bg} ${STYLE.text}`}>
-                  <IconComp className="h-4 w-4" />
+                  <ShoppingCart className="h-4 w-4" />
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium ${!n.read ? "font-semibold" : ""}`}>{n.title}</p>
+                  <p className={`text-sm font-medium ${!n.is_read ? "font-semibold" : ""}`}>{n.title}</p>
                   <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{n.description}</p>
                 </div>
 
                 {/* Right */}
                 <div className="flex flex-col items-end shrink-0">
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">{n.timestamp}</span>
-                  {!n.read && <span className="w-2 h-2 rounded-full bg-primary mt-1" />}
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{formatTimestamp(n.created_at)}</span>
+                  {!n.is_read && <span className="w-2 h-2 rounded-full bg-primary mt-1" />}
                 </div>
               </div>
             )

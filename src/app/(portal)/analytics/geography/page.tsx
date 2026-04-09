@@ -204,28 +204,16 @@ export default function GeographyAnalyticsPage() {
   const [citySortDir, setCitySortDir] = useState<SortDirection>("desc")
   const [cityPage, setCityPage] = useState(0)
 
-  /* ---- Fetch all orders with batching ---- */
+  /* ---- Fetch orders (limited for performance) ---- */
   useEffect(() => {
     async function fetchAll() {
       setLoading(true)
-      const batchSize = 1000
-      const all: OrderRow[] = []
-      let from = 0
-      let hasMore = true
-      while (hasMore) {
-        const { data } = await supabase
-          .from("faire_orders")
-          .select("shipping_address, total_cents, store_id")
-          .range(from, from + batchSize - 1)
-        if (data && data.length > 0) {
-          all.push(...(data as OrderRow[]))
-          from += batchSize
-          if (data.length < batchSize) hasMore = false
-        } else {
-          hasMore = false
-        }
-      }
-      setOrders(all)
+      const { data } = await supabase
+        .from("faire_orders")
+        .select("shipping_address, total_cents, store_id")
+        .order("faire_created_at", { ascending: false })
+        .limit(500)
+      setOrders((data ?? []) as OrderRow[])
       setLoading(false)
     }
     fetchAll()
@@ -534,7 +522,7 @@ export default function GeographyAnalyticsPage() {
       {/* ---- Stats Row ---- */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {STATS.map((s) => (
-          <div key={s.label} className="rounded-md border bg-card p-4 flex items-start justify-between">
+          <div key={s.label} className="rounded-lg border border-border/80 bg-card shadow-sm p-4 flex items-start justify-between">
             <div>
               <p className="text-[11px] font-medium text-muted-foreground">{s.label}</p>
               <p className="text-xl font-bold font-heading mt-1">{s.value}</p>
@@ -552,7 +540,7 @@ export default function GeographyAnalyticsPage() {
         {/* ========== Left Column ========== */}
         <div className="lg:col-span-2 space-y-4">
           {/* Section 1: State / City Performance */}
-          <div className="rounded-md border bg-card overflow-hidden">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
             {/* Tab pills */}
             <div className="px-3 py-2.5 border-b flex items-center gap-2">
               <button
@@ -686,7 +674,7 @@ export default function GeographyAnalyticsPage() {
           </div>
 
           {/* Section 2: International Orders */}
-          <div className="rounded-md border bg-card overflow-hidden">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
             <div className="px-3 py-2.5 border-b flex items-center gap-2">
               <Globe className="size-3.5 text-muted-foreground" />
               <h2 className="text-sm font-semibold">International</h2>
@@ -728,7 +716,7 @@ export default function GeographyAnalyticsPage() {
         {/* ========== Right Column ========== */}
         <div className="space-y-4">
           {/* Widget 1: US Map (compact) */}
-          <div className="rounded-md border bg-card overflow-hidden">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
             <div className="px-3 py-2 border-b">
               <h3 className="text-sm font-semibold">US Heatmap</h3>
             </div>
@@ -798,7 +786,7 @@ export default function GeographyAnalyticsPage() {
           </div>
 
           {/* Widget 2: Top 5 States mini leaderboard */}
-          <div className="rounded-md border bg-card overflow-hidden">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
             <div className="px-3 py-2 border-b">
               <h3 className="text-sm font-semibold">Top States</h3>
             </div>
@@ -825,7 +813,7 @@ export default function GeographyAnalyticsPage() {
           </div>
 
           {/* Widget 3: Revenue Split */}
-          <div className="rounded-md border bg-card overflow-hidden">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
             <div className="px-3 py-2 border-b">
               <h3 className="text-sm font-semibold">Revenue Split</h3>
             </div>

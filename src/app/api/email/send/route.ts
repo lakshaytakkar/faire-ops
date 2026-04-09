@@ -2,10 +2,12 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { sendEmail, renderTemplate, isResendConfigured } from "@/lib/resend"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+  )
+}
 
 export async function POST(request: Request) {
   try {
@@ -27,7 +29,7 @@ export async function POST(request: Request) {
     let html: string
 
     if (template_id) {
-      const { data: template } = await supabase
+      const { data: template } = await getSupabase()
         .from("email_templates")
         .select("*")
         .eq("id", template_id)
@@ -48,7 +50,7 @@ export async function POST(request: Request) {
 
     if (!isResendConfigured()) {
       // Log but don't actually send
-      await supabase.from("email_logs").insert({
+      await getSupabase().from("email_logs").insert({
         template_id: template_id ?? null,
         to_email,
         to_name: to_name ?? null,
@@ -62,7 +64,7 @@ export async function POST(request: Request) {
 
     const result = await sendEmail({ to: to_email, toName: to_name, subject, html })
 
-    await supabase.from("email_logs").insert({
+    await getSupabase().from("email_logs").insert({
       template_id: template_id ?? null,
       to_email,
       to_name: to_name ?? null,

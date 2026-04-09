@@ -2,11 +2,10 @@
 
 import { useState, useEffect, useCallback, Fragment } from "react"
 import {
-  History,
+  ScrollText,
   Loader2,
   CheckCircle2,
   XCircle,
-  Clock,
   Activity,
   AlertTriangle,
   Timer,
@@ -16,21 +15,15 @@ import {
   ChevronsRight,
   ChevronLeft,
   ChevronRight,
-  Zap,
-  User,
-  Monitor,
+  Search,
   RefreshCw,
+  Clock,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
-
-interface Automation {
-  id: string
-  name: string
-}
 
 interface AutomationRun {
   id: string
@@ -45,10 +38,9 @@ interface AutomationRun {
   automations?: { name: string } | null
 }
 
-type SortColumn = "started_at" | "duration_ms" | "status" | "triggered_by"
-type SortDir = "asc" | "desc"
-
-const PAGE_SIZE = 20
+const PAGE_SIZE = 25
+const STATUS_FILTERS = ["all", "success", "failed", "running"] as const
+type StatusFilter = (typeof STATUS_FILTERS)[number]
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -63,6 +55,18 @@ function formatDuration(ms: number | null): string {
   return `${minutes}m ${seconds}s`
 }
 
+function timeAgo(iso: string | null): string {
+  if (!iso) return "-"
+  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  if (seconds < 60) return `${seconds}s ago`
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
+}
+
 function formatDate(iso: string | null): string {
   if (!iso) return "-"
   return new Date(iso).toLocaleString("en-US", {
@@ -74,41 +78,27 @@ function formatDate(iso: string | null): string {
   })
 }
 
-const STATUS_CONFIG: Record<string, { bg: string; icon: React.ElementType; pulse?: boolean }> = {
-  running: { bg: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400", icon: Loader2, pulse: true },
+const STATUS_CONFIG: Record<string, { bg: string; icon: React.ElementType; spin?: boolean }> = {
+  running: { bg: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400", icon: Loader2, spin: true },
   success: { bg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400", icon: CheckCircle2 },
-  failed: { bg: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400", icon: XCircle },
-}
-
-const TRIGGER_CONFIG: Record<string, { bg: string; icon: React.ElementType }> = {
-  system: { bg: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300", icon: Monitor },
-  manual: { bg: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400", icon: User },
-  event: { bg: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400", icon: Zap },
+  failed:  { bg: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400", icon: XCircle },
 }
 
 /* ------------------------------------------------------------------ */
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
-export default function AutomationHistoryPage() {
-  const [automations, setAutomations] = useState<Automation[]>([])
+export default function AutomationLogsPage() {
   const [runs, setRuns] = useState<AutomationRun[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [stats, setStats] = useState({ total: 0, successRate: 0, avgDuration: 0, failedRecent: 0 })
   const [loading, setLoading] = useState(true)
 
-  // Timeline dots (last 24 runs)
-  const [timelineDots, setTimelineDots] = useState<{ id: string; status: string }[]>([])
-
   // Filters
-  const [filterAutomation, setFilterAutomation] = useState("")
-  const [filterStatus, setFilterStatus] = useState("")
-  const [filterDateFrom, setFilterDateFrom] = useState("")
-  const [filterDateTo, setFilterDateTo] = useState("")
+  const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
 
-  // Sort & pagination
-  const [sortColumn, setSortColumn] = useState<SortColumn>("started_at")
-  const [sortDir, setSortDir] = useState<SortDir>("desc")
+  // Pagination
   const [page, setPage] = useState(0)
 
   // Expanded rows
@@ -122,15 +112,6 @@ export default function AutomationHistoryPage() {
       return next
     })
   }
-
-  /* ---- Fetch automations list ---- */
-  useEffect(() => {
-    async function fetchAutomations() {
-      const { data } = await supabase.from("automations").select("id, name").order("name")
-      setAutomations((data ?? []) as Automation[])
-    }
-    fetchAutomations()
-  }, [])
 
   /* ---- Fetch stats ---- */
   const fetchStats = useCallback(async () => {
@@ -159,69 +140,40 @@ export default function AutomationHistoryPage() {
     })
   }, [])
 
-  /* ---- Fetch timeline dots ---- */
-  const fetchTimeline = useCallback(async () => {
-    const { data } = await supabase
-      .from("automation_runs")
-      .select("id, status")
-      .order("started_at", { ascending: false })
-      .limit(24)
-    setTimelineDots((data ?? []) as { id: string; status: string }[])
-  }, [])
-
   /* ---- Fetch runs ---- */
   const fetchRuns = useCallback(async () => {
     setLoading(true)
     let query = supabase
       .from("automation_runs")
       .select("*, automations(name)", { count: "exact" })
-      .order(sortColumn, { ascending: sortDir === "asc" })
+      .order("started_at", { ascending: false })
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
 
-    if (filterAutomation) query = query.eq("automation_id", filterAutomation)
-    if (filterStatus) query = query.eq("status", filterStatus)
-    if (filterDateFrom) query = query.gte("started_at", new Date(filterDateFrom).toISOString())
-    if (filterDateTo) {
-      const to = new Date(filterDateTo)
-      to.setHours(23, 59, 59, 999)
-      query = query.lte("started_at", to.toISOString())
-    }
+    if (statusFilter !== "all") query = query.eq("status", statusFilter)
 
     const { data, count } = await query
-    setRuns((data ?? []) as AutomationRun[])
-    setTotalCount(count ?? 0)
-    setLoading(false)
-  }, [sortColumn, sortDir, page, filterAutomation, filterStatus, filterDateFrom, filterDateTo])
 
-  useEffect(() => { fetchStats(); fetchTimeline() }, [fetchStats, fetchTimeline])
+    let filtered = (data ?? []) as AutomationRun[]
+    let filteredCount = count ?? 0
+
+    // Client-side search by automation name
+    if (search.trim()) {
+      const term = search.trim().toLowerCase()
+      filtered = filtered.filter((r) =>
+        (r.automations?.name ?? "").toLowerCase().includes(term)
+      )
+      filteredCount = filtered.length
+    }
+
+    setRuns(filtered)
+    setTotalCount(search.trim() ? filteredCount : (count ?? 0))
+    setLoading(false)
+  }, [page, statusFilter, search])
+
+  useEffect(() => { fetchStats() }, [fetchStats])
   useEffect(() => { fetchRuns() }, [fetchRuns])
 
-  /* ---- Sort handler ---- */
-  function handleSort(col: SortColumn) {
-    if (sortColumn === col) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"))
-    } else {
-      setSortColumn(col)
-      setSortDir("desc")
-    }
-    setPage(0)
-  }
-
-  function SortIcon({ col }: { col: SortColumn }) {
-    if (sortColumn !== col) return <ChevronDown className="size-3 opacity-30" />
-    return sortDir === "asc" ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />
-  }
-
-  /* ---- Reset filters ---- */
-  function resetFilters() {
-    setFilterAutomation("")
-    setFilterStatus("")
-    setFilterDateFrom("")
-    setFilterDateTo("")
-    setPage(0)
-  }
-
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
 
   /* ---- Stat cards ---- */
   const statCards = [
@@ -237,15 +189,15 @@ export default function AutomationHistoryPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold font-heading text-foreground flex items-center gap-2">
-            <History className="size-6" />
-            Automation History
+            <ScrollText className="size-6" />
+            Automation Logs
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Execution logs and performance tracking
+            Execution history and performance
           </p>
         </div>
         <button
-          onClick={() => { fetchStats(); fetchTimeline(); fetchRuns() }}
+          onClick={() => { fetchStats(); fetchRuns() }}
           className="inline-flex items-center gap-2 h-9 px-4 rounded-md border text-sm font-medium hover:bg-muted/50 transition-colors"
         >
           <RefreshCw className="size-4" />
@@ -258,7 +210,7 @@ export default function AutomationHistoryPage() {
         {statCards.map((stat) => {
           const Icon = stat.icon
           return (
-            <div key={stat.label} className="rounded-md border bg-card p-5 flex items-start justify-between">
+            <div key={stat.label} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
                 <p className="text-2xl font-bold font-heading mt-2">{stat.value}</p>
@@ -271,138 +223,50 @@ export default function AutomationHistoryPage() {
         })}
       </div>
 
-      {/* Timeline Chart */}
-      <div className="rounded-md border bg-card p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold flex items-center gap-2">
-            <Activity className="size-4 text-primary" />
-            Recent Activity
-          </h2>
-          <span className="text-xs text-muted-foreground">Last 24 runs</span>
+      {/* Filters toolbar */}
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4 flex items-center gap-4 flex-wrap">
+        {/* Search */}
+        <div className="relative">
+          <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search by automation name..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(0) }}
+            className="h-9 pl-9 pr-3 rounded-md border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 min-w-[260px]"
+          />
         </div>
+
+        {/* Status pills */}
         <div className="flex items-center gap-1.5">
-          {timelineDots.length === 0 && (
-            <span className="text-xs text-muted-foreground">No runs recorded yet</span>
-          )}
-          {[...timelineDots].reverse().map((dot) => (
-            <div
-              key={dot.id}
-              title={dot.status}
-              className={`size-4 rounded-full shrink-0 transition-colors ${
-                dot.status === "success"
-                  ? "bg-emerald-500"
-                  : dot.status === "failed"
-                    ? "bg-red-500"
-                    : dot.status === "running"
-                      ? "bg-blue-500 animate-pulse"
-                      : "bg-gray-300 dark:bg-gray-600"
+          {STATUS_FILTERS.map((s) => (
+            <button
+              key={s}
+              onClick={() => { setStatusFilter(s); setPage(0) }}
+              className={`h-8 px-3 rounded-full text-xs font-medium capitalize transition-colors ${
+                statusFilter === s
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted"
               }`}
-            />
+            >
+              {s}
+            </button>
           ))}
         </div>
-        <div className="flex items-center gap-4 mt-2">
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="size-2.5 rounded-full bg-emerald-500" /> Success
-          </span>
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="size-2.5 rounded-full bg-red-500" /> Failed
-          </span>
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="size-2.5 rounded-full bg-blue-500" /> Running
-          </span>
-        </div>
       </div>
 
-      {/* Filters */}
-      <div className="rounded-md border bg-card p-4">
-        <div className="flex items-end gap-4 flex-wrap">
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Automation</label>
-            <select
-              value={filterAutomation}
-              onChange={(e) => { setFilterAutomation(e.target.value); setPage(0) }}
-              className="h-9 px-3 rounded-md border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 min-w-[200px]"
-            >
-              <option value="">All Automations</option>
-              {automations.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Status</label>
-            <select
-              value={filterStatus}
-              onChange={(e) => { setFilterStatus(e.target.value); setPage(0) }}
-              className="h-9 px-3 rounded-md border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 min-w-[140px]"
-            >
-              <option value="">All</option>
-              <option value="running">Running</option>
-              <option value="success">Success</option>
-              <option value="failed">Failed</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">From</label>
-            <input
-              type="date"
-              value={filterDateFrom}
-              onChange={(e) => { setFilterDateFrom(e.target.value); setPage(0) }}
-              className="h-9 px-3 rounded-md border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">To</label>
-            <input
-              type="date"
-              value={filterDateTo}
-              onChange={(e) => { setFilterDateTo(e.target.value); setPage(0) }}
-              className="h-9 px-3 rounded-md border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
-          {(filterAutomation || filterStatus || filterDateFrom || filterDateTo) && (
-            <button
-              onClick={resetFilters}
-              className="h-9 px-3 rounded-md border text-xs font-medium hover:bg-muted/50 transition-colors text-muted-foreground"
-            >
-              Clear Filters
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Runs Table */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      {/* Logs Table */}
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/40">
                 <th className="w-8 px-2 py-2.5" />
                 <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Automation</th>
-                <th
-                  className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("status")}
-                >
-                  <span className="inline-flex items-center gap-1">Status <SortIcon col="status" /></span>
-                </th>
-                <th
-                  className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("started_at")}
-                >
-                  <span className="inline-flex items-center gap-1">Started At <SortIcon col="started_at" /></span>
-                </th>
-                <th
-                  className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("duration_ms")}
-                >
-                  <span className="inline-flex items-center gap-1">Duration <SortIcon col="duration_ms" /></span>
-                </th>
-                <th
-                  className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("triggered_by")}
-                >
-                  <span className="inline-flex items-center gap-1">Triggered By <SortIcon col="triggered_by" /></span>
-                </th>
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Status</th>
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Time</th>
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Duration</th>
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Triggered By</th>
                 <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Error</th>
               </tr>
             </thead>
@@ -424,8 +288,6 @@ export default function AutomationHistoryPage() {
               {!loading && runs.map((run) => {
                 const statusCfg = STATUS_CONFIG[run.status] ?? STATUS_CONFIG.success
                 const StatusIcon = statusCfg.icon
-                const triggerCfg = TRIGGER_CONFIG[run.triggered_by] ?? TRIGGER_CONFIG.system
-                const TriggerIcon = triggerCfg.icon
                 const isExpanded = expandedRows.has(run.id)
 
                 return (
@@ -446,21 +308,18 @@ export default function AutomationHistoryPage() {
                       </td>
                       <td className="px-4 py-2.5">
                         <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${statusCfg.bg}`}>
-                          <StatusIcon className={`size-3 ${statusCfg.pulse ? "animate-spin" : ""}`} />
+                          <StatusIcon className={`size-3 ${statusCfg.spin ? "animate-spin" : ""}`} />
                           {run.status}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5 text-xs text-muted-foreground">
-                        {formatDate(run.started_at)}
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground" title={formatDate(run.started_at)}>
+                        {timeAgo(run.started_at)}
                       </td>
                       <td className="px-4 py-2.5 text-xs font-mono">
                         {formatDuration(run.duration_ms)}
                       </td>
-                      <td className="px-4 py-2.5">
-                        <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${triggerCfg.bg}`}>
-                          <TriggerIcon className="size-3" />
-                          {run.triggered_by}
-                        </span>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground capitalize">
+                        {run.triggered_by}
                       </td>
                       <td className="px-4 py-2.5 text-xs text-red-600 dark:text-red-400 max-w-[200px] truncate">
                         {run.error_message ?? ""}
@@ -470,16 +329,14 @@ export default function AutomationHistoryPage() {
                       <tr className="border-b bg-muted/20">
                         <td colSpan={7} className="px-6 py-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Result */}
                             <div>
                               <p className="text-xs font-medium text-muted-foreground mb-1.5">Result</p>
                               <pre className="text-xs bg-muted rounded-md p-3 overflow-x-auto max-h-48 overflow-y-auto font-mono">
                                 {run.result ? JSON.stringify(run.result, null, 2) : "No result data"}
                               </pre>
                             </div>
-                            {/* Error */}
                             <div>
-                              <p className="text-xs font-medium text-muted-foreground mb-1.5">Error Message</p>
+                              <p className="text-xs font-medium text-muted-foreground mb-1.5">Error Details</p>
                               {run.error_message ? (
                                 <pre className="text-xs bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 rounded-md p-3 overflow-x-auto max-h-48 overflow-y-auto font-mono whitespace-pre-wrap">
                                   {run.error_message}

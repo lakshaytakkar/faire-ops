@@ -1,10 +1,21 @@
 "use client"
 
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, BookOpen } from "lucide-react"
 
 /* ------------------------------------------------------------------ */
 /*  Mock data                                                          */
 /* ------------------------------------------------------------------ */
+
+const GRADIENTS = [
+  "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+  "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+  "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+  "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+  "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+  "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)",
+  "linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)",
+  "linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)",
+]
 
 const BLOG_POSTS = [
   {
@@ -12,7 +23,6 @@ const BLOG_POSTS = [
     title: "Faire SEO Best Practices",
     category: "SEO",
     description: "Optimize your Faire store listings for maximum visibility. Learn keyword strategies, tag optimization, and how to rank higher in Faire search results.",
-    gradient: "from-blue-500 to-cyan-400",
     categoryBadge: "bg-blue-50 text-blue-700",
     readingTime: "8 min read",
   },
@@ -21,7 +31,6 @@ const BLOG_POSTS = [
     title: "Wholesale Pricing Strategy",
     category: "Pricing",
     description: "Master wholesale margin calculations, MAP pricing, and tiered pricing structures to maximize profit while staying competitive on the platform.",
-    gradient: "from-emerald-500 to-teal-400",
     categoryBadge: "bg-emerald-50 text-emerald-700",
     readingTime: "12 min read",
   },
@@ -30,7 +39,6 @@ const BLOG_POSTS = [
     title: "Product Photography Tips",
     category: "Creative",
     description: "Boost conversion rates with better product photos. Covers lighting setups, backgrounds, lifestyle shots, and Faire image requirements.",
-    gradient: "from-purple-500 to-pink-400",
     categoryBadge: "bg-purple-50 text-purple-700",
     readingTime: "6 min read",
   },
@@ -39,7 +47,6 @@ const BLOG_POSTS = [
     title: "Retailer Outreach Templates",
     category: "Sales",
     description: "Ready-to-use email and WhatsApp templates for cold outreach, follow-ups, reorder reminders, and seasonal promotions to drive repeat purchases.",
-    gradient: "from-amber-500 to-orange-400",
     categoryBadge: "bg-amber-50 text-amber-700",
     readingTime: "5 min read",
   },
@@ -48,7 +55,6 @@ const BLOG_POSTS = [
     title: "Faire Direct Guide",
     category: "Growth",
     description: "Everything you need to know about Faire Direct: 0% commission setup, retailer invitation workflows, link sharing, and tracking FD revenue.",
-    gradient: "from-red-500 to-rose-400",
     categoryBadge: "bg-red-50 text-red-700",
     readingTime: "10 min read",
   },
@@ -57,7 +63,6 @@ const BLOG_POSTS = [
     title: "Seasonal Planning 2026",
     category: "Strategy",
     description: "Plan your Q2-Q4 product launches, inventory levels, and promotional calendar. Includes key Faire marketplace dates and seasonal demand patterns.",
-    gradient: "from-indigo-500 to-violet-400",
     categoryBadge: "bg-indigo-50 text-indigo-700",
     readingTime: "15 min read",
   },
@@ -78,10 +83,15 @@ export default function BlogsPage() {
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {BLOG_POSTS.map((post) => (
-          <div key={post.id} className="rounded-md border bg-card overflow-hidden hover:shadow-sm transition-shadow">
-            {/* Color gradient strip */}
-            <div className={`h-2 bg-gradient-to-r ${post.gradient}`} />
+        {BLOG_POSTS.map((post, index) => (
+          <div key={post.id} className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden hover:shadow-sm transition-shadow">
+            {/* Gradient thumbnail */}
+            <div
+              className="h-28 flex items-center justify-center"
+              style={{ background: GRADIENTS[index % GRADIENTS.length] }}
+            >
+              <BookOpen className="size-10 text-white/25" />
+            </div>
 
             <div className="p-5">
               {/* Title + Badge */}

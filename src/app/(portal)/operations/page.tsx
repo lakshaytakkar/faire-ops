@@ -1,5 +1,10 @@
-import { redirect } from "next/navigation"
+"use client"
 
-export default function Page() {
-  redirect("/operations/tasks")
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+
+export default function RedirectPage() {
+  const router = useRouter()
+  useEffect(() => { router.replace("/operations/tasks") }, [router])
+  return null
 }

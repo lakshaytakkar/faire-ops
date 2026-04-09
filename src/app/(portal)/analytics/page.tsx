@@ -1,5 +1,10 @@
-import { redirect } from "next/navigation"
+"use client"
 
-export default function AnalyticsIndexPage() {
-  redirect("/analytics/revenue")
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+
+export default function RedirectPage() {
+  const router = useRouter()
+  useEffect(() => { router.replace("/analytics/revenue") }, [router])
+  return null
 }

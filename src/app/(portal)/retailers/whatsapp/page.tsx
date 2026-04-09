@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { MessageSquare, CalendarDays, Clock, Building2, Plus, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { useBrandFilter } from "@/lib/brand-filter-context"
 
 /* ------------------------------------------------------------------ */
 /*  Mock data                                                          */
@@ -44,6 +45,8 @@ const STATUS_BADGE: Record<string, string> = {
 /* ------------------------------------------------------------------ */
 
 export default function WhatsAppLogPage() {
+  const { activeBrand, stores, storesLoading, activeStore } = useBrandFilter()
+
   type SortKey = "date"
   type SortDir = "asc" | "desc"
   const [sortKey, setSortKey] = useState<SortKey>("date")
@@ -59,19 +62,26 @@ export default function WhatsAppLogPage() {
     return sortDir === "asc" ? <ArrowUp className="size-3 text-primary ml-1" /> : <ArrowDown className="size-3 text-primary ml-1" />
   }
 
+  // Filter entries by active brand (matching store name)
+  const filteredEntries = useMemo(() => {
+    if (activeBrand === "all" || !activeStore) return WHATSAPP_ENTRIES
+    return WHATSAPP_ENTRIES.filter((e) => e.brand === activeStore.name)
+  }, [activeBrand, activeStore])
+
   const sortedEntries = useMemo(() => {
-    return [...WHATSAPP_ENTRIES].sort((a, b) => {
+    return [...filteredEntries].sort((a, b) => {
       const dir = sortDir === "asc" ? 1 : -1
       return dir * (new Date(a.date).getTime() - new Date(b.date).getTime())
     })
-  }, [sortKey, sortDir])
+  }, [filteredEntries, sortKey, sortDir])
 
-  const totalSent = WHATSAPP_ENTRIES.filter((e) => e.status === "sent").length
-  const thisWeek = WHATSAPP_ENTRIES.filter((e) => e.date.startsWith("Apr")).length
+  const totalSent = filteredEntries.filter((e) => e.status === "sent").length
+  const thisWeek = filteredEntries.filter((e) => e.date.startsWith("Apr")).length
   const topBrand = (() => {
     const counts: Record<string, number> = {}
-    WHATSAPP_ENTRIES.forEach((e) => { counts[e.brand] = (counts[e.brand] || 0) + 1 })
-    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0]
+    filteredEntries.forEach((e) => { counts[e.brand] = (counts[e.brand] || 0) + 1 })
+    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1])
+    return entries.length > 0 ? entries[0][0] : "—"
   })()
 
   const STATS = [
@@ -98,7 +108,7 @@ export default function WhatsAppLogPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {STATS.map((s) => (
-          <div key={s.label} className="rounded-md border bg-card p-5 flex items-start justify-between">
+          <div key={s.label} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
               <p className="text-2xl font-bold font-heading mt-2">{s.value}</p>
@@ -112,7 +122,7 @@ export default function WhatsAppLogPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -152,7 +162,7 @@ export default function WhatsAppLogPage() {
           </table>
         </div>
         <div className="border-t px-4 py-3 text-xs text-muted-foreground">
-          Showing {WHATSAPP_ENTRIES.length} entries
+          Showing {filteredEntries.length} entries
         </div>
       </div>
     </div>

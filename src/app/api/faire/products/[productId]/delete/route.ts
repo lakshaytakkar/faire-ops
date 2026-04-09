@@ -2,17 +2,19 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { deleteProduct } from "@/lib/faire-api"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+  )
+}
 
 export async function POST(request: Request, { params }: { params: Promise<{ productId: string }> }) {
   try {
     const { productId } = await params
 
     // Get product to find store
-    const { data: product } = await supabase
+    const { data: product } = await getSupabase()
       .from("faire_products")
       .select("store_id, faire_product_id")
       .eq("faire_product_id", productId)
@@ -21,7 +23,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
     if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 })
 
     // Get store credentials
-    const { data: store } = await supabase
+    const { data: store } = await getSupabase()
       .from("faire_stores")
       .select("oauth_token, app_credentials")
       .eq("id", product.store_id)
@@ -36,7 +38,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
     )
 
     // Delete from local DB
-    await supabase
+    await getSupabase()
       .from("faire_products")
       .delete()
       .eq("faire_product_id", productId)

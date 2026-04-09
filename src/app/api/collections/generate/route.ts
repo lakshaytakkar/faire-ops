@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+  )
+}
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -67,11 +69,11 @@ const PRICE_RANGES: PriceRange[] = [
 
 async function deduplicateCollections(): Promise<number> {
   // Find duplicate groups (same store_id + collection_type + name)
-  const { data: dupes } = await supabase.rpc("get_duplicate_collections").select()
+  const { data: dupes } = await getSupabase().rpc("get_duplicate_collections").select()
 
   // Fallback: query manually if RPC doesn't exist
   if (!dupes) {
-    const { data: all } = await supabase
+    const { data: all } = await getSupabase()
       .from("collections")
       .select("id, store_id, collection_type, name, created_at")
       .order("created_at", { ascending: true })
@@ -91,7 +93,7 @@ async function deduplicateCollections(): Promise<number> {
     }
 
     if (toDelete.length > 0) {
-      await supabase.from("collections").delete().in("id", toDelete)
+      await getSupabase().from("collections").delete().in("id", toDelete)
     }
     return toDelete.length
   }
@@ -104,7 +106,7 @@ async function deduplicateCollections(): Promise<number> {
 /* ------------------------------------------------------------------ */
 
 async function standardizeNames(): Promise<number> {
-  const { data: cats } = await supabase
+  const { data: cats } = await getSupabase()
     .from("collections")
     .select("id, name")
     .eq("collection_type", "category")
@@ -115,7 +117,7 @@ async function standardizeNames(): Promise<number> {
   for (const row of cats) {
     const cleaned = cleanCategoryName(row.name)
     if (cleaned !== row.name) {
-      await supabase.from("collections").update({ name: cleaned }).eq("id", row.id)
+      await getSupabase().from("collections").update({ name: cleaned }).eq("id", row.id)
       updated++
     }
   }
@@ -133,7 +135,7 @@ export async function POST() {
     const namesStandardized = await standardizeNames()
 
     // Get all active stores
-    const { data: stores, error: storesError } = await supabase
+    const { data: stores, error: storesError } = await getSupabase()
       .from("faire_stores")
       .select("id, name")
       .eq("active", true)
@@ -176,7 +178,7 @@ export async function POST() {
       }
 
       // Fetch all products for this store
-      const { data: products } = await supabase
+      const { data: products } = await getSupabase()
         .from("faire_products")
         .select("id, category, wholesale_price_cents, faire_created_at, name")
         .eq("store_id", store.id)
@@ -187,7 +189,7 @@ export async function POST() {
       }
 
       // Fetch existing collections for this store to avoid duplicates
-      const { data: existingCollections } = await supabase
+      const { data: existingCollections } = await getSupabase()
         .from("collections")
         .select("id, name, collection_type")
         .eq("store_id", store.id)
@@ -209,7 +211,7 @@ export async function POST() {
 
       // --- 1) "All Products" collection (curated) ---
       if (!collectionExists("curated", "All Products")) {
-        const { error } = await supabase.from("collections").insert({
+        const { error } = await getSupabase().from("collections").insert({
           name: "All Products",
           description: "Browse our complete product catalog",
           store_id: store.id,
@@ -242,7 +244,7 @@ export async function POST() {
           storeResult.skipped++
           continue
         }
-        const { error } = await supabase.from("collections").insert({
+        const { error } = await getSupabase().from("collections").insert({
           name: catName,
           description: `All products in the ${catName} category`,
           store_id: store.id,
@@ -275,7 +277,7 @@ export async function POST() {
 
         if (matchCount === 0) continue
 
-        const { error } = await supabase.from("collections").insert({
+        const { error } = await getSupabase().from("collections").insert({
           name: range.name,
           description: `Products priced ${range.name.toLowerCase()}`,
           store_id: store.id,
@@ -303,7 +305,7 @@ export async function POST() {
         if (!collectionExists("price_range", "Premium Collection")) {
           const premiumCount = prices.filter((p) => p >= medianPrice).length
           if (premiumCount > 0) {
-            const { error } = await supabase.from("collections").insert({
+            const { error } = await getSupabase().from("collections").insert({
               name: "Premium Collection",
               description: `Our finest products, priced above the median ($${(medianPrice / 100).toFixed(2)})`,
               store_id: store.id,
@@ -326,7 +328,7 @@ export async function POST() {
         if (!collectionExists("price_range", "Value Picks")) {
           const valueCount = prices.filter((p) => p < medianPrice).length
           if (valueCount > 0) {
-            const { error } = await supabase.from("collections").insert({
+            const { error } = await getSupabase().from("collections").insert({
               name: "Value Picks",
               description: `Great finds at accessible prices, under $${(medianPrice / 100).toFixed(2)}`,
               store_id: store.id,
@@ -348,7 +350,7 @@ export async function POST() {
 
       // --- 5) Bestsellers collection ---
       if (!collectionExists("bestseller", "Bestsellers")) {
-        const { data: orders } = await supabase
+        const { data: orders } = await getSupabase()
           .from("faire_orders")
           .select("raw_data")
           .eq("store_id", store.id)
@@ -374,7 +376,7 @@ export async function POST() {
 
         const bestsellersCount = Math.min(20, productOrderCount.size)
 
-        const { error } = await supabase.from("collections").insert({
+        const { error } = await getSupabase().from("collections").insert({
           name: "Bestsellers",
           description: "Products with the most orders",
           store_id: store.id,
@@ -401,7 +403,7 @@ export async function POST() {
           return new Date(p.faire_created_at) >= thirtyDaysAgo
         }).length
 
-        const { error } = await supabase.from("collections").insert({
+        const { error } = await getSupabase().from("collections").insert({
           name: "New Arrivals",
           description: "Most recently added products",
           store_id: store.id,
@@ -420,7 +422,7 @@ export async function POST() {
       }
 
       // --- Post-generation: Update product_count for ALL collections ---
-      const { data: allCollections } = await supabase
+      const { data: allCollections } = await getSupabase()
         .from("collections")
         .select("id, name, collection_type, filter_rules")
         .eq("store_id", store.id)
@@ -468,7 +470,7 @@ export async function POST() {
             continue
           }
 
-          await supabase
+          await getSupabase()
             .from("collections")
             .update({ product_count: actualCount })
             .eq("id", col.id)
@@ -477,7 +479,7 @@ export async function POST() {
       }
 
       // --- Post-generation: Remove empty collections (product_count = 0) ---
-      const { data: empties } = await supabase
+      const { data: empties } = await getSupabase()
         .from("collections")
         .select("id")
         .eq("store_id", store.id)
@@ -485,7 +487,7 @@ export async function POST() {
 
       if (empties && empties.length > 0) {
         const emptyIds = empties.map((e) => e.id)
-        await supabase.from("collections").delete().in("id", emptyIds)
+        await getSupabase().from("collections").delete().in("id", emptyIds)
         storeResult.emptiesRemoved = empties.length
       }
 

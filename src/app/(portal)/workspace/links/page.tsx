@@ -8,6 +8,11 @@ import {
   Trash2,
   X,
   Link2,
+  Wrench,
+  BookOpen,
+  Truck,
+  Store,
+  Globe,
 } from "lucide-react"
 import { Dialog } from "@base-ui/react/dialog"
 import { supabase } from "@/lib/supabase"
@@ -64,6 +69,14 @@ const CATEGORY_STYLES: Record<LinkCategory, string> = {
   supplier: "bg-amber-50 text-amber-700",
   faire: "bg-emerald-50 text-emerald-700",
   general: "bg-gray-100 text-gray-700",
+}
+
+const CATEGORY_THUMBNAIL: Record<LinkCategory, { gradient: string; icon: typeof Wrench }> = {
+  tool: { gradient: "bg-gradient-to-br from-blue-500 to-blue-600", icon: Wrench },
+  documentation: { gradient: "bg-gradient-to-br from-green-500 to-green-600", icon: BookOpen },
+  supplier: { gradient: "bg-gradient-to-br from-amber-500 to-amber-600", icon: Truck },
+  faire: { gradient: "bg-gradient-to-br from-purple-500 to-purple-600", icon: Store },
+  general: { gradient: "bg-gradient-to-br from-slate-500 to-slate-600", icon: Globe },
 }
 
 /* ------------------------------------------------------------------ */
@@ -325,7 +338,7 @@ export default function LinksPage() {
 
       {/* Grid */}
       {filtered.length === 0 ? (
-        <div className="rounded-md border bg-card p-12 text-center">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-12 text-center">
           <Link2 className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm font-medium text-foreground">No links found</p>
           <p className="text-xs text-muted-foreground mt-1">
@@ -339,7 +352,7 @@ export default function LinksPage() {
           {filtered.map((link) => (
             <div
               key={link.id}
-              className="group rounded-md border bg-card p-4 hover:shadow-sm transition-shadow relative"
+              className="group rounded-lg border border-border/80 bg-card shadow-sm p-4 hover:shadow-sm transition-shadow relative"
             >
               {/* Delete button */}
               <button
@@ -359,17 +372,31 @@ export default function LinksPage() {
                 rel="noopener noreferrer"
                 className="block"
               >
-                <div className="flex items-start gap-2">
-                  <h3 className="text-sm font-semibold text-foreground">
-                    {link.title}
-                  </h3>
-                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3">
+                  {/* Thumbnail */}
+                  {(() => {
+                    const thumb = CATEGORY_THUMBNAIL[link.category]
+                    const ThumbIcon = thumb.icon
+                    return (
+                      <div className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 ${thumb.gradient}`}>
+                        <ThumbIcon className="h-5 w-5 text-white" />
+                      </div>
+                    )
+                  })()}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start gap-2">
+                      <h3 className="text-sm font-semibold text-foreground">
+                        {link.title}
+                      </h3>
+                      <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                    </div>
+                    {link.description && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {link.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                {link.description && (
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                    {link.description}
-                  </p>
-                )}
               </a>
 
               {/* Footer */}

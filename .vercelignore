@@ -1,0 +1,6 @@
+docs/
+scripts/
+*.md
+!README.md
+faire.code-workspace
+.claude/

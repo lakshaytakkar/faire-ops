@@ -12,7 +12,6 @@ import {
   Wallet,
   Blocks,
   Megaphone,
-  Sparkles,
   FileBarChart,
   Target,
 } from "lucide-react"
@@ -92,21 +91,6 @@ const NAV_ITEMS: NavItem[] = [
       { title: "Products", url: "/analytics/products" },
       { title: "Traffic", url: "/analytics/traffic" },
       { title: "Geography", url: "/analytics/geography" },
-    ],
-  },
-  {
-    title: "AI Tools",
-    url: "/workspace/ai-tools",
-    icon: Sparkles,
-    subItems: [
-      { title: "All Tools", url: "/workspace/ai-tools/all" },
-      { title: "Titles", url: "/workspace/ai-tools/title-optimizer" },
-      { title: "Descriptions", url: "/workspace/ai-tools/description-generator" },
-      { title: "Tags", url: "/workspace/ai-tools/product-tags" },
-      { title: "Audit", url: "/workspace/ai-tools/listing-audit" },
-      { title: "Pricing", url: "/workspace/ai-tools/pricing-recommender" },
-      { title: "Emails", url: "/workspace/ai-tools/retailer-email" },
-      { title: "Trends", url: "/workspace/ai-tools/trend-analyzer" },
     ],
   },
   {
@@ -259,7 +243,7 @@ export function TopNavigation() {
                 "flex items-center justify-center gap-1.5 h-12 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-primary text-white"
-                  : "text-white/70 hover:bg-white/10 hover:text-white"
+                  : "text-white hover:bg-white/15"
               )}
             >
               <Icon className="size-4" />
@@ -291,8 +275,8 @@ export function TopNavigation() {
                   "flex items-center justify-center gap-1.5 h-11 text-sm transition-colors",
                   i < subItems.length - 1 && "border-r border-border",
                   active
-                    ? "bg-primary/8 text-primary font-semibold border-b-2 border-b-primary"
-                    : "text-muted-foreground font-medium hover:text-foreground hover:bg-muted/50"
+                    ? "bg-primary/8 text-foreground font-bold border-b-2 border-b-primary"
+                    : "text-foreground font-medium hover:bg-muted/50"
                 )}
               >
                 {sub.title}

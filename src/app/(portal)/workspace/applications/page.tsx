@@ -282,7 +282,7 @@ function NewApplicationDialog({ open, onClose, onCreated }: { open: boolean; onC
           {step === 4 && (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">Review the application before submitting.</p>
-              <div className="rounded-md border divide-y">
+              <div className="rounded-lg border border-border/80 bg-card shadow-sm divide-y">
                 <div className="flex justify-between px-4 py-3"><span className="text-sm text-muted-foreground">Brand Name</span><span className="text-sm font-medium">{form.brand_name || "—"}</span></div>
                 <div className="flex justify-between px-4 py-3"><span className="text-sm text-muted-foreground">Category</span><span className="text-sm font-medium">{form.category || "—"}</span></div>
                 <div className="flex justify-between px-4 py-3"><span className="text-sm text-muted-foreground">Email</span><span className="text-sm font-medium">{form.email_id || "—"}</span></div>
@@ -438,7 +438,7 @@ export default function SellerApplicationsPage() {
           <div className="h-9 w-40 bg-muted animate-pulse rounded" />
         </div>
         <div className="grid grid-cols-3 lg:grid-cols-6 gap-4">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-24 rounded-md bg-muted animate-pulse" />)}</div>
-        <div className="rounded-md border bg-card overflow-hidden">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 border-b bg-muted/30 animate-pulse" />)}</div>
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 border-b bg-muted/30 animate-pulse" />)}</div>
       </div>
     )
   }
@@ -490,7 +490,7 @@ export default function SellerApplicationsPage() {
           const cfg = card.iconKey ? STATUS_ICON_CFG[card.iconKey] : null
           const Icon = cfg?.icon ?? ClipboardList
           return (
-            <button key={card.label} onClick={() => setStatusFilter(card.status ?? "all")} className={`rounded-md border bg-card p-4 flex items-start justify-between text-left transition-colors ${statusFilter === (card.status ?? "all") ? "ring-2 ring-primary/30" : "hover:bg-muted/30"}`}>
+            <button key={card.label} onClick={() => setStatusFilter(card.status ?? "all")} className={`rounded-lg border border-border/80 bg-card shadow-sm p-4 flex items-start justify-between text-left transition-colors ${statusFilter === (card.status ?? "all") ? "ring-2 ring-primary/30" : "hover:bg-muted/30"}`}>
               <div>
                 <p className="text-xs font-medium text-muted-foreground">{card.label}</p>
                 <p className="text-xl font-bold font-heading mt-1">{card.value}</p>
@@ -524,7 +524,7 @@ export default function SellerApplicationsPage() {
 
       {/* Table (List View) */}
       {view === "list" && (
-        <div className="rounded-md border bg-card overflow-hidden">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -582,7 +582,7 @@ export default function SellerApplicationsPage() {
             {KANBAN_COLUMNS.map((col) => {
               const colApps = appsByStatus[col.key] ?? []
               return (
-                <div key={col.key} className="rounded-md border bg-card overflow-hidden min-w-[200px]">
+                <div key={col.key} className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden min-w-[200px]">
                   {/* Column Header */}
                   <div className="px-3 py-2.5 border-b bg-muted/40 flex items-center justify-between">
                     <div className="flex items-center gap-2">

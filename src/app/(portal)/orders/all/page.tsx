@@ -62,16 +62,16 @@ function formatCents(cents: number): string {
   return "$" + (cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 25
 
 export default function OrdersPage() {
   const router = useRouter()
   const { activeBrand, stores } = useBrandFilter()
   const storeId = activeBrand === "all" ? undefined : activeBrand
-  const { orders, loading: ordersLoading, refetch } = useOrders(storeId)
+  const { orders, totalCount, loading: ordersLoading, refetch } = useOrders(storeId)
   const { stats, loading: statsLoading } = useOrderStats(storeId)
 
-  const [view, setView] = useState<"list" | "board">("list")
+  const [view, setView] = useState<"list" | "board">("board")
   const [activeTab, setActiveTab] = useState<TabKey>("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [sortKey, setSortKey] = useState<SortKey>("date")
@@ -284,7 +284,7 @@ export default function OrdersPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">New Orders</p>
             <p className="text-2xl font-bold font-heading mt-2">{stats.newOrders}</p>
@@ -294,7 +294,7 @@ export default function OrdersPage() {
             <Clock className="h-4 w-4" style={{ color: "#f59e0b" }} />
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Processing</p>
             <p className="text-2xl font-bold font-heading mt-2">{stats.processing}</p>
@@ -304,7 +304,7 @@ export default function OrdersPage() {
             <Package className="h-4 w-4" style={{ color: "#3b82f6" }} />
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">In Transit</p>
             <p className="text-2xl font-bold font-heading mt-2">{stats.inTransit}</p>
@@ -314,7 +314,7 @@ export default function OrdersPage() {
             <Truck className="h-4 w-4" style={{ color: "#10b981" }} />
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Total Revenue</p>
             <p className="text-2xl font-bold font-heading mt-2">{formatCents(stats.totalRevenueCents)}</p>
@@ -327,7 +327,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Table / Board */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         {/* Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
           <div className="flex items-center gap-3">
@@ -506,7 +506,7 @@ export default function OrdersPage() {
             {/* Pagination */}
             <div className="border-t px-4 py-3 flex items-center justify-between">
               <p className="text-xs text-muted-foreground">
-                Showing {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, totalFiltered)} of {totalFiltered} orders
+                Showing {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, totalFiltered)} of {totalFiltered} orders{totalCount > totalFiltered ? ` (${totalCount.toLocaleString()} total)` : ""}
               </p>
               <div className="flex items-center gap-1">
                 <button
@@ -570,7 +570,7 @@ export default function OrdersPage() {
                     const remaining = colOrders.length - col.maxShow
 
                     return (
-                      <div key={col.key} className="rounded-md border bg-card overflow-hidden min-w-[220px]">
+                      <div key={col.key} className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden min-w-[220px]">
                         {/* Column Header */}
                         <div className="px-3 py-2.5 border-b bg-muted/40 flex items-center justify-between">
                           <div className="flex items-center gap-2">
@@ -589,7 +589,7 @@ export default function OrdersPage() {
                             <div
                               key={order.id}
                               onClick={() => router.push("/orders/" + order.faire_order_id)}
-                              className="rounded-md border bg-card p-3 hover:shadow-sm transition-shadow cursor-pointer"
+                              className="rounded-lg border border-border/80 bg-card shadow-sm p-3 hover:shadow-sm transition-shadow cursor-pointer"
                             >
                               {/* Row 1: ID + Total */}
                               <div className="flex items-center justify-between">

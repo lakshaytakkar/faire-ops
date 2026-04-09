@@ -81,12 +81,12 @@ function Skeleton() {
       <div className="h-8 w-48 rounded bg-muted" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-md border bg-card p-5 h-[108px]" />
+          <div key={i} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 h-[108px]" />
         ))}
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="rounded-md border bg-card overflow-hidden h-[220px]" />
+          <div key={i} className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden h-[220px]" />
         ))}
       </div>
     </div>
@@ -307,8 +307,9 @@ export default function CollectionsPage() {
     setLoadingProducts(false)
   }, [])
 
-  // Product images for collage thumbnails: collectionId -> image URLs
-  const [collageImages, setCollageImages] = useState<Record<string, string[]>>({})
+  // Pagination state
+  const [page, setPage] = useState(1)
+  const ITEMS_PER_PAGE = 20
 
   // Fetch collections
   const fetchCollections = async () => {
@@ -317,6 +318,7 @@ export default function CollectionsPage() {
       .from("collections")
       .select("*")
       .order("sort_order", { ascending: true })
+      .limit(100)
 
     if (activeBrand !== "all") {
       query = query.eq("store_id", activeBrand)
@@ -325,49 +327,8 @@ export default function CollectionsPage() {
     const { data } = await query
     const cols = data ?? []
     setCollections(cols)
+    setPage(1)
     setLoading(false)
-
-    // Fetch 9 product images per collection for collage thumbnails (lightweight)
-    if (cols.length > 0) {
-      const imageMap: Record<string, string[]> = {}
-      // Group by store, fetch only image URLs
-      const storeGroups = new Map<string, Collection[]>()
-      for (const c of cols) {
-        const list = storeGroups.get(c.store_id) ?? []
-        list.push(c)
-        storeGroups.set(c.store_id, list)
-      }
-
-      // Fetch in parallel per store
-      await Promise.all([...storeGroups].map(async ([storeId, storeCols]) => {
-        const { data: products } = await supabase
-          .from("faire_products")
-          .select("category, primary_image_url, wholesale_price_cents")
-          .eq("store_id", storeId)
-          .not("primary_image_url", "is", null)
-          .limit(500)
-
-        const prods = products ?? []
-
-        for (const col of storeCols) {
-          let matching: typeof prods
-          if (col.collection_type === "category") {
-            const catName = (col.filter_rules as Record<string, string>).category_name
-            matching = catName ? prods.filter(p => p.category?.includes(catName)) : []
-          } else if (col.collection_type === "price_range") {
-            const rules = col.filter_rules as Record<string, number>
-            matching = prods.filter(p => {
-              const price = p.wholesale_price_cents ?? 0
-              return price >= (rules.min_price_cents ?? 0) && price < (rules.max_price_cents ?? Infinity)
-            })
-          } else {
-            matching = prods.slice(0, 9)
-          }
-          imageMap[col.id] = matching.slice(0, 9).map(p => p.primary_image_url).filter(Boolean)
-        }
-      }))
-      setCollageImages(imageMap)
-    }
   }
 
   useEffect(() => {
@@ -393,6 +354,11 @@ export default function CollectionsPage() {
     if (filterTab === "all") return collections
     return collections.filter((c) => c.collection_type === filterTab)
   }, [collections, filterTab])
+
+  // Paginated subset
+  const visibleCount = page * ITEMS_PER_PAGE
+  const visible = filtered.slice(0, visibleCount)
+  const hasMore = visibleCount < filtered.length
 
   // Stats
   const totalCollections = collections.length
@@ -453,7 +419,7 @@ export default function CollectionsPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((card) => (
-          <div key={card.label} className="rounded-md border bg-card p-5 flex items-start justify-between">
+          <div key={card.label} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-muted-foreground">{card.label}</p>
               <p className="text-2xl font-bold font-heading mt-2">{card.value}</p>
@@ -473,7 +439,7 @@ export default function CollectionsPage() {
         {filterTabs.map((t) => (
           <button
             key={t.key}
-            onClick={() => setFilterTab(t.key)}
+            onClick={() => { setFilterTab(t.key); setPage(1) }}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
               filterTab === t.key
                 ? "bg-primary text-primary-foreground"
@@ -487,15 +453,16 @@ export default function CollectionsPage() {
 
       {/* Collection Grid */}
       {filtered.length === 0 ? (
-        <div className="rounded-md border bg-card p-12 text-center">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-12 text-center">
           <Layers className="size-10 mx-auto text-muted-foreground/40" />
           <p className="mt-3 text-sm text-muted-foreground">
             No collections found. Click &quot;Generate Collections&quot; to auto-create from product data.
           </p>
         </div>
       ) : (
+        <>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filtered.map((col) => {
+          {visible.map((col) => {
             const store = getStore(col.store_id)
             const Icon = TYPE_ICON[col.collection_type] ?? Tag
             const gradient = TYPE_GRADIENT[col.collection_type] ?? "from-zinc-500/20 to-zinc-400/20"
@@ -505,47 +472,23 @@ export default function CollectionsPage() {
               <div
                 key={col.id}
                 onClick={() => openCollectionModal(col)}
-                className="rounded-md border bg-card overflow-hidden hover:shadow-sm cursor-pointer transition-shadow"
+                className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden hover:shadow-sm cursor-pointer transition-shadow"
               >
-                {/* Thumbnail area — 3x3 product collage */}
+                {/* Thumbnail */}
                 <div className="aspect-square relative">
-                  {(() => {
-                    const images = collageImages[col.id] ?? []
-                    if (images.length >= 4) {
-                      // Show 3x3 grid (or as many as available up to 9)
-                      const gridImages = images.slice(0, 9)
-                      const cols3 = gridImages.length >= 9 ? 3 : gridImages.length >= 4 ? 2 : 1
-                      return (
-                        <div className={`w-full h-full grid gap-0 bg-muted/20`} style={{ gridTemplateColumns: `repeat(${cols3}, 1fr)` }}>
-                          {gridImages.slice(0, cols3 * cols3).map((url, i) => (
-                            <img
-                              key={i}
-                              src={url + (url.includes("?") ? "&" : "?") + "width=150&height=150&fit=crop"}
-                              alt=""
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                              decoding="async"
-                            />
-                          ))}
-                        </div>
-                      )
-                    } else if (col.thumbnail_url) {
-                      return (
-                        <img
-                          src={col.thumbnail_url}
-                          alt={col.name}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      )
-                    } else {
-                      return (
-                        <div className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>
-                          <Icon className="size-8 text-muted-foreground/40" />
-                        </div>
-                      )
-                    }
-                  })()}
+                  {col.thumbnail_url ? (
+                    <img
+                      src={col.thumbnail_url}
+                      alt={col.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <div className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+                      <Icon className="size-8 text-muted-foreground/40" />
+                    </div>
+                  )}
                 </div>
 
                 {/* Body */}
@@ -585,6 +528,19 @@ export default function CollectionsPage() {
             )
           })}
         </div>
+
+        {/* Show More Button */}
+        {hasMore && (
+          <div className="flex justify-center pt-4">
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              className="px-6 py-2 text-sm font-medium rounded-md border hover:bg-muted transition-colors"
+            >
+              Show More ({filtered.length - visibleCount} remaining)
+            </button>
+          </div>
+        )}
+        </>
       )}
 
       {/* New Collection Dialog */}
@@ -666,6 +622,7 @@ export default function CollectionsPage() {
                               alt={product.name}
                               className="w-full h-full object-cover"
                               loading="lazy"
+                              decoding="async"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">

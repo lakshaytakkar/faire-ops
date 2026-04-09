@@ -1,5 +1,10 @@
-import { redirect } from "next/navigation"
+"use client"
 
-export default function EmailsIndexPage() {
-  redirect("/workspace/emails/dashboard")
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+
+export default function RedirectPage() {
+  const router = useRouter()
+  useEffect(() => { router.replace("/workspace/emails/dashboard") }, [router])
+  return null
 }

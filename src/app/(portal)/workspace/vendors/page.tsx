@@ -229,7 +229,7 @@ export default function VendorsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs text-muted-foreground">Total Vendors</p>
             <p className="text-2xl font-bold mt-1">{totalVendors}</p>
@@ -239,7 +239,7 @@ export default function VendorsPage() {
           </div>
         </div>
 
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs text-muted-foreground">Default Vendor</p>
             <p className="text-lg font-semibold mt-1 truncate max-w-[140px]">{defaultVendor}</p>
@@ -249,7 +249,7 @@ export default function VendorsPage() {
           </div>
         </div>
 
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs text-muted-foreground">Avg Lead Time</p>
             <p className="text-2xl font-bold mt-1">{avgLead} days</p>
@@ -259,7 +259,7 @@ export default function VendorsPage() {
           </div>
         </div>
 
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs text-muted-foreground">Total Completed Orders</p>
             <p className="text-2xl font-bold mt-1">{totalOrders}</p>
@@ -272,7 +272,7 @@ export default function VendorsPage() {
 
       {/* Table */}
       {vendors.length === 0 ? (
-        <div className="rounded-md border bg-card p-12 text-center">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-12 text-center">
           <Truck className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm font-medium text-foreground">No vendors yet</p>
           <p className="text-xs text-muted-foreground mt-1">
@@ -280,7 +280,7 @@ export default function VendorsPage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-md border bg-card overflow-hidden">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/40">

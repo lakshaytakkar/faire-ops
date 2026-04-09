@@ -10,6 +10,14 @@ import {
   Plus,
   X,
   Search,
+  ClipboardList,
+  BookOpen,
+  Workflow,
+  ShieldCheck,
+  Settings,
+  Users,
+  Landmark,
+  FolderOpen,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -48,6 +56,27 @@ const CATEGORY_OPTIONS = [
   "HR",
   "General",
 ]
+
+const GRADIENTS = [
+  "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+  "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+  "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+  "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+  "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+  "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)",
+  "linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)",
+  "linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)",
+]
+
+const CATEGORY_ICONS: Record<string, React.ElementType> = {
+  Operations: Settings,
+  Fulfillment: Workflow,
+  CRM: Users,
+  Catalog: BookOpen,
+  Finance: Landmark,
+  HR: ShieldCheck,
+  General: FolderOpen,
+}
 
 const TEAM_MEMBERS = ["Lakshay", "Aditya", "Khushal", "Bharti", "Allen", "Harsh"]
 
@@ -122,7 +151,7 @@ export default function SOPsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Total</p>
             <p className="text-2xl font-bold font-heading mt-2">{totalCount}</p>
@@ -131,7 +160,7 @@ export default function SOPsPage() {
             <FileText className="h-4 w-4 text-primary" />
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Published</p>
             <p className="text-2xl font-bold font-heading mt-2 text-emerald-600">
@@ -142,7 +171,7 @@ export default function SOPsPage() {
             <CheckCircle className="h-4 w-4 text-emerald-600" />
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Draft</p>
             <p className="text-2xl font-bold font-heading mt-2 text-amber-600">
@@ -153,7 +182,7 @@ export default function SOPsPage() {
             <PenLine className="h-4 w-4 text-amber-600" />
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Last Updated</p>
             <p className="text-lg font-bold font-heading mt-2">
@@ -211,15 +240,24 @@ export default function SOPsPage() {
       ) : filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground py-8 text-center">No SOPs found</p>
       ) : (
-        <div className="space-y-3">
-          {filtered.map((sop) => (
-            <div
-              key={sop.id}
-              onClick={() => router.push(`/workspace/sops/${sop.id}`)}
-              className="rounded-md border bg-card p-5 hover:shadow-sm transition-shadow cursor-pointer"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filtered.map((sop, index) => {
+            const CatIcon = CATEGORY_ICONS[sop.category] ?? ClipboardList
+            return (
+              <div
+                key={sop.id}
+                onClick={() => router.push(`/workspace/sops/${sop.id}`)}
+                className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden hover:shadow-sm transition-shadow cursor-pointer"
+              >
+                {/* Gradient thumbnail */}
+                <div
+                  className="h-28 flex items-center justify-center"
+                  style={{ background: GRADIENTS[index % GRADIENTS.length] }}
+                >
+                  <CatIcon className="size-10 text-white/25" />
+                </div>
+
+                <div className="p-4">
                   <h3 className="text-sm font-semibold">{sop.title}</h3>
                   {sop.description && (
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
@@ -251,8 +289,8 @@ export default function SOPsPage() {
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -316,7 +354,7 @@ function NewSOPDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="rounded-md border bg-card p-6 w-full max-w-lg shadow-lg max-h-[90vh] overflow-y-auto">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm p-6 w-full max-w-lg shadow-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold font-heading">New SOP</h2>
           <Button variant="ghost" size="icon-xs" onClick={onClose}>

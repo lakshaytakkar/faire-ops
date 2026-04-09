@@ -185,7 +185,7 @@ function InventorySkeleton() {
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="rounded-md border bg-card p-5 h-28" />
+          <div key={i} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 h-28" />
         ))}
       </div>
       <div className="rounded-md border bg-card h-96" />
@@ -349,7 +349,7 @@ export default function InventoryPage() {
 
       {/* ---- Low Stock Alerts ---- */}
       {allLowStock.length > 0 && (
-        <div className="rounded-md border bg-card overflow-hidden">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 border-b bg-muted/40">
             <AlertTriangle className="size-4 text-amber-600" />
             <span className="text-sm font-medium">Low Stock Alerts</span>
@@ -408,7 +408,7 @@ export default function InventoryPage() {
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="rounded-md border bg-card p-5 flex items-start justify-between"
+            className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between"
           >
             <div>
               <p className="text-xs font-medium text-muted-foreground">{card.label}</p>
@@ -426,7 +426,7 @@ export default function InventoryPage() {
       </div>
 
       {/* ---- Inventory Table ---- */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="overflow-auto">
           <table className="w-full">
             <thead>

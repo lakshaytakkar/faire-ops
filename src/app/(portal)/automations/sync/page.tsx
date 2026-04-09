@@ -3,21 +3,17 @@
 import { useEffect, useState, useCallback } from "react"
 import {
   RefreshCw,
+  Landmark,
+  Truck,
   CheckCircle2,
   XCircle,
-  Clock,
   Loader2,
-  Activity,
-  AlertTriangle,
-  Timer,
   ChevronDown,
   ChevronRight,
-  Play,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import {
   Table,
   TableHeader,
@@ -31,21 +27,13 @@ import {
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-interface Automation {
-  id: string
+interface SyncAction {
+  key: string
   name: string
-  description: string | null
-  type: string
-  category: string
-  trigger_type: string
-  cron_expression: string | null
-  config: Record<string, unknown>
-  is_active: boolean
-  last_run_at: string | null
-  last_status: string | null
-  last_error: string | null
-  run_count: number
-  created_by: string | null
+  description: string
+  endpoint: string
+  icon: typeof RefreshCw
+  automationName: string
 }
 
 interface AutomationRun {
@@ -60,6 +48,37 @@ interface AutomationRun {
   triggered_by: string | null
   automations: { name: string } | null
 }
+
+/* ------------------------------------------------------------------ */
+/*  Constants                                                          */
+/* ------------------------------------------------------------------ */
+
+const SYNC_ACTIONS: SyncAction[] = [
+  {
+    key: "faire",
+    name: "Sync Faire",
+    description: "Syncs orders, products, retailers from Faire API",
+    endpoint: "/api/faire/sync",
+    icon: RefreshCw,
+    automationName: "Faire",
+  },
+  {
+    key: "banking",
+    name: "Sync Banking",
+    description: "Syncs Wise bank transactions",
+    endpoint: "/api/wise/sync",
+    icon: Landmark,
+    automationName: "Wise",
+  },
+  {
+    key: "tracking",
+    name: "Sync Tracking",
+    description: "Syncs 17Track shipment status",
+    endpoint: "/api/tracking/sync",
+    icon: Truck,
+    automationName: "Tracking",
+  },
+]
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -78,28 +97,20 @@ function timeAgo(dateStr: string | null): string {
   return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
-function cronLabel(cron: string | null): string {
-  if (!cron) return "Manual"
-  if (cron.includes("*/5")) return "Every 5m"
-  if (cron.includes("*/15")) return "Every 15m"
-  if (cron.includes("*/30")) return "Every 30m"
-  if (cron === "0 * * * *") return "Every hour"
-  if (cron === "0 */2 * * *") return "Every 2h"
-  if (cron === "0 */4 * * *") return "Every 4h"
-  if (cron === "0 */6 * * *") return "Every 6h"
-  if (cron === "0 */12 * * *") return "Every 12h"
-  if (cron === "0 0 * * *") return "Daily"
-  if (cron === "0 9 * * *") return "Daily 9am"
-  if (cron === "0 9 * * 1") return "Mon 9am"
-  if (cron === "0 8 * * 1-5") return "Weekdays 8am"
-  return cron
-}
-
 function fmtDuration(ms: number | null): string {
   if (ms == null) return "-"
   if (ms < 1000) return `${ms}ms`
   if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`
   return `${(ms / 60000).toFixed(1)}m`
+}
+
+function fmtTimestamp(dateStr: string): string {
+  return new Date(dateStr).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -136,138 +147,118 @@ function StatusBadge({ status }: { status: string }) {
 /* ------------------------------------------------------------------ */
 
 export default function SyncPage() {
-  const [automations, setAutomations] = useState<Automation[]>([])
+  const [lastSyncTimes, setLastSyncTimes] = useState<Record<string, string | null>>({})
   const [runs, setRuns] = useState<AutomationRun[]>([])
   const [loading, setLoading] = useState(true)
-  const [runningIds, setRunningIds] = useState<Set<string>>(new Set())
+  const [runningKeys, setRunningKeys] = useState<Set<string>>(new Set())
   const [expandedRun, setExpandedRun] = useState<string | null>(null)
-  const [toast, setToast] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const [autoRes, runsRes] = await Promise.all([
-      supabase
-        .from("automations")
-        .select("*")
-        .in("type", ["sync", "integration"])
-        .order("name"),
-      supabase
-        .from("automation_runs")
-        .select("*, automations(name)")
-        .order("started_at", { ascending: false })
-        .limit(50),
-    ])
-    if (autoRes.error) console.error("fetchAutomations:", autoRes.error)
-    if (runsRes.error) console.error("fetchRuns:", runsRes.error)
-    setAutomations(autoRes.data ?? [])
-    setRuns((runsRes.data as AutomationRun[]) ?? [])
+
+    // Fetch last_run_at for each automation by name match
+    const { data: automations } = await supabase
+      .from("automations")
+      .select("name, last_run_at")
+
+    const times: Record<string, string | null> = {}
+    for (const action of SYNC_ACTIONS) {
+      const match = automations?.find((a) =>
+        a.name.toLowerCase().includes(action.automationName.toLowerCase())
+      )
+      times[action.key] = match?.last_run_at ?? null
+    }
+    setLastSyncTimes(times)
+
+    // Fetch last 30 runs
+    const { data: runsData, error: runsError } = await supabase
+      .from("automation_runs")
+      .select("*, automations(name)")
+      .order("started_at", { ascending: false })
+      .limit(30)
+
+    if (runsError) console.error("fetchRuns:", runsError)
+    setRuns((runsData as AutomationRun[]) ?? [])
     setLoading(false)
   }, [])
 
-  useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
-  function showToast(msg: string) {
-    setToast(msg)
-    setTimeout(() => setToast(null), 3000)
+  function showToast(message: string, type: "success" | "error") {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3500)
   }
 
-  // Run sync
-  async function handleRun(automation: Automation) {
-    setRunningIds((prev) => new Set(prev).add(automation.id))
+  async function handleSync(action: SyncAction) {
+    setRunningKeys((prev) => new Set(prev).add(action.key))
     try {
-      const endpoint = (automation.config as Record<string, string>)?.endpoint
-      if (endpoint) {
-        await fetch(endpoint, { method: "POST" }).catch(() => {})
-      }
-      const now = new Date().toISOString()
-      await supabase.from("automation_runs").insert({
-        automation_id: automation.id,
-        status: "success",
-        started_at: now,
-        completed_at: now,
-        duration_ms: 0,
-        triggered_by: "manual",
-      })
-      await supabase.from("automations").update({
-        last_run_at: now,
-        last_status: "success",
-        run_count: (automation.run_count || 0) + 1,
-      }).eq("id", automation.id)
-      showToast(`Synced: ${automation.name}`)
+      const res = await fetch(action.endpoint, { method: "POST" })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      showToast(`${action.name} completed successfully`, "success")
       fetchData()
-    } catch {
-      showToast(`Failed: ${automation.name}`)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error"
+      showToast(`${action.name} failed: ${msg}`, "error")
     } finally {
-      setRunningIds((prev) => {
+      setRunningKeys((prev) => {
         const next = new Set(prev)
-        next.delete(automation.id)
+        next.delete(action.key)
         return next
       })
     }
   }
 
-  // Stats
-  const totalSyncs = automations.length
-  const lastSuccessful = runs.find((r) => r.status === "success")
-  const lastFailed = runs.find((r) => r.status === "failed")
-  const avgDuration = runs.length
-    ? Math.round(runs.reduce((sum, r) => sum + (r.duration_ms ?? 0), 0) / runs.length)
-    : 0
-
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Sync & Integrations</h1>
-        <p className="text-sm text-muted-foreground">Monitor data synchronization across services</p>
+        <h1 className="text-2xl font-bold tracking-tight">Sync Center</h1>
+        <p className="text-sm text-muted-foreground">
+          Run and monitor data synchronization
+        </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Card size="sm">
-          <CardContent className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
-              <RefreshCw className="size-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Total Syncs</p>
-              <p className="text-xl font-bold">{loading ? "-" : totalSyncs}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card size="sm">
-          <CardContent className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-emerald-50">
-              <CheckCircle2 className="size-4 text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Last Successful</p>
-              <p className="text-sm font-semibold">{loading ? "-" : lastSuccessful ? timeAgo(lastSuccessful.started_at) : "None"}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card size="sm">
-          <CardContent className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-red-50">
-              <AlertTriangle className="size-4 text-red-600" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Last Failed</p>
-              <p className="text-sm font-semibold">{loading ? "-" : lastFailed ? timeAgo(lastFailed.started_at) : "None"}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card size="sm">
-          <CardContent className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-blue-50">
-              <Timer className="size-4 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Avg Duration</p>
-              <p className="text-sm font-semibold">{loading ? "-" : fmtDuration(avgDuration)}</p>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Action Cards */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {SYNC_ACTIONS.map((action) => {
+          const Icon = action.icon
+          const isRunning = runningKeys.has(action.key)
+          const lastSync = lastSyncTimes[action.key]
+
+          return (
+            <Card key={action.key} className="relative overflow-hidden">
+              <CardContent className="flex flex-col items-center gap-4 py-6">
+                <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10">
+                  <Icon className="size-6 text-primary" />
+                </div>
+                <div className="text-center">
+                  <p className="text-base font-semibold">{action.name}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {action.description}
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Last synced: {loading ? "..." : timeAgo(lastSync)}
+                </p>
+                <Button
+                  onClick={() => handleSync(action)}
+                  disabled={isRunning}
+                  className="w-full"
+                >
+                  {isRunning ? (
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-2 size-4" />
+                  )}
+                  {isRunning ? "Syncing..." : "Sync Now"}
+                </Button>
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
       {/* Loading */}
@@ -277,78 +268,18 @@ export default function SyncPage() {
         </div>
       )}
 
-      {/* Sync Cards */}
-      {!loading && automations.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {automations.map((a) => (
-            <Card key={a.id} className="overflow-hidden">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <CardTitle className="truncate">{a.name}</CardTitle>
-                  {a.is_active ? (
-                    <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">Active</span>
-                  ) : (
-                    <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">Inactive</span>
-                  )}
-                </div>
-                <CardAction>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRun(a)}
-                    disabled={runningIds.has(a.id)}
-                  >
-                    {runningIds.has(a.id) ? (
-                      <Loader2 className="size-3 animate-spin" />
-                    ) : (
-                      <Play className="size-3" />
-                    )}
-                    Sync Now
-                  </Button>
-                </CardAction>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <p className="text-muted-foreground">Last Run</p>
-                    <p className="font-medium">{timeAgo(a.last_run_at)}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Status</p>
-                    <div className="mt-0.5">{a.last_status ? <StatusBadge status={a.last_status} /> : <span className="text-gray-400">-</span>}</div>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Run Count</p>
-                    <p className="font-medium">{a.run_count}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Schedule</p>
-                    <p className="font-medium">{cronLabel(a.cron_expression)}</p>
-                  </div>
-                </div>
-                {a.last_error && (
-                  <div className="mt-3 rounded-md bg-red-50 p-2 text-[11px] text-red-700">
-                    {a.last_error}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Run History */}
+      {/* Recent Sync Runs */}
       {!loading && (
         <Card>
           <CardHeader>
-            <CardTitle>Run History</CardTitle>
-            <CardDescription>Last 50 automation runs across all syncs</CardDescription>
+            <CardTitle>Recent Sync Runs</CardTitle>
+            <CardDescription>Last 30 runs across all automations</CardDescription>
           </CardHeader>
           <CardContent className="px-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="pl-4">Automation</TableHead>
+                  <TableHead className="pl-4">Automation Name</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Started</TableHead>
                   <TableHead>Duration</TableHead>
@@ -360,8 +291,11 @@ export default function SyncPage() {
               <TableBody>
                 {runs.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      No runs recorded yet.
+                    <TableCell
+                      colSpan={7}
+                      className="text-center text-muted-foreground py-8"
+                    >
+                      No sync runs recorded yet.
                     </TableCell>
                   </TableRow>
                 )}
@@ -374,10 +308,10 @@ export default function SyncPage() {
                       <TableCell>
                         <StatusBadge status={run.status} />
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {timeAgo(run.started_at)}
+                      <TableCell className="text-muted-foreground text-xs">
+                        {fmtTimestamp(run.started_at)}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="text-muted-foreground text-xs">
                         {fmtDuration(run.duration_ms)}
                       </TableCell>
                       <TableCell>
@@ -391,7 +325,11 @@ export default function SyncPage() {
                       <TableCell>
                         {run.result && (
                           <button
-                            onClick={() => setExpandedRun(expandedRun === run.id ? null : run.id)}
+                            onClick={() =>
+                              setExpandedRun(
+                                expandedRun === run.id ? null : run.id
+                              )
+                            }
                             className="text-muted-foreground hover:text-foreground"
                           >
                             {expandedRun === run.id ? (
@@ -422,9 +360,19 @@ export default function SyncPage() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-lg border bg-card px-4 py-3 text-sm shadow-lg animate-in fade-in slide-in-from-bottom-4">
-          <CheckCircle2 className="size-4 text-emerald-500" />
-          {toast}
+        <div
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-lg border px-4 py-3 text-sm shadow-lg animate-in fade-in slide-in-from-bottom-4 ${
+            toast.type === "success"
+              ? "bg-card"
+              : "bg-red-50 border-red-200"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle2 className="size-4 text-emerald-500" />
+          ) : (
+            <XCircle className="size-4 text-red-500" />
+          )}
+          {toast.message}
         </div>
       )}
     </div>

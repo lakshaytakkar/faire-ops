@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+  )
+}
 
 const BASE_URL = process.env.FAIRE_API_BASE_URL || "https://www.faire.com/external-api/v2"
 
@@ -55,7 +57,7 @@ async function countFaireItems(
 
 export async function GET() {
   try {
-    const { data: stores } = await supabase
+    const { data: stores } = await getSupabase()
       .from("faire_stores")
       .select("id, name, oauth_token, app_credentials")
       .eq("active", true)
@@ -69,12 +71,12 @@ export async function GET() {
 
     for (const store of stores) {
       // Count in DB
-      const { count: dbOrders } = await supabase
+      const { count: dbOrders } = await getSupabase()
         .from("faire_orders")
         .select("*", { count: "exact", head: true })
         .eq("store_id", store.id)
 
-      const { count: dbProducts } = await supabase
+      const { count: dbProducts } = await getSupabase()
         .from("faire_products")
         .select("*", { count: "exact", head: true })
         .eq("store_id", store.id)
@@ -114,7 +116,7 @@ export async function GET() {
       })
     }
 
-    const { count: totalRetailers } = await supabase
+    const { count: totalRetailers } = await getSupabase()
       .from("faire_retailers")
       .select("*", { count: "exact", head: true })
 

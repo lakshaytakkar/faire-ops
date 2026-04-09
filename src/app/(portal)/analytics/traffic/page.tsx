@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Users, Eye, Percent, DollarSign, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { Users, Eye, Percent, DollarSign, ArrowUpDown, ArrowUp, ArrowDown, AlertCircle } from "lucide-react"
+import { useBrandFilter } from "@/lib/brand-filter-context"
 
 /* ------------------------------------------------------------------ */
 /*  Inline data                                                        */
@@ -44,6 +45,7 @@ const maxPageViews = Math.max(...TOP_PAGES.map((p) => p.views))
 /* ------------------------------------------------------------------ */
 
 export default function TrafficPage() {
+  const { activeBrand } = useBrandFilter()
   const [dateFilter, setDateFilter] = useState("Today")
   const [sortKey, setSortKey] = useState("visitors")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
@@ -87,6 +89,12 @@ export default function TrafficPage() {
         <p className="mt-0.5 text-sm text-muted-foreground">Monitor visitor sources and page performance</p>
       </div>
 
+      {/* Sample Data Banner */}
+      <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-800">
+        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+        <span>Traffic data is illustrative. Faire does not provide traffic analytics via API{activeBrand !== "all" ? " — brand filter has no effect on this page" : ""}.</span>
+      </div>
+
       {/* Date Filter Chips */}
       <div className="flex items-center gap-2">
         {["Today", "7 Days", "30 Days", "90 Days", "All Time"].map(period => (
@@ -107,7 +115,7 @@ export default function TrafficPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {STATS.map((s) => (
-          <div key={s.label} className="rounded-md border bg-card p-5 flex items-start justify-between">
+          <div key={s.label} className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
               <p className="text-2xl font-bold font-heading mt-2">{s.value}</p>
@@ -121,7 +129,7 @@ export default function TrafficPage() {
       </div>
 
       {/* Traffic Sources Table */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -154,7 +162,7 @@ export default function TrafficPage() {
       </div>
 
       {/* Top Pages */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="flex items-center justify-between border-b px-5 py-3.5">
           <h2 className="text-sm font-semibold">Top Pages</h2>
           <span className="text-xs text-muted-foreground">{dateFilter === "All Time" ? "All time" : dateFilter === "Today" ? "Today" : `Last ${dateFilter}`}</span>

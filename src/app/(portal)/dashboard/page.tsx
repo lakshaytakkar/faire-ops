@@ -64,10 +64,9 @@ function isStale(dateStr: string | null): boolean {
 
 export default function DashboardPage() {
   const { activeBrand, stores, storesLoading } = useBrandFilter()
-  const { stats, loading: statsLoading } = useOrderStats(activeBrand === "all" ? undefined : activeBrand)
-  const { syncing, error: syncError, triggerSync } = useSync()
-
   const [dateFilter, setDateFilter] = useState("All Time")
+  const { stats, loading: statsLoading } = useOrderStats(activeBrand === "all" ? undefined : activeBrand, dateFilter)
+  const { syncing, error: syncError, triggerSync } = useSync()
   const [sortKey, setSortKey] = useState("orders")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
 
@@ -89,10 +88,7 @@ export default function DashboardPage() {
   const totalOrders = stats.total
   const totalListings = filteredStores.reduce((sum, s) => sum + s.total_products, 0)
 
-  // Scale revenue/orders based on date filter (approximate since we don't have daily breakdowns)
-  const dateMultiplier = dateFilter === "Today" ? 0.003 : dateFilter === "This Month" ? 0.08 : dateFilter === "3 Months" ? 0.25 : 1
-  const scaledRevenue = Math.round(totalRevenue * dateMultiplier)
-  const scaledOrders = Math.round(totalOrders * dateMultiplier)
+  // Revenue and orders are now properly filtered by date in the useOrderStats hook
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"
@@ -180,11 +176,11 @@ export default function DashboardPage() {
         </p>
         <div className="mt-5 flex items-center gap-8">
           <div>
-            <p className="text-2xl font-bold">${scaledRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+            <p className="text-2xl font-bold">${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
             <p className="text-xs opacity-50">{dateFilter} Revenue</p>
           </div>
           <div>
-            <p className="text-2xl font-bold">{scaledOrders}</p>
+            <p className="text-2xl font-bold">{totalOrders}</p>
             <p className="text-xs opacity-50">{dateFilter} Orders</p>
           </div>
           <div>
@@ -197,9 +193,9 @@ export default function DashboardPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Revenue */}
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
-            <p className="text-xs font-medium text-muted-foreground">Total Revenue</p>
+            <p className="text-xs font-medium text-muted-foreground">{dateFilter} Revenue</p>
             <p className="text-2xl font-bold font-heading mt-2">${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
             <p className="text-xs text-muted-foreground mt-1">{totalOrders} orders</p>
           </div>
@@ -212,7 +208,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Pending Orders */}
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Pending Orders</p>
             <p className={`text-2xl font-bold font-heading mt-2 ${pendingCount > 0 ? "text-red-600" : ""}`}>{pendingCount}</p>
@@ -229,7 +225,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Active Stores */}
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Active Stores</p>
             <p className="text-2xl font-bold font-heading mt-2">{filteredStores.length}</p>
@@ -246,7 +242,7 @@ export default function DashboardPage() {
         </div>
 
         {/* In Transit */}
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">In Transit</p>
             <p className="text-2xl font-bold font-heading mt-2">{stats.inTransit}</p>
@@ -264,7 +260,7 @@ export default function DashboardPage() {
       {/* Section Grid: Recent Activity | Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activity / Sync */}
-        <div className="rounded-md border bg-card overflow-hidden">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
           <div className="flex items-center justify-between border-b px-5 py-3.5">
             <h2 className="text-sm font-semibold">Recent Activity</h2>
             <button
@@ -325,7 +321,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Alerts */}
-        <div className="rounded-md border bg-card overflow-hidden">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
           <div className="flex items-center justify-between border-b px-5 py-3.5">
             <h2 className="text-sm font-semibold flex items-center gap-2">
               Alerts
@@ -384,7 +380,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Store Performance Table */}
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
         <div className="flex items-center justify-between border-b px-5 py-3.5">
           <h2 className="text-sm font-semibold">Store Performance</h2>
           <Link
@@ -459,7 +455,7 @@ export default function DashboardPage() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-md border bg-card p-5 flex items-center gap-4 hover:bg-muted/20 transition-colors cursor-pointer">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-center gap-4 hover:bg-muted/20 transition-colors cursor-pointer">
           <div className="h-9 w-9 rounded-lg flex items-center justify-center bg-primary/10">
             <Zap className="h-4 w-4 text-primary" />
           </div>
@@ -468,7 +464,7 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">Find trending products</p>
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-center gap-4 hover:bg-muted/20 transition-colors cursor-pointer">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-center gap-4 hover:bg-muted/20 transition-colors cursor-pointer">
           <div className="h-9 w-9 rounded-lg flex items-center justify-center bg-emerald-500/10">
             <TrendingUp className="h-4 w-4 text-emerald-600" />
           </div>
@@ -477,7 +473,7 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">Revenue &amp; performance</p>
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-center gap-4 hover:bg-muted/20 transition-colors cursor-pointer">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-center gap-4 hover:bg-muted/20 transition-colors cursor-pointer">
           <div className="h-9 w-9 rounded-lg flex items-center justify-center bg-amber-500/10">
             <Clock className="h-4 w-4 text-amber-600" />
           </div>

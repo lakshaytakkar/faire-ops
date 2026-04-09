@@ -47,11 +47,9 @@ interface CalendarEvent {
 
 const TEAM_MEMBERS = [
   { name: "Lakshay", initials: "LK", color: "#3B82F6" },
-  { name: "Aditya", initials: "AD", color: "#10B981" },
-  { name: "Khushal", initials: "KH", color: "#F59E0B" },
-  { name: "Bharti", initials: "BH", color: "#8B5CF6" },
-  { name: "Allen", initials: "AL", color: "#EC4899" },
-  { name: "Harsh", initials: "HR", color: "#EF4444" },
+  { name: "Shantanu", initials: "SH", color: "#F59E0B" },
+  { name: "Yash Jain", initials: "YJ", color: "#10B981" },
+  { name: "Krish Verma", initials: "KV", color: "#8B5CF6" },
 ] as const
 
 const EVENT_TYPES: { value: EventType; label: string }[] = [

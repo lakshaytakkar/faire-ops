@@ -127,19 +127,19 @@ export default function ReportsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Total Reports</p>
             <p className="text-2xl font-bold font-heading mt-2">{reports.length}</p>
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">This Month</p>
             <p className="text-2xl font-bold font-heading mt-2">{thisMonth}</p>
           </div>
         </div>
-        <div className="rounded-md border bg-card p-5 flex items-start justify-between">
+        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Latest Report</p>
             <p className="text-2xl font-bold font-heading mt-2">{latestDate}</p>
@@ -211,7 +211,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Scheduled Reports */}
-      <div className="rounded-md border bg-card p-5 mt-4">
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 mt-4">
         <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
           <Zap className="size-4 text-amber-500" />
           Scheduled Reports

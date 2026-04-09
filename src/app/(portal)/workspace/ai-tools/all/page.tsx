@@ -30,6 +30,17 @@ interface Tool {
   categoryColor: string
 }
 
+const GRADIENTS = [
+  "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+  "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+  "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+  "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+  "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+  "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)",
+  "linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)",
+  "linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)",
+]
+
 const TOOLS: Tool[] = [
   {
     slug: "title-optimizer",
@@ -171,27 +182,34 @@ export default function AIToolsPage() {
 
       {/* Tool cards grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {TOOLS.map((tool) => {
+        {TOOLS.map((tool, index) => {
           const Icon = tool.icon
           return (
             <div
               key={tool.slug}
               onClick={() => router.push(`/workspace/ai-tools/${tool.slug}`)}
-              className="rounded-md border bg-card p-5 hover:shadow-sm transition-shadow cursor-pointer"
+              className="rounded-md border bg-card overflow-hidden hover:shadow-sm transition-shadow cursor-pointer"
             >
-              <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${tool.iconBg}`}>
-                <Icon className={`h-5 w-5 ${tool.iconColor}`} />
+              {/* Gradient thumbnail */}
+              <div
+                className="h-28 flex items-center justify-center"
+                style={{ background: GRADIENTS[index % GRADIENTS.length] }}
+              >
+                <Icon className="size-10 text-white/25" />
               </div>
-              <h3 className="text-sm font-semibold mt-3 text-foreground">
-                {tool.name}
-              </h3>
-              <p className="text-xs text-muted-foreground mt-1">
-                {tool.description}
-              </p>
-              <div className="mt-3">
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${tool.categoryColor}`}>
-                  {tool.category}
-                </span>
+
+              <div className="p-5">
+                <h3 className="text-sm font-semibold text-foreground">
+                  {tool.name}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {tool.description}
+                </p>
+                <div className="mt-3">
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${tool.categoryColor}`}>
+                    {tool.category}
+                  </span>
+                </div>
               </div>
             </div>
           )
