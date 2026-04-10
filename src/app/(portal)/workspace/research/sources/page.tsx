@@ -17,6 +17,18 @@ import {
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
+import { SubNav } from "@/components/shared/sub-nav"
+
+const SUB_NAV_ITEMS = [
+  { title: "Dashboard", href: "/workspace/research/dashboard" },
+  { title: "Tools", href: "/workspace/research/tools" },
+  { title: "Products", href: "/workspace/research/products" },
+  { title: "Competitors", href: "/workspace/research/competitors" },
+  { title: "Trends", href: "/workspace/research/trends" },
+  { title: "Goals", href: "/workspace/research/goals" },
+  { title: "Reports", href: "/workspace/research/reports" },
+  { title: "Sources", href: "/workspace/research/sources" },
+]
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -198,6 +210,7 @@ export default function ResearchSourcesPage() {
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
+      <SubNav items={SUB_NAV_ITEMS} />
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>

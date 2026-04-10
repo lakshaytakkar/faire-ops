@@ -21,20 +21,25 @@ async function ensureBucket(supabase: ReturnType<typeof getSupabase>) {
   }
 }
 
-const HERO_PROMPT = `An ultra-premium, light-themed abstract wallpaper for a high-end business software homepage.
+const HERO_PROMPT = `A whimsical, hand-illustrated cartoon wallpaper for a modern business software homepage. Inspired by Google Doodles and editorial illustration.
 
-Composition:
-- Soft dreamy gradient mesh in pastel blue (#dbeafe), lavender (#ede9fe), and warm cream (#fff7ed)
-- Large blurred glass-morphism shapes floating gently across the canvas — translucent rounded squares and soft circles
-- Subtle bokeh light particles
-- Elegant negative space, calm, inviting
-- High-key lighting, no harsh shadows
-- Faint geometric grid hint at the bottom for a tech feel
-- 16:9 ultrawide aspect, cinematic depth of field
+Scene:
+- Soft pastel sky in peach, lavender, and sky blue
+- Fluffy cartoon clouds with simple curious faces drifting gently across the sky
+- Pastel rolling hills at the bottom in mint green and butter yellow
+- Tiny doodle plants and flowers dotting the hills
+- A few small abstract shapes floating: a paper airplane, a tiny hot air balloon, a kite
+- A whisper of a horizon line, optimistic and inviting
+- Plenty of negative space in the upper-middle area for a centered title and card
 
-Style: minimal, premium fintech aesthetic, soft, optimistic, professional. Like the cover of a modern SaaS marketing page. Light, airy, never dark or heavy.
+Style:
+- Whimsical hand-drawn doodle art with thick clean outlines
+- Flat vibrant fill colors with subtle shading
+- Friendly, playful, optimistic, premium-but-childlike charm
+- Modern editorial illustration meets Google Doodle
+- 16:9 wide cinematic format
 
-No text, no logos, no people, no objects — purely abstract.`
+Strict rules: no text, no logos, no people, no business objects, no UI elements. Purely a decorative scenic illustration.`
 
 /**
  * Generates the homepage hero wallpaper using Gemini and uploads it to

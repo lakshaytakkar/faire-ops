@@ -1,20 +1,15 @@
 "use client"
 
-import { usePathname } from "next/navigation"
-import Link from "next/link"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 import { cn } from "@/lib/utils"
-import { Layers, Grid3x3 } from "lucide-react"
+import { Layers } from "lucide-react"
 
 export function BrandDock() {
   const { activeBrand, setActiveBrand, stores, inactiveStores, storesLoading } = useBrandFilter()
-  const pathname = usePathname()
 
   if (storesLoading) {
     return (
       <aside className="shrink-0 w-[52px] bg-black flex flex-col items-center py-2 gap-2">
-        <div className="w-10 h-10 rounded bg-white/5 animate-pulse" />
-        <div className="w-6 h-px bg-white/10" />
         <div className="w-10 h-10 rounded bg-white/5 animate-pulse" />
         <div className="w-6 h-px bg-white/10" />
         {[1, 2, 3, 4].map((i) => (
@@ -26,17 +21,6 @@ export function BrandDock() {
 
   return (
     <aside className="shrink-0 w-[52px] bg-black flex flex-col items-center py-2 gap-0.5">
-      {/* All Spaces — hard navigation back to the Business Suite homepage */}
-      <Link
-        href="/"
-        title="All Spaces"
-        className="relative flex items-center justify-center w-10 h-10 rounded bg-white/5 hover:bg-white/15 text-white/80 hover:text-white transition-colors"
-      >
-        <Grid3x3 className="size-[18px]" />
-      </Link>
-
-      <div className="w-6 h-px bg-white/10 my-1" />
-
       {/* All Brands */}
       <button
         onClick={() => setActiveBrand("all")}

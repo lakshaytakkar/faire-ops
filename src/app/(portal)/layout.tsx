@@ -11,16 +11,22 @@ export default function PortalLayout({
 }) {
   return (
     <BrandFilterProvider>
-      <div className="flex h-screen w-full">
-        <BrandDock />
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <UtilityBar />
-          <TopNavigation />
-          <main className="flex-1 overflow-auto px-4 py-5 md:px-6 lg:px-8">
-            {children}
-          </main>
+      <div className="flex h-screen w-full flex-col">
+        {/* Full-width utility bar — sits across the entire viewport, above
+            both docks, visually separating the chrome from the workspace. */}
+        <UtilityBar />
+
+        {/* Dock + content row */}
+        <div className="flex flex-1 min-h-0">
+          <BrandDock />
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <TopNavigation />
+            <main className="flex-1 overflow-auto px-4 py-5 md:px-6 lg:px-8">
+              {children}
+            </main>
+          </div>
+          <WorkspaceDock />
         </div>
-        <WorkspaceDock />
       </div>
     </BrandFilterProvider>
   )

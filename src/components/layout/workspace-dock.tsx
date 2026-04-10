@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -14,15 +13,14 @@ import {
   Link2,
   FolderOpen,
   GraduationCap,
-  FileText,
   Settings,
   BarChart3,
   Zap,
   Mail,
   Sparkles,
   Phone,
-  Grid3x3,
   Telescope,
+  LifeBuoy,
 } from "lucide-react"
 
 const WORKSPACE_ITEMS = [
@@ -31,7 +29,8 @@ const WORKSPACE_ITEMS = [
   { href: "/workspace/team", icon: Users, label: "Team", color: "#8b5cf6", bg: "rgba(139,92,246,0.15)" },
   { href: "/workspace/chat", icon: MessageCircle, label: "Chat", color: "#10b981", bg: "rgba(16,185,129,0.15)" },
   { href: "/workspace/qa/calls", icon: Phone, label: "Calls (QA)", color: "#0ea5e9", bg: "rgba(14,165,233,0.15)" },
-  { href: "/workspace/inbox", icon: Bell, label: "Inbox", color: "#ef4444", bg: "rgba(239,68,68,0.15)" },
+  { href: "/workspace/tickets", icon: LifeBuoy, label: "Tickets", color: "#ef4444", bg: "rgba(239,68,68,0.15)" },
+  { href: "/workspace/inbox", icon: Bell, label: "Inbox", color: "#f43f5e", bg: "rgba(244,63,94,0.15)" },
   null, // separator
   { href: "/workspace/research", icon: Telescope, label: "Research", color: "#6366f1", bg: "rgba(99,102,241,0.15)" },
   { href: "/workspace/training", icon: GraduationCap, label: "Learning", color: "#14b8a6", bg: "rgba(20,184,166,0.15)" },
@@ -49,49 +48,9 @@ const WORKSPACE_ITEMS = [
 
 export function WorkspaceDock() {
   const pathname = usePathname()
-  const [showProfile, setShowProfile] = useState(false)
 
   return (
     <aside className="shrink-0 w-[48px] bg-black flex flex-col items-center py-2 gap-1 border-l border-white/5 overflow-y-auto">
-      {/* Click-outside to close profile menu */}
-      {showProfile && (
-        <div className="fixed inset-0 z-40" onClick={() => setShowProfile(false)} />
-      )}
-
-      {/* User profile at top */}
-      <div className="relative z-50">
-        <button
-          onClick={() => setShowProfile(!showProfile)}
-          className="flex items-center justify-center w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/30 hover:ring-white/60 transition-all cursor-pointer"
-          title="Lakshay — Sr. Manager"
-        >
-          <img src="https://eeoesllyceegmzfqfbyu.supabase.co/storage/v1/object/public/images/team/lakshay.png" alt="Lakshay" className="w-full h-full object-cover" />
-        </button>
-        {showProfile && (
-          <div className="absolute right-full mr-2 top-0 w-48 rounded-lg border bg-card shadow-xl z-50 overflow-hidden">
-            <div className="p-3 border-b bg-muted/30 flex items-center gap-2.5">
-              <img src="https://eeoesllyceegmzfqfbyu.supabase.co/storage/v1/object/public/images/team/lakshay.png" alt="Lakshay" className="w-9 h-9 rounded-full object-cover" />
-              <div>
-                <p className="text-sm font-semibold">Lakshay</p>
-                <p className="text-[11px] text-muted-foreground">Sr. Manager</p>
-              </div>
-            </div>
-            <div className="py-1">
-              <Link href="/" onClick={() => setShowProfile(false)} className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-muted transition-colors">
-                <Grid3x3 className="size-3" /> All Spaces
-              </Link>
-              <Link href="/workspace/account" onClick={() => setShowProfile(false)} className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-muted transition-colors">
-                <Settings className="size-3" /> Account
-              </Link>
-              <Link href="/workspace/settings" onClick={() => setShowProfile(false)} className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-muted transition-colors">
-                <Settings className="size-3" /> Settings
-              </Link>
-            </div>
-          </div>
-        )}
-      </div>
-      <div className="w-5 h-px bg-white/10 my-0.5" />
-
       {WORKSPACE_ITEMS.map((item, i) => {
         if (item === null) {
           return <div key={`sep-${i}`} className="w-5 h-px bg-white/10 my-0.5" />
