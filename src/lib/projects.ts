@@ -150,6 +150,116 @@ export async function listChecklistFor(
   return out
 }
 
+/**
+ * Fetch the full child records (checklist, pages, plugins) for every project
+ * in one batched set of queries. Used by the homepage so the inline project
+ * detail view can render instantly on click without a second round-trip.
+ */
+export async function listAllProjectChildren(
+  projectIds: string[]
+): Promise<{
+  checklistByProject: Map<string, ChecklistItem[]>
+  pagesByProject: Map<string, ProjectPage[]>
+  pluginsByProject: Map<string, ProjectPluginRow[]>
+}> {
+  const out = {
+    checklistByProject: new Map<string, ChecklistItem[]>(),
+    pagesByProject: new Map<string, ProjectPage[]>(),
+    pluginsByProject: new Map<string, ProjectPluginRow[]>(),
+  }
+  if (projectIds.length === 0) return out
+
+  try {
+    const [checklistRes, pagesRes, pluginsRes] = await Promise.all([
+      supabase
+        .from("project_checklist")
+        .select(
+          "id, project_id, item_key, item_label, status, notes, sort_order"
+        )
+        .in("project_id", projectIds)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("project_pages")
+        .select("id, project_id, parent_id, name, path, status, sort_order")
+        .in("project_id", projectIds)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("project_plugins")
+        .select("id, project_id, plugin_slug, plugin_label, status")
+        .in("project_id", projectIds)
+        .order("plugin_label", { ascending: true }),
+    ])
+
+    for (const row of (checklistRes.data ?? []) as Array<
+      Record<string, unknown>
+    >) {
+      const projectId = String(row.project_id ?? "")
+      const item: ChecklistItem = {
+        id: String(row.id ?? ""),
+        item_key: String(row.item_key ?? ""),
+        item_label: String(row.item_label ?? ""),
+        status: String(row.status ?? "pending") as ChecklistStatus,
+        notes: (row.notes as string | null) ?? null,
+        sort_order: Number(row.sort_order ?? 0),
+      }
+      const arr = out.checklistByProject.get(projectId) ?? []
+      arr.push(item)
+      out.checklistByProject.set(projectId, arr)
+    }
+
+    // Build flat pages per project, then nest by parent_id.
+    const flatByProject = new Map<string, ProjectPage[]>()
+    for (const row of (pagesRes.data ?? []) as Array<
+      Record<string, unknown>
+    >) {
+      const projectId = String(row.project_id ?? "")
+      const page: ProjectPage = {
+        id: String(row.id ?? ""),
+        parent_id: (row.parent_id as string | null) ?? null,
+        name: String(row.name ?? ""),
+        path: (row.path as string | null) ?? null,
+        status: String(row.status ?? "pending") as PageStatus,
+        sort_order: Number(row.sort_order ?? 0),
+        subpages: [],
+      }
+      const arr = flatByProject.get(projectId) ?? []
+      arr.push(page)
+      flatByProject.set(projectId, arr)
+    }
+    for (const [projectId, flat] of flatByProject.entries()) {
+      const index = new Map(flat.map((p) => [p.id, p]))
+      const roots: ProjectPage[] = []
+      for (const p of flat) {
+        if (p.parent_id && index.has(p.parent_id)) {
+          index.get(p.parent_id)!.subpages!.push(p)
+        } else {
+          roots.push(p)
+        }
+      }
+      out.pagesByProject.set(projectId, roots)
+    }
+
+    for (const row of (pluginsRes.data ?? []) as Array<
+      Record<string, unknown>
+    >) {
+      const projectId = String(row.project_id ?? "")
+      const plugin: ProjectPluginRow = {
+        id: String(row.id ?? ""),
+        plugin_slug: String(row.plugin_slug ?? ""),
+        plugin_label: String(row.plugin_label ?? ""),
+        status: String(row.status ?? "installed") as PluginInstallStatus,
+      }
+      const arr = out.pluginsByProject.get(projectId) ?? []
+      arr.push(plugin)
+      out.pluginsByProject.set(projectId, arr)
+    }
+  } catch (err) {
+    console.error("listAllProjectChildren exception:", err)
+  }
+
+  return out
+}
+
 export async function getProjectBySlug(
   slug: string
 ): Promise<ProjectWithChildren | null> {

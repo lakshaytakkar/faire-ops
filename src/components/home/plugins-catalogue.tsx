@@ -33,7 +33,7 @@ function PluginCard({ plugin, tone }: { plugin: Plugin; tone: Tone }) {
   const isGlass = tone === "glass"
 
   const wrapperBase =
-    "group flex items-start gap-3 rounded-lg p-3 transition-all shadow-sm border"
+    "group flex items-start gap-2 rounded-md p-2 transition-all shadow-sm border"
 
   const wrapperTone = isGlass
     ? isInstalled
@@ -66,26 +66,23 @@ function PluginCard({ plugin, tone }: { plugin: Plugin; tone: Tone }) {
     <div className={cx(wrapperBase, wrapperTone)}>
       <div
         className={cx(
-          "flex items-center justify-center h-10 w-10 rounded-md shrink-0",
+          "flex items-center justify-center h-8 w-8 rounded shrink-0",
           iconBg
         )}
       >
-        <Icon className="h-5 w-5" />
+        <Icon className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">
         <h3
           className={cx(
-            "text-sm font-semibold font-heading leading-tight truncate",
+            "text-xs font-semibold font-heading leading-tight truncate",
             titleColor
           )}
         >
           {plugin.name}
         </h3>
         <p
-          className={cx(
-            "text-[11px] leading-snug mt-0.5 line-clamp-2",
-            descColor
-          )}
+          className={cx("text-[10px] leading-snug mt-0.5 line-clamp-1", descColor)}
         >
           {plugin.description}
         </p>
@@ -94,21 +91,21 @@ function PluginCard({ plugin, tone }: { plugin: Plugin; tone: Tone }) {
         {isInstalled ? (
           <span
             className={cx(
-              "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-wider ring-1 ring-inset",
+              "inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ring-1 ring-inset",
               pillInstalled
             )}
           >
-            <Check className="h-3 w-3" />
-            Installed
+            <Check className="h-2.5 w-2.5" />
+            On
           </span>
         ) : (
           <span
             className={cx(
-              "inline-flex items-center rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-wider",
+              "inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider",
               pillPending
             )}
           >
-            Coming soon
+            Soon
           </span>
         )}
       </div>
@@ -142,64 +139,55 @@ export function PluginsCatalogue({
       <div className="max-w-3xl">
         <h1
           className={cx(
-            "text-3xl md:text-4xl font-bold font-heading tracking-tight",
+            "text-2xl md:text-3xl font-bold font-heading tracking-tight",
             headingColor
           )}
         >
           Plugins
         </h1>
         <p
-          className={cx(
-            "mt-3 text-sm md:text-base leading-relaxed",
-            mutedColor
-          )}
+          className={cx("mt-2 text-xs md:text-sm leading-relaxed", mutedColor)}
         >
-          Universal modules that can be installed into any space. Each space
-          is isolated — install only what it needs. We already ship{" "}
+          Universal modules installable into any space.{" "}
           <span className={cx("font-semibold", headingColor)}>
             {totalInstalled}
           </span>{" "}
-          modules, with{" "}
+          shipped,{" "}
           <span className={cx("font-semibold", headingColor)}>
             {totalPending}
           </span>{" "}
-          on the roadmap. Pending plugins are shown in grayscale.
+          on the roadmap.
         </p>
       </div>
 
       {/* Categories */}
-      <div className="mt-10 space-y-10">
+      <div className="mt-6 space-y-6">
         {categories.map((category) => {
           const installedInCat = category.plugins.filter(
             (p) => p.status === "installed"
           ).length
           return (
             <section key={category.name}>
-              <div className="flex items-baseline justify-between gap-4 mb-4">
-                <div>
-                  <h2
-                    className={cx(
-                      "text-lg md:text-xl font-bold font-heading",
-                      headingColor
-                    )}
-                  >
-                    {category.name}
-                  </h2>
-                  <p className={cx("text-xs mt-0.5", mutedColor)}>
-                    {category.blurb}
-                  </p>
-                </div>
-                <div
+              <div className="flex items-baseline justify-between gap-4 mb-2">
+                <h2
                   className={cx(
-                    "text-[10px] font-bold uppercase tracking-wider shrink-0",
+                    "text-[11px] font-bold uppercase tracking-wider",
                     mutedColor
                   )}
                 >
-                  {installedInCat} / {category.plugins.length} installed
+                  {category.name}
+                </h2>
+                <div
+                  className={cx(
+                    "text-[10px] font-bold tabular-nums shrink-0",
+                    mutedColor
+                  )}
+                >
+                  {installedInCat}/{category.plugins.length}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
                 {category.plugins.map((plugin) => (
                   <PluginCard
                     key={category.name + plugin.name}
@@ -215,13 +203,9 @@ export function PluginsCatalogue({
 
       {/* Footer */}
       <div
-        className={cx(
-          "mt-16 pt-8 border-t text-xs",
-          dividerColor,
-          mutedColor
-        )}
+        className={cx("mt-8 pt-4 border-t text-[11px]", dividerColor, mutedColor)}
       >
-        Total: {totalInstalled} installed · {totalPending} coming soon ·{" "}
+        {totalInstalled} installed · {totalPending} coming soon ·{" "}
         {categories.length} categories
       </div>
     </div>

@@ -26,11 +26,16 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Space } from "@/lib/spaces"
-import type { Project, ChecklistSummary } from "@/lib/projects"
+import type {
+  Project,
+  ProjectWithChildren,
+  ChecklistSummary,
+} from "@/lib/projects"
 import { WallpaperSwitcher } from "@/components/home/wallpaper-switcher"
 import { InstallButton } from "@/components/home/install-button"
 import { PluginsCatalogue } from "@/components/home/plugins-catalogue"
 import { ProjectsGrid } from "@/components/home/projects-grid"
+import { ProjectDetailInline } from "@/components/home/project-detail-inline"
 import {
   PLUGIN_CATEGORIES,
   countInstalled,
@@ -372,20 +377,35 @@ function PluginsView() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Projects view — same wallpaper, scrollable glass panel             */
+/*  Projects view — compact list, click a row to open inline detail    */
 /* ------------------------------------------------------------------ */
 
 function ProjectsView({
   projects,
   summaries,
+  selectedDetail,
+  onSelectSlug,
+  onBack,
 }: {
   projects: Project[]
   summaries: Map<string, ChecklistSummary>
+  selectedDetail: ProjectWithChildren | null
+  onSelectSlug: (slug: string) => void
+  onBack: () => void
 }) {
   return (
-    <div className="relative min-h-screen flex flex-col items-center px-5 py-20">
-      <div className="w-full max-w-6xl rounded-2xl border border-white/10 bg-black/45 backdrop-blur-xl shadow-2xl p-6 md:p-10">
-        <ProjectsGrid projects={projects} summaries={summaries} tone="glass" />
+    <div className="relative min-h-screen flex flex-col items-center px-5 py-16">
+      <div className="w-full max-w-5xl rounded-2xl border border-white/10 bg-black/50 backdrop-blur-xl shadow-2xl p-5 md:p-8">
+        {selectedDetail ? (
+          <ProjectDetailInline project={selectedDetail} onBack={onBack} />
+        ) : (
+          <ProjectsGrid
+            projects={projects}
+            summaries={summaries}
+            tone="glass"
+            onSelectSlug={onSelectSlug}
+          />
+        )}
       </div>
     </div>
   )
@@ -403,18 +423,28 @@ interface HomeLauncherProps {
   /** Array of [projectId, ChecklistSummary] so we can pass a Map across the
       server→client boundary (Maps aren't serializable as props). */
   projectSummaries: Array<[string, ChecklistSummary]>
+  /** Array of [slug, ProjectWithChildren] — full detail for every project,
+      pre-fetched server-side so the inline detail view opens instantly. */
+  projectDetails: Array<[string, ProjectWithChildren]>
 }
 
 export function HomeLauncher({
   activeApps,
   projects,
   projectSummaries,
+  projectDetails,
 }: HomeLauncherProps) {
   const [view, setView] = useState<View>("home")
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null)
   const summaryMap = useMemo(
     () => new Map(projectSummaries),
     [projectSummaries]
   )
+  const detailMap = useMemo(
+    () => new Map(projectDetails),
+    [projectDetails]
+  )
+  const selectedDetail = selectedSlug ? detailMap.get(selectedSlug) ?? null : null
 
   return (
     <main className="relative min-h-screen overflow-hidden">
@@ -490,7 +520,13 @@ export function HomeLauncher({
       {view === "home" && <HomeHero activeApps={activeApps} />}
       {view === "plugins" && <PluginsView />}
       {view === "projects" && (
-        <ProjectsView projects={projects} summaries={summaryMap} />
+        <ProjectsView
+          projects={projects}
+          summaries={summaryMap}
+          selectedDetail={selectedDetail}
+          onSelectSlug={setSelectedSlug}
+          onBack={() => setSelectedSlug(null)}
+        />
       )}
 
       {/* Bottom-left wallpaper attribution (Home view only) */}
