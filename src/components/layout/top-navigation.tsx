@@ -8,11 +8,9 @@ import {
   ShoppingCart,
   Package,
   Users,
-  BarChart2,
   Wallet,
   Blocks,
   Megaphone,
-  FileBarChart,
   Target,
   Phone,
 } from "lucide-react"
@@ -37,9 +35,14 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   {
-    title: "Dashboard",
+    title: "Overview",
     url: "/dashboard",
     icon: LayoutDashboard,
+    subItems: [
+      { title: "Dashboard", url: "/dashboard" },
+      { title: "Analytics", url: "/dashboard/analytics" },
+      { title: "Reports", url: "/dashboard/reports" },
+    ],
   },
   {
     title: "Orders",
@@ -80,18 +83,6 @@ const NAV_ITEMS: NavItem[] = [
       { title: "Follow-ups", url: "/retailers/follow-ups" },
       { title: "WhatsApp", url: "/retailers/whatsapp" },
       { title: "Faire Direct", url: "/retailers/faire-direct" },
-    ],
-  },
-  {
-    title: "Analytics",
-    url: "/analytics",
-    icon: BarChart2,
-    subItems: [
-      { title: "Revenue", url: "/analytics/revenue" },
-      { title: "Stores", url: "/analytics/stores" },
-      { title: "Products", url: "/analytics/products" },
-      { title: "Traffic", url: "/analytics/traffic" },
-      { title: "Geography", url: "/analytics/geography" },
     ],
   },
   {
@@ -160,16 +151,6 @@ const NAV_ITEMS: NavItem[] = [
       { title: "Reports", url: "/marketing/reports" },
     ],
   },
-  {
-    title: "Reports",
-    url: "/reports",
-    icon: FileBarChart,
-    centralOnly: true,
-    subItems: [
-      { title: "All Reports", url: "/reports/all" },
-      { title: "Day Close", url: "/reports/day-close" },
-    ],
-  },
 ]
 
 function getActiveNavItem(pathname: string, items: NavItem[]): NavItem | null {
@@ -190,6 +171,10 @@ function getActiveNavItem(pathname: string, items: NavItem[]): NavItem | null {
 
 function isSubItemActive(pathname: string, subUrl: string, isFirst: boolean, parentUrl: string): boolean {
   if (pathname === subUrl) return true
+  // When a sub-item's url equals the parent url (e.g. first sub pointing at the
+  // parent route), it should only be active on the exact parent path — otherwise
+  // it would light up for every descendant route.
+  if (subUrl === parentUrl) return false
   if (pathname.startsWith(subUrl + "/")) return true
   return false
 }

@@ -60,10 +60,10 @@ export function WorkspaceDock() {
   const pathname = usePathname()
 
   return (
-    <aside className="shrink-0 w-12 bg-black flex flex-col border-l border-white/5 overflow-y-auto">
+    <aside className="shrink-0 w-12 bg-black flex flex-col border-l border-white/10 overflow-y-auto">
       {WORKSPACE_ITEMS.map((item, i) => {
         if (item === null) {
-          return <div key={`sep-${i}`} className="w-12 h-px bg-white/15" />
+          return <div key={`sep-${i}`} className="w-12 h-12 border-b border-white/10" />
         }
 
         const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
@@ -73,20 +73,18 @@ export function WorkspaceDock() {
             key={item.href}
             href={item.href}
             className={cn(
-              "relative flex items-center justify-center w-12 h-12 border-b border-white/10 group transition-colors",
-              isActive ? "bg-white/10" : "hover:bg-white/10"
+              "relative flex items-center justify-center w-12 h-12 border-b border-white/10 group transition-all",
+              isActive && "ring-1 ring-inset ring-white/40"
             )}
             title={item.label}
+            style={{ backgroundColor: item.color }}
           >
-            <span
-              className="flex items-center justify-center w-7 h-7 rounded shrink-0"
-              style={{ backgroundColor: item.color }}
-            >
-              <item.icon className="size-[14px] text-white" />
-            </span>
+            <item.icon className="size-[18px] text-white" />
             {isActive && (
               <span className="absolute left-0 top-0 bottom-0 w-[2px] bg-white" />
             )}
+            {/* Hover overlay for visual feedback */}
+            <span className="absolute inset-0 bg-white/0 group-hover:bg-white/15 transition-colors pointer-events-none" />
             {/* Tooltip */}
             <span className="absolute right-full mr-2 px-2 py-1 rounded-md bg-foreground text-background text-[10px] font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 shadow-lg">
               {item.label}

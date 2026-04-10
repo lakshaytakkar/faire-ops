@@ -29,6 +29,7 @@ import {
   Settings,
   User,
   Sparkles,
+  Home,
 } from "lucide-react"
 
 // Hardcoded for the first Space. When a second Space is added, this should
@@ -112,13 +113,13 @@ export function UtilityBar() {
 
   return (
     <div className="shrink-0 h-12 w-full bg-card border-t border-slate-300 flex items-stretch z-30">
-      {/* === LEFT: Space switcher === */}
+      {/* === LEFT: Home === */}
       <Link
         href="/"
         className="flex items-center justify-center w-12 h-12 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors shrink-0 border-r border-slate-300"
-        title="All Spaces"
+        title="Home"
       >
-        <Grid3x3 className="size-4" />
+        <Home className="size-4" />
       </Link>
 
       <Link
