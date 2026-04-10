@@ -37,7 +37,7 @@ export function BrandDock() {
         )}
         title="All Stores"
       >
-        <Layers className="size-[18px] text-white" />
+        <Layers className="size-7 text-white" strokeWidth={2.25} />
         {activeBrand === "all" && (
           <span className="absolute right-0 top-0 bottom-0 w-[2px] bg-white" />
         )}
@@ -67,7 +67,7 @@ export function BrandDock() {
                 loading="lazy"
               />
             ) : (
-              <span className="text-[11px] font-bold text-white">
+              <span className="text-base font-bold text-white">
                 {store.short}
               </span>
             )}
@@ -98,7 +98,7 @@ export function BrandDock() {
                   loading="lazy"
                 />
               ) : (
-                <span className="text-[11px] font-bold text-white/80">
+                <span className="text-base font-bold text-white/80">
                   {store.short}
                 </span>
               )}

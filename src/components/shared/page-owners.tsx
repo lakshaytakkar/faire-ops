@@ -132,7 +132,7 @@ export function PageOwnersButton({ pageRoute }: PageOwnersProps) {
         <Users className="size-3.5 mr-1" />
         Owners
         {count > 0 && (
-          <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary/15 text-primary text-[10px] font-bold">
+          <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary/15 text-primary text-xs font-bold">
             {count}
           </span>
         )}
@@ -204,7 +204,7 @@ export function PageOwnersButton({ pageRoute }: PageOwnersProps) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="text-sm font-semibold text-foreground">{o.user?.full_name ?? "Unknown user"}</h4>
-                          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${meta.badge}`}>
+                          <span className={`inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full border ${meta.badge}`}>
                             <Icon className="size-2.5" />
                             {meta.label}
                           </span>

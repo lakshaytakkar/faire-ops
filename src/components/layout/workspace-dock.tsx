@@ -79,7 +79,7 @@ export function WorkspaceDock() {
             title={item.label}
             style={{ backgroundColor: item.color }}
           >
-            <item.icon className="size-[18px] text-white" />
+            <item.icon className="size-7 text-white" strokeWidth={2.25} />
             {isActive && (
               <span className="absolute left-0 top-0 bottom-0 w-[2px] bg-white" />
             )}

@@ -215,7 +215,7 @@ function RichTextEditorImpl({
         >
           <LinkIcon className="w-3.5 h-3.5" />
         </ToolbarButton>
-        <div className="ml-auto text-[10px] text-muted-foreground/70 px-1 select-none">
+        <div className="ml-auto text-xs text-muted-foreground/70 px-1 select-none">
           Enter to send · Shift+Enter for line
         </div>
       </div>

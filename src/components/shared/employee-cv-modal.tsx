@@ -496,7 +496,7 @@ export default function EmployeeCVModal({ memberId, memberName, onClose }: Emplo
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-sm font-medium truncate">{skill.skill_name}</span>
-                            <span className={`text-[10px] font-bold ${proficiencyTextColor(skill.proficiency)}`}>
+                            <span className={`text-xs font-bold ${proficiencyTextColor(skill.proficiency)}`}>
                               {skill.proficiency}%
                             </span>
                           </div>
@@ -507,7 +507,7 @@ export default function EmployeeCVModal({ memberId, memberName, onClose }: Emplo
                             />
                           </div>
                         </div>
-                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground shrink-0">
+                        <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground shrink-0">
                           {skill.category}
                         </span>
                       </div>
@@ -555,7 +555,7 @@ export default function EmployeeCVModal({ memberId, memberName, onClose }: Emplo
                               {proj.tags.map((tag) => (
                                 <span
                                   key={tag}
-                                  className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200"
+                                  className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200"
                                 >
                                   {tag}
                                 </span>

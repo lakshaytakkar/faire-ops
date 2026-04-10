@@ -207,7 +207,7 @@ export function TreeExplorer({ nodes, onStatusChange, onNodeClick, expandAll: in
 
           {/* Task number */}
           {node.task_number && (
-            <span className="text-[10px] text-muted-foreground shrink-0">#{node.task_number}</span>
+            <span className="text-xs text-muted-foreground shrink-0">#{node.task_number}</span>
           )}
 
           {/* Title */}
@@ -241,7 +241,7 @@ export function TreeExplorer({ nodes, onStatusChange, onNodeClick, expandAll: in
           {/* Priority badge */}
           {node.priority && (
             <span
-              className={`text-[10px] font-medium px-1.5 py-0.5 rounded capitalize shrink-0 ${
+              className={`text-xs font-medium px-1.5 py-0.5 rounded capitalize shrink-0 ${
                 PRIORITY_STYLES[node.priority] ?? ""
               }`}
             >
