@@ -124,12 +124,15 @@ export function getActiveSpaceSlug(pathname: string): string {
 export function SpaceDock() {
   const pathname = usePathname()
   const activeSlug = getActiveSpaceSlug(pathname)
-  const { hasSpaceAccess, isSuperadmin, loading } = useAuth()
+  const { hasSpaceAccess, isSuperadmin, loading, user } = useAuth()
 
   // Filter to spaces the current user has access to. Superadmin sees all.
   // While loading, show all (otherwise the dock briefly empties on first render).
+  // If auth resolved to no user at all (e.g. RLS regression, network error,
+  // dev fallback misconfigured), still show all spaces — the alternative is
+  // an invisible dock with no diagnostic, which is what bit us in #S378.
   const visibleSpaces = SPACES.filter((s) => {
-    if (loading || isSuperadmin) return true
+    if (loading || isSuperadmin || !user) return true
     return hasSpaceAccess(s.slug)
   })
 

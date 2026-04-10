@@ -248,47 +248,45 @@ const BRAND_LOGOS: BrandLogo[] = [
 function BrandLogoGrid() {
   return (
     <div className="mt-6 w-full">
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-2">
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-3">
         Brands & Ventures
       </p>
-      <div className="rounded-lg border border-border/80 bg-card shadow-sm p-3">
-        <div className="grid grid-cols-3 gap-2">
-          {BRAND_LOGOS.map((brand) => {
-            const inner = (
-              <div className="h-16 flex items-center justify-center rounded-md bg-white border border-border/60 hover:border-foreground/20 hover:shadow-sm transition-all p-2 group">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`/logos/${brand.slug}.png`}
-                  alt={brand.name}
-                  className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform"
-                />
-              </div>
-            )
-            if (brand.url) {
-              const isExternal = /^https?:\/\//i.test(brand.url)
-              return isExternal ? (
-                <a
-                  key={brand.slug}
-                  href={brand.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title={brand.name}
-                >
-                  {inner}
-                </a>
-              ) : (
-                <Link key={brand.slug} href={brand.url} title={brand.name}>
-                  {inner}
-                </Link>
-              )
-            }
-            return (
-              <div key={brand.slug} title={`${brand.name} (coming soon)`} className="opacity-70">
+      <div className="grid grid-cols-3 gap-5">
+        {BRAND_LOGOS.map((brand) => {
+          const inner = (
+            <div className="flex items-center justify-center h-28 group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/logos/${brand.slug}.png`}
+                alt={brand.name}
+                className="h-full w-full object-contain group-hover:scale-105 transition-transform"
+              />
+            </div>
+          )
+          if (brand.url) {
+            const isExternal = /^https?:\/\//i.test(brand.url)
+            return isExternal ? (
+              <a
+                key={brand.slug}
+                href={brand.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={brand.name}
+              >
                 {inner}
-              </div>
+              </a>
+            ) : (
+              <Link key={brand.slug} href={brand.url} title={brand.name}>
+                {inner}
+              </Link>
             )
-          })}
-        </div>
+          }
+          return (
+            <div key={brand.slug} title={`${brand.name} (coming soon)`} className="opacity-70">
+              {inner}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
