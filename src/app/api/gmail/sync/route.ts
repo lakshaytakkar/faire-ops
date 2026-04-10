@@ -21,11 +21,11 @@ function getAdmin() {
 /**
  * Pulls the most recent messages from Gmail and persists them in Supabase.
  *
- * Body: { accountId?: string, max?: number }
+ * Body: { accountId?: string, max?: number }  (max defaults to 500, capped at 2000)
  *
  * Strategy:
- *   1. Fetch the message list (no labelIds filter — we get system labels back
- *      from messages.get and store them).
+ *   1. Page through users.messages.list using nextPageToken until we have
+ *      `max` refs or there are no more pages.
  *   2. Skip messages we already have *and* haven't changed (cheap label sync
  *      via metadata format) — full body fetch only for new ones.
  *   3. Update gmail_accounts.history_id + counts + last_synced_at.
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}))
     const accountId: string | undefined = body.accountId
-    const max: number = Math.min(Math.max(body.max ?? 50, 1), 200)
+    const max: number = Math.min(Math.max(body.max ?? 500, 1), 2000)
 
     const account = await loadAccount(accountId)
     if (!account) {
@@ -51,7 +51,8 @@ export async function POST(req: NextRequest) {
 
     const supabase = getAdmin()
 
-    // Pull the existing gmail_id set so we can skip already-fetched messages
+    // Pull the existing gmail_id set so we can skip already-fetched messages.
+    // At ~50 bytes/row this is ~5MB for 100k messages which is acceptable.
     const { data: existingRows } = await supabase
       .from("gmail_messages")
       .select("gmail_id, label_ids")
@@ -62,9 +63,20 @@ export async function POST(req: NextRequest) {
       existingMap.set(r.gmail_id as string, (r.label_ids as string[]) ?? [])
     }
 
-    // 1. Fetch the latest message list
-    const list = await listMessages(token, { maxResults: max })
-    const refs = list.messages ?? []
+    // 1. Page through messages.list until we've collected `max` refs or run out.
+    const refs: { id: string; threadId: string }[] = []
+    let pageToken: string | undefined = undefined
+    while (refs.length < max) {
+      const pageSize = Math.min(500, max - refs.length)
+      const page: Awaited<ReturnType<typeof listMessages>> = await listMessages(token, {
+        maxResults: pageSize,
+        pageToken,
+      })
+      const pageRefs = page.messages ?? []
+      refs.push(...pageRefs)
+      if (!page.nextPageToken || pageRefs.length === 0) break
+      pageToken = page.nextPageToken
+    }
 
     let inserted = 0
     let updated = 0

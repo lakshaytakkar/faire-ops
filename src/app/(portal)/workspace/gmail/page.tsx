@@ -5,6 +5,7 @@ import {
   Mail, Search, Star, Send, FileText, AlertTriangle, Trash2,
   Plus, ChevronDown, X, ArrowLeft, Reply, MoreVertical,
   Inbox as InboxIcon, Pencil, Check, RefreshCw, Link as LinkIcon,
+  Sparkles, Maximize2,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
@@ -117,6 +118,13 @@ export default function GmailPage() {
   const [statusBanner, setStatusBanner] = useState<{ kind: "success" | "error"; text: string } | null>(null)
 
   const [pendingAutoSync, setPendingAutoSync] = useState(false)
+  const [messageLimit, setMessageLimit] = useState(100)
+  const [categorizing, setCategorizing] = useState(false)
+
+  /* ---- Inline reply composer state ---- */
+  const [replyBody, setReplyBody] = useState("")
+  const [replySending, setReplySending] = useState(false)
+  const [aiDrafting, setAiDrafting] = useState(false)
 
   /* ---- Read OAuth result from query params ---- */
   useEffect(() => {
@@ -162,7 +170,7 @@ export default function GmailPage() {
       .select("id, account_id, gmail_id, thread_id, subject, sender, sender_email, recipients, snippet, body_text, body_html, label_ids, is_read, is_starred, has_attachment, received_at")
       .eq("account_id", activeAccount.id)
       .order("received_at", { ascending: false })
-      .limit(200)
+      .limit(messageLimit)
 
     if (activeFolder === "STARRED") {
       query = query.eq("is_starred", true)
@@ -173,7 +181,7 @@ export default function GmailPage() {
     const { data } = await query
     setMessages(data ?? [])
     setLoading(false)
-  }, [activeAccount, activeFolder])
+  }, [activeAccount, activeFolder, messageLimit])
 
   /* ---- Pull from Gmail API into Supabase, then re-read ---- */
   const [syncing, setSyncing] = useState(false)
@@ -190,7 +198,7 @@ export default function GmailPage() {
       if (res.ok) {
         setStatusBanner({
           kind: "success",
-          text: `Synced — ${data.inserted} new, ${data.updated} updated`,
+          text: `Synced ${data.inserted ?? 0} new, ${data.updated ?? 0} updated of ${data.total ?? 0} total`,
         })
         await fetchMessages()
       } else if (res.status === 401) {
@@ -210,6 +218,51 @@ export default function GmailPage() {
   }, [activeAccount, fetchMessages])
 
   useEffect(() => { fetchMessages() }, [fetchMessages])
+
+  /* ---- Reset inline reply state when selected message changes ---- */
+  useEffect(() => {
+    setReplyBody("")
+    setAiDrafting(false)
+    setReplySending(false)
+  }, [selectedMessage?.id])
+
+  /* ---- Categorize with AI ---- */
+  const handleCategorize = useCallback(async () => {
+    if (!activeAccount) return
+    setCategorizing(true)
+    try {
+      const res = await fetch("/api/gmail/ai/categorize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accountId: activeAccount.id,
+          max: 50,
+          onlyUncategorized: true,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        const byCategory = (data.byCategory ?? {}) as Record<string, number>
+        const breakdown = Object.entries(byCategory)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(", ")
+        setStatusBanner({
+          kind: "success",
+          text: breakdown
+            ? `Categorized ${data.categorized ?? 0} messages — ${breakdown}`
+            : `Categorized ${data.categorized ?? 0} messages`,
+        })
+        await fetchMessages()
+      } else {
+        setStatusBanner({ kind: "error", text: data.error ?? "Categorize failed" })
+      }
+    } catch (err) {
+      console.error(err)
+      setStatusBanner({ kind: "error", text: "Network error during categorize" })
+    } finally {
+      setCategorizing(false)
+    }
+  }, [activeAccount, fetchMessages])
 
   /* ---- Auto-sync once after a fresh OAuth connection ---- */
   useEffect(() => {
@@ -365,6 +418,81 @@ export default function GmailPage() {
     }
   }
 
+  /* ---- Inline reply handlers ---- */
+  async function handleInlineReplySend() {
+    if (!selectedMessage || !activeAccount) return
+    if (!replyBody.trim()) return
+    setReplySending(true)
+    try {
+      const res = await fetch("/api/gmail/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: selectedMessage.sender_email,
+          subject: `Re: ${selectedMessage.subject ?? ""}`,
+          body: replyBody,
+          threadId: selectedMessage.thread_id,
+          accountId: activeAccount.id,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setStatusBanner({
+          kind: "success",
+          text: data.demo ? "Saved (no Google account connected)" : "Reply sent",
+        })
+        setReplyBody("")
+      } else {
+        setStatusBanner({ kind: "error", text: data.error ?? "Reply failed" })
+      }
+    } catch (err) {
+      console.error("Reply failed:", err)
+      setStatusBanner({ kind: "error", text: "Network error" })
+    } finally {
+      setReplySending(false)
+    }
+  }
+
+  async function handleAiDraft() {
+    if (!selectedMessage) return
+    setAiDrafting(true)
+    try {
+      const res = await fetch("/api/gmail/ai/draft-reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messageId: selectedMessage.id,
+          tone: "professional",
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setReplyBody(data.body ?? "")
+        setStatusBanner({ kind: "success", text: "AI draft ready — edit and send" })
+      } else {
+        setStatusBanner({ kind: "error", text: data.error ?? "AI draft failed" })
+      }
+    } catch (err) {
+      console.error("AI draft failed:", err)
+      setStatusBanner({ kind: "error", text: "Network error generating draft" })
+    } finally {
+      setAiDrafting(false)
+    }
+  }
+
+  function expandReplyToCompose() {
+    if (!selectedMessage) return
+    setCompose({
+      open: true,
+      to: selectedMessage.sender_email ?? "",
+      cc: "",
+      showCc: false,
+      subject: `Re: ${selectedMessage.subject ?? ""}`,
+      body: replyBody,
+      replyTo: selectedMessage,
+    })
+  }
+
   function connectAccount() {
     window.location.href = "/api/gmail/oauth/start"
   }
@@ -391,6 +519,14 @@ export default function GmailPage() {
           >
             <RefreshCw className={`h-4 w-4 text-muted-foreground ${syncing ? "animate-spin" : ""}`} />
             {syncing ? "Syncing..." : "Sync"}
+          </button>
+          <button
+            onClick={handleCategorize}
+            disabled={categorizing || !activeAccount}
+            className="inline-flex items-center gap-1.5 rounded-md bg-card border border-border/80 shadow-sm px-3 h-9 text-sm font-medium text-foreground hover:bg-muted/60 hover:border-border transition-colors disabled:opacity-50"
+          >
+            <Sparkles className={`h-4 w-4 text-muted-foreground ${categorizing ? "animate-pulse" : ""}`} />
+            {categorizing ? "Categorizing..." : "Categorize with AI"}
           </button>
           <button
             onClick={connectAccount}
@@ -661,33 +797,32 @@ export default function GmailPage() {
                     </button>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-6">
-                    <div className="max-w-3xl mx-auto">
-                      <div className="flex items-start gap-3 mb-5">
-                        <div
-                          className="h-10 w-10 rounded-md flex items-center justify-center text-white text-sm font-bold shrink-0"
-                          style={{ backgroundColor: avatarBg(selectedMessage.sender) }}
-                        >
-                          {senderInitial(selectedMessage.sender)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-baseline gap-2 flex-wrap">
-                            <span className="font-semibold text-sm">{selectedMessage.sender}</span>
-                            <span className="text-xs text-muted-foreground">
-                              &lt;{selectedMessage.sender_email}&gt;
-                            </span>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            to {selectedMessage.recipients} · {formatDate(selectedMessage.received_at)}
-                          </p>
-                        </div>
+                  <div className="flex-1 overflow-y-auto">
+                    <div className="flex items-start gap-3 px-6 py-5 border-b border-border/80">
+                      <div
+                        className="h-10 w-10 rounded-md flex items-center justify-center text-white text-sm font-bold shrink-0"
+                        style={{ backgroundColor: avatarBg(selectedMessage.sender) }}
+                      >
+                        {senderInitial(selectedMessage.sender)}
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          <span className="font-semibold text-sm">{selectedMessage.sender}</span>
+                          <span className="text-xs text-muted-foreground">
+                            &lt;{selectedMessage.sender_email}&gt;
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          to {selectedMessage.recipients} · {formatDate(selectedMessage.received_at)}
+                        </p>
+                      </div>
+                    </div>
 
+                    <div className="px-6 py-5">
                       <div className="rounded-md border border-border/80 bg-background p-5">
                         {selectedMessage.body_html ? (
                           <iframe
                             // Sandboxed so remote scripts cannot run, no top-nav, no forms.
-                            // Only allow same-origin so we can access the doc to size it.
                             sandbox=""
                             srcDoc={`<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><style>body{font-family:-apple-system,system-ui,sans-serif;font-size:14px;line-height:1.5;color:#0f172a;margin:0;padding:0;}img{max-width:100%;height:auto;}a{color:#3b82f6;}</style></head><body>${selectedMessage.body_html}</body></html>`}
                             className="w-full min-h-[400px] border-0"
@@ -700,13 +835,53 @@ export default function GmailPage() {
                         )}
                       </div>
 
-                      <button
-                        onClick={() => openReply(selectedMessage)}
-                        className="mt-5 w-full flex items-center gap-2 px-4 py-2.5 rounded-md border border-border/80 text-sm text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors"
-                      >
-                        <Reply className="h-4 w-4" />
-                        Click here to reply
-                      </button>
+                      {/* Inline reply composer */}
+                      <div className="mt-5 rounded-md border border-border/80 bg-background overflow-hidden">
+                        <div className="flex items-center gap-2 px-4 h-11 border-b border-border/80 bg-muted/20">
+                          <Reply className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-sm font-medium font-heading truncate">
+                            Reply to {selectedMessage.sender ?? selectedMessage.sender_email ?? "sender"}
+                          </span>
+                          <div className="flex-1" />
+                          <button
+                            onClick={handleAiDraft}
+                            disabled={aiDrafting}
+                            className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-border/80 bg-card shadow-sm text-xs font-medium text-foreground hover:bg-muted/60 transition-colors disabled:opacity-50"
+                          >
+                            <Sparkles className={`h-3.5 w-3.5 text-muted-foreground ${aiDrafting ? "animate-pulse" : ""}`} />
+                            {aiDrafting ? "Drafting..." : "AI Draft"}
+                          </button>
+                        </div>
+                        <textarea
+                          value={replyBody}
+                          onChange={(e) => setReplyBody(e.target.value)}
+                          rows={6}
+                          placeholder="Write a reply..."
+                          className="w-full p-4 text-sm bg-transparent resize-y focus:outline-none min-h-[140px]"
+                        />
+                        <div className="flex items-center gap-2 px-4 h-12 border-t border-border/80 bg-muted/10">
+                          <button
+                            onClick={handleInlineReplySend}
+                            disabled={replySending || !replyBody.trim() || !activeAccount}
+                            className="inline-flex items-center gap-1.5 h-8 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                          >
+                            <Send className="h-3.5 w-3.5" />
+                            {replySending ? "Sending..." : "Send"}
+                          </button>
+                          <button
+                            onClick={expandReplyToCompose}
+                            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border/80 bg-card shadow-sm text-xs font-medium text-foreground hover:bg-muted/60 transition-colors"
+                            title="Expand to full editor"
+                          >
+                            <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
+                            Expand
+                          </button>
+                          <div className="flex-1" />
+                          <span className="text-xs text-muted-foreground">
+                            Replying to thread
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </>
@@ -808,6 +983,16 @@ export default function GmailPage() {
                           </span>
                         </div>
                       ))
+                    )}
+                    {!loading && messages.length > 0 && messages.length >= messageLimit && (
+                      <div className="flex items-center justify-center p-4">
+                        <button
+                          onClick={() => setMessageLimit((prev) => prev + 100)}
+                          className="inline-flex items-center gap-1.5 h-8 px-4 rounded-md border border-border/80 bg-card shadow-sm text-xs font-medium text-foreground hover:bg-muted/60 transition-colors"
+                        >
+                          Load more
+                        </button>
+                      </div>
                     )}
                   </div>
                 </>

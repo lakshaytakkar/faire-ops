@@ -16,6 +16,75 @@ export async function generateText(prompt: string): Promise<string> {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/*  Audio transcription + analysis                                     */
+/* ------------------------------------------------------------------ */
+
+export interface CallTranscriptionResult {
+  transcript: string
+  summary: string
+  key_points: string[]
+  sentiment: "positive" | "neutral" | "negative" | "escalated"
+  topics: string[]
+  flag_severity: "none" | "low" | "medium" | "high" | "critical"
+  flag_reasons: string[]
+  quality_score: number
+  action_items: string[]
+}
+
+/**
+ * Transcribe and analyze a call recording using Gemini 2.5 Flash audio input.
+ * Returns transcript + AI summary, sentiment, flags, action items.
+ */
+export async function transcribeCallAudio(
+  audioBase64: string,
+  mimeType: string = "audio/mpeg"
+): Promise<CallTranscriptionResult> {
+  if (!genAI) {
+    throw new Error("Gemini API key not configured")
+  }
+
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
+
+  const prompt = `You are a call quality analyst. Listen to this call recording and respond with ONLY a valid JSON object (no markdown, no code fences) with this exact structure:
+
+{
+  "transcript": "Full verbatim transcript with speaker labels like 'Agent:' and 'Customer:'",
+  "summary": "2-3 sentence summary of what the call was about",
+  "key_points": ["Key point 1", "Key point 2", "..."],
+  "sentiment": "positive | neutral | negative | escalated",
+  "topics": ["topic1", "topic2"],
+  "flag_severity": "none | low | medium | high | critical",
+  "flag_reasons": ["Specific issues if any, e.g., rude_tone, unresolved_complaint, compliance_issue"],
+  "quality_score": 0-100,
+  "action_items": ["Concrete next steps mentioned in the call"]
+}
+
+Be honest in your scoring. If the call was professional and successful, score high. If there were issues, flag them clearly. For very short calls (under 10 seconds), return minimal data.`
+
+  const result = await model.generateContent([
+    { text: prompt },
+    {
+      inlineData: {
+        mimeType,
+        data: audioBase64,
+      },
+    },
+  ])
+
+  let text = result.response.text().trim()
+  // Strip any markdown code fences if Gemini wraps response
+  text = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "")
+
+  try {
+    const parsed = JSON.parse(text) as CallTranscriptionResult
+    return parsed
+  } catch (e) {
+    console.error("Failed to parse Gemini transcription JSON:", text.slice(0, 500))
+    throw new Error("Gemini returned invalid JSON for transcription")
+  }
+}
+
 export async function generateProductDescription(
   productName: string,
   category: string,

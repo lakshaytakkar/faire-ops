@@ -415,12 +415,14 @@ export async function deleteMessage(token: string, id: string) {
   return gmailFetch<void>(token, `/messages/${id}`, { method: "DELETE" })
 }
 
-/** users.messages.send */
-export async function sendMessage(token: string, raw: string) {
+/** users.messages.send — pass threadId to thread a reply into an existing conversation. */
+export async function sendMessage(token: string, raw: string, threadId?: string) {
+  const message: { raw: string; threadId?: string } = { raw }
+  if (threadId) message.threadId = threadId
   return gmailFetch<{ id: string; threadId: string; labelIds?: string[] }>(
     token,
     `/messages/send`,
-    { method: "POST", body: { raw } }
+    { method: "POST", body: message }
   )
 }
 
@@ -532,4 +534,140 @@ export async function deleteLocalMessage(accountId: string, gmailId: string) {
     .delete()
     .eq("account_id", accountId)
     .eq("gmail_id", gmailId)
+}
+
+/* ------------------------------------------------------------------ */
+/*  Drafts                                                             */
+/* ------------------------------------------------------------------ */
+
+export interface GmailDraftResource {
+  id: string
+  message: GmailMessageResource
+}
+
+export interface GmailDraftListResponse {
+  drafts?: { id: string; message: { id: string; threadId: string } }[]
+  nextPageToken?: string
+  resultSizeEstimate?: number
+}
+
+/**
+ * users.drafts.create — creates a new draft from a base64url-encoded raw MIME
+ * message. Pass threadId to attach the draft to an existing conversation so
+ * that sending it lands as a threaded reply.
+ */
+export async function createDraft(token: string, raw: string, threadId?: string) {
+  const message: { raw: string; threadId?: string } = { raw }
+  if (threadId) message.threadId = threadId
+  return gmailFetch<GmailDraftResource>(token, `/drafts`, {
+    method: "POST",
+    body: { message },
+  })
+}
+
+/** users.drafts.get — fetches a single draft, optionally in a specific format. */
+export async function getDraft(
+  token: string,
+  draftId: string,
+  format: "minimal" | "full" | "metadata" | "raw" = "full"
+) {
+  return gmailFetch<GmailDraftResource>(token, `/drafts/${draftId}`, {
+    query: { format },
+  })
+}
+
+/**
+ * users.drafts.update — replaces the raw content of an existing draft.
+ * threadId is optional and behaves the same as createDraft.
+ */
+export async function updateDraft(
+  token: string,
+  draftId: string,
+  raw: string,
+  threadId?: string
+) {
+  const message: { raw: string; threadId?: string } = { raw }
+  if (threadId) message.threadId = threadId
+  return gmailFetch<GmailDraftResource>(token, `/drafts/${draftId}`, {
+    method: "PUT",
+    body: { message },
+  })
+}
+
+/** users.drafts.delete — permanently deletes a draft. */
+export async function deleteDraft(token: string, draftId: string) {
+  return gmailFetch<void>(token, `/drafts/${draftId}`, { method: "DELETE" })
+}
+
+/**
+ * users.drafts.send — sends an existing draft. Returns the sent message
+ * resource (id, threadId, labelIds).
+ */
+export async function sendDraft(token: string, draftId: string) {
+  return gmailFetch<{ id: string; threadId: string; labelIds?: string[] }>(
+    token,
+    `/drafts/send`,
+    { method: "POST", body: { id: draftId } }
+  )
+}
+
+/** users.drafts.list — lists drafts for the authenticated user, with pagination. */
+export async function listDrafts(
+  token: string,
+  opts: { pageToken?: string; maxResults?: number } = {}
+) {
+  return gmailFetch<GmailDraftListResponse>(token, `/drafts`, {
+    query: {
+      pageToken: opts.pageToken,
+      maxResults: opts.maxResults ?? 50,
+    },
+  })
+}
+
+/* ------------------------------------------------------------------ */
+/*  Labels                                                             */
+/* ------------------------------------------------------------------ */
+
+export interface GmailLabelResource {
+  id: string
+  name: string
+  type?: string
+  messageListVisibility?: string
+  labelListVisibility?: string
+}
+
+/**
+ * users.labels.create — creates a user label. Defaults to showing the label
+ * in both the message list and the label list unless overridden.
+ */
+export async function createLabel(
+  token: string,
+  name: string,
+  opts: {
+    messageListVisibility?: "show" | "hide"
+    labelListVisibility?: "labelShow" | "labelShowIfUnread" | "labelHide"
+  } = {}
+) {
+  return gmailFetch<GmailLabelResource>(token, `/labels`, {
+    method: "POST",
+    body: {
+      name,
+      messageListVisibility: opts.messageListVisibility ?? "show",
+      labelListVisibility: opts.labelListVisibility ?? "labelShow",
+    },
+  })
+}
+
+/**
+ * Looks up a label by (case-insensitive) name, creating it if it doesn't
+ * already exist. Useful for AI categorization flows that want to ensure a
+ * category label exists before applying it to a message.
+ */
+export async function findOrCreateLabel(token: string, name: string) {
+  const { labels } = await listLabels(token)
+  const existing = (labels ?? []).find(
+    (l) => l.name.toLowerCase() === name.toLowerCase()
+  )
+  if (existing) return existing as GmailLabelResource
+  return createLabel(token, name)
 }

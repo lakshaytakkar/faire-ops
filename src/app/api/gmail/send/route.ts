@@ -14,10 +14,11 @@ import {
  * Compose and send an email through Gmail.
  *
  * Body:
- *   { to, cc?, bcc?, subject, body, accountId?, html?, inReplyTo?, references? }
+ *   { to, cc?, bcc?, subject, body, accountId?, html?, inReplyTo?, references?, threadId? }
  *
  * On success the sent message is fetched back and saved into Supabase so it
- * appears in the Sent folder immediately.
+ * appears in the Sent folder immediately. When `threadId` is set the message
+ * is sent as a threaded reply in the existing conversation.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -32,6 +33,7 @@ export async function POST(req: NextRequest) {
       html,
       inReplyTo,
       references,
+      threadId,
     } = body
 
     if (!to || !subject || !emailBody) {
@@ -71,7 +73,7 @@ export async function POST(req: NextRequest) {
     })
 
     try {
-      const sent = await sendMessage(token, raw)
+      const sent = await sendMessage(token, raw, threadId)
 
       // Fetch the sent message and persist it locally so it shows up in Sent folder
       try {

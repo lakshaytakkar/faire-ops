@@ -14,6 +14,7 @@ import {
   Megaphone,
   FileBarChart,
   Target,
+  Phone,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useBrandFilter } from "@/lib/brand-filter-context"
@@ -129,6 +130,20 @@ const NAV_ITEMS: NavItem[] = [
     subItems: [
       { title: "All Stores", url: "/workspace/stores/all" },
       { title: "Applications", url: "/workspace/applications", countKey: "draftApps" },
+    ],
+  },
+  {
+    title: "QA",
+    url: "/workspace/qa",
+    icon: Phone,
+    centralOnly: true,
+    subItems: [
+      { title: "Dashboard", url: "/workspace/qa/dashboard" },
+      { title: "Calls", url: "/workspace/qa/calls" },
+      { title: "Reviews", url: "/workspace/qa/reviews" },
+      { title: "Flags", url: "/workspace/qa/flags" },
+      { title: "Employees", url: "/workspace/qa/employees" },
+      { title: "Sync", url: "/workspace/qa/sync" },
     ],
   },
   {
