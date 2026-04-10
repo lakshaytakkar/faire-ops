@@ -4,41 +4,47 @@ import { useBrandFilter } from "@/lib/brand-filter-context"
 import { cn } from "@/lib/utils"
 import { Layers } from "lucide-react"
 
+/**
+ * Left brand dock — vertical strip of 48px square cells, sharp corners,
+ * matching the geometry of the workspace dock and the bottom utility bar.
+ *
+ * Each cell is `w-12 h-12` with `border-b border-white/10` so the cells
+ * read as a connected grid. Active state is `bg-white/10` with a 2px white
+ * indicator strip on the inner (right) edge. Content (store logos / brand
+ * marks) keeps its own rounded shape inside the square cell.
+ */
 export function BrandDock() {
   const { activeBrand, setActiveBrand, stores, inactiveStores, storesLoading } = useBrandFilter()
 
   if (storesLoading) {
     return (
-      <aside className="shrink-0 w-[52px] bg-black flex flex-col items-center py-2 gap-2">
-        <div className="w-10 h-10 rounded bg-white/5 animate-pulse" />
-        <div className="w-6 h-px bg-white/10" />
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="w-10 h-10 rounded bg-white/5 animate-pulse" />
+      <aside className="shrink-0 w-12 bg-black flex flex-col">
+        <div className="w-12 h-12 border-b border-white/10 bg-white/[0.04] animate-pulse" />
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="w-12 h-12 border-b border-white/10 bg-white/[0.04] animate-pulse" />
         ))}
       </aside>
     )
   }
 
   return (
-    <aside className="shrink-0 w-[52px] bg-black flex flex-col items-center py-2 gap-0.5">
+    <aside className="shrink-0 w-12 bg-black flex flex-col">
       {/* All Brands */}
       <button
         onClick={() => setActiveBrand("all")}
         className={cn(
-          "relative flex items-center justify-center w-10 h-10 transition-colors",
+          "relative flex items-center justify-center w-12 h-12 border-b border-white/10 transition-colors",
           activeBrand === "all"
-            ? "bg-primary text-white"
-            : "text-white/50 hover:bg-white/10 hover:text-white"
+            ? "bg-white/10 text-white"
+            : "text-white/60 hover:bg-white/10 hover:text-white"
         )}
         title="All Stores"
       >
-        <Layers className="size-[18px]" />
+        <Layers className="size-4" />
         {activeBrand === "all" && (
-          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-white rounded-r-sm" />
+          <span className="absolute right-0 top-0 bottom-0 w-[2px] bg-white" />
         )}
       </button>
-
-      <div className="w-6 h-px bg-white/10 my-1" />
 
       {/* Store entries */}
       {stores.map((store) => {
@@ -48,34 +54,29 @@ export function BrandDock() {
             key={store.id}
             onClick={() => setActiveBrand(store.id)}
             className={cn(
-              "relative flex items-center justify-center w-10 h-10 transition-colors",
-              isActive ? "bg-white/12" : "hover:bg-white/8"
+              "relative flex items-center justify-center w-12 h-12 border-b border-white/10 transition-colors",
+              isActive ? "bg-white/10" : "hover:bg-white/10"
             )}
             title={store.name}
           >
             {store.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={store.logo_url}
                 alt={store.name}
-                className={cn(
-                  "w-[30px] h-[30px] rounded object-cover transition-transform",
-                  isActive && "ring-[2px] ring-white/50 scale-105"
-                )}
+                className="w-7 h-7 rounded object-cover"
                 loading="lazy"
               />
             ) : (
               <span
-                className={cn(
-                  "flex items-center justify-center w-[30px] h-[30px] text-[10px] font-bold text-white rounded transition-transform",
-                  isActive && "ring-[2px] ring-white/50 scale-105"
-                )}
+                className="flex items-center justify-center w-7 h-7 text-[10px] font-bold text-white rounded"
                 style={{ backgroundColor: store.color }}
               >
                 {store.short}
               </span>
             )}
             {isActive && (
-              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-white rounded-r-sm" />
+              <span className="absolute right-0 top-0 bottom-0 w-[2px] bg-white" />
             )}
           </button>
         )
@@ -84,15 +85,14 @@ export function BrandDock() {
       {/* Inactive stores (grayed) */}
       {inactiveStores.length > 0 && (
         <>
-          <div className="w-6 h-px bg-white/10 my-1" />
           {inactiveStores.map((store) => (
             <div
               key={store.id}
-              className="relative flex items-center justify-center w-10 h-10 opacity-35 cursor-not-allowed"
+              className="relative flex items-center justify-center w-12 h-12 border-b border-white/10 opacity-35 cursor-not-allowed"
               title={`${store.name} (inactive)`}
             >
               <span
-                className="flex items-center justify-center w-[30px] h-[30px] text-[10px] font-bold text-white/60 rounded grayscale"
+                className="flex items-center justify-center w-7 h-7 text-[10px] font-bold text-white/60 rounded grayscale"
                 style={{ backgroundColor: store.color }}
               >
                 {store.short}
@@ -102,7 +102,7 @@ export function BrandDock() {
         </>
       )}
 
-      {/* Spacer */}
+      {/* Spacer fills remaining height with the same dark background */}
       <div className="flex-1" />
     </aside>
   )

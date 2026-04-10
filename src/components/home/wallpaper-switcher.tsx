@@ -60,16 +60,17 @@ export function WallpaperSwitcher({ wallpapers }: WallpaperSwitcherProps) {
         />
       ))}
 
-      {/* Shuffle button — positioned absolutely by the parent via portal-style placement.
-          We give it a fixed position in the top-right corner of the viewport. */}
-      <button
-        type="button"
-        onClick={shuffle}
-        title={`Shuffle wallpaper · ${current.name}`}
-        className="fixed top-4 right-16 z-20 inline-flex items-center justify-center h-8 w-8 rounded-md border border-border/80 bg-card shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
-      >
-        <Shuffle className="h-4 w-4" />
-      </button>
+      {/* Shuffle button — only shown when there are multiple wallpapers to cycle through */}
+      {wallpapers.length > 1 && (
+        <button
+          type="button"
+          onClick={shuffle}
+          title={`Shuffle wallpaper · ${current.name}`}
+          className="fixed top-4 right-16 z-20 inline-flex items-center justify-center h-8 w-8 rounded-md border border-border/80 bg-card shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+        >
+          <Shuffle className="h-4 w-4" />
+        </button>
+      )}
     </>
   )
 }

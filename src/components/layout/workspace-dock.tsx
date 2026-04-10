@@ -46,14 +46,24 @@ const WORKSPACE_ITEMS = [
   { href: "/workspace/settings", icon: Settings, label: "Settings", color: "#64748b", bg: "rgba(100,116,139,0.15)" },
 ]
 
+/**
+ * Right workspace dock — vertical strip of 48px square cells, mirroring the
+ * geometry of the left brand dock and the bottom utility bar.
+ *
+ * Cells are sharp `w-12 h-12` with `border-b border-white/10` between them.
+ * The colored icon block (calendar blue, tasks amber, etc.) lives INSIDE
+ * the cell as a smaller rounded square so the dock keeps its visual
+ * character without breaking the uniform cell grid. Active state =
+ * `bg-white/10` plus a 2px white indicator strip on the inner (left) edge.
+ */
 export function WorkspaceDock() {
   const pathname = usePathname()
 
   return (
-    <aside className="shrink-0 w-[48px] bg-black flex flex-col items-center py-2 gap-1 border-l border-white/5 overflow-y-auto">
+    <aside className="shrink-0 w-12 bg-black flex flex-col border-l border-white/5 overflow-y-auto">
       {WORKSPACE_ITEMS.map((item, i) => {
         if (item === null) {
-          return <div key={`sep-${i}`} className="w-5 h-px bg-white/10 my-0.5" />
+          return <div key={`sep-${i}`} className="w-12 h-px bg-white/15" />
         }
 
         const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
@@ -63,17 +73,19 @@ export function WorkspaceDock() {
             key={item.href}
             href={item.href}
             className={cn(
-              "relative flex items-center justify-center w-8 h-8 rounded-md group",
-              isActive ? "ring-1.5 ring-white/50 shadow-sm scale-105" : "hover:scale-105 hover:shadow-sm"
+              "relative flex items-center justify-center w-12 h-12 border-b border-white/10 group transition-colors",
+              isActive ? "bg-white/10" : "hover:bg-white/10"
             )}
-            style={{ backgroundColor: item.color }}
             title={item.label}
           >
-            <item.icon className="size-[14px] text-white" />
+            <span
+              className="flex items-center justify-center w-7 h-7 rounded shrink-0"
+              style={{ backgroundColor: item.color }}
+            >
+              <item.icon className="size-[14px] text-white" />
+            </span>
             {isActive && (
-              <span
-                className="absolute right-0 top-1/2 -translate-y-1/2 w-[2.5px] h-4 rounded-l-sm bg-white"
-              />
+              <span className="absolute left-0 top-0 bottom-0 w-[2px] bg-white" />
             )}
             {/* Tooltip */}
             <span className="absolute right-full mr-2 px-2 py-1 rounded-md bg-foreground text-background text-[10px] font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 shadow-lg">
@@ -82,6 +94,8 @@ export function WorkspaceDock() {
           </Link>
         )
       })}
+      {/* Spacer fills remaining height with the same dark background */}
+      <div className="flex-1" />
     </aside>
   )
 }

@@ -29,18 +29,6 @@ const WP_BASE =
 
 const WALLPAPERS = [
   { id: "vestrahorn", name: "Vestrahorn Sunset", url: "/wallpaper-vestrahorn.jpg" },
-  { id: "floating-friends", name: "Floating Friends", url: `${WP_BASE}/wallpaper-floating-friends.png` },
-  { id: "cartoon-clouds", name: "Cartoon Clouds", url: `${WP_BASE}/homepage-hero.png` },
-  { id: "sunrise-hills", name: "Sunrise Hills", url: `${WP_BASE}/wallpaper-sunrise-hills.png` },
-  { id: "magical-forest", name: "Magical Forest", url: `${WP_BASE}/wallpaper-magical-forest.png` },
-  { id: "underwater-reef", name: "Coral Reef", url: `${WP_BASE}/wallpaper-underwater-reef.png` },
-  { id: "cherry-blossom", name: "Cherry Blossom Park", url: `${WP_BASE}/wallpaper-cherry-blossom.png` },
-  { id: "desert-oasis", name: "Desert Oasis", url: `${WP_BASE}/wallpaper-desert-oasis.png` },
-  { id: "floating-islands", name: "Sky Islands", url: `${WP_BASE}/wallpaper-floating-islands.png` },
-  { id: "cozy-village", name: "Cozy Village", url: `${WP_BASE}/wallpaper-cozy-village.png` },
-  { id: "spring-meadow", name: "Spring Meadow", url: `${WP_BASE}/wallpaper-spring-meadow.png` },
-  { id: "autumn-grove", name: "Autumn Grove", url: `${WP_BASE}/wallpaper-autumn-grove.png` },
-  { id: "snowy-cabin", name: "Snowy Cabin", url: `${WP_BASE}/wallpaper-snowy-cabin.png` },
 ]
 
 /* ------------------------------------------------------------------ */
@@ -210,10 +198,10 @@ export default async function HomePage() {
       <div className="relative min-h-screen flex flex-col items-center justify-center px-5 py-20">
         <div className="w-full max-w-md flex flex-col items-center">
           {/* Wordmark */}
-          <h1 className="text-4xl md:text-5xl font-bold font-heading tracking-tight text-center text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
-            TeamSync<span className="text-violet-300"> AI</span>
+          <h1 className="text-4xl md:text-5xl font-bold font-heading tracking-tight text-center text-white">
+            TeamSync<span className="text-primary"> AI</span>
           </h1>
-          <p className="mt-1.5 text-sm text-white/90 text-center drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">
+          <p className="mt-1.5 text-sm text-white/90 text-center">
             Every operation, one place.
           </p>
 
