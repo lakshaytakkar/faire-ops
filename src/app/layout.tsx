@@ -1,6 +1,7 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import localFont from "next/font/local"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { PwaRegister } from "@/components/pwa-register"
 import "./globals.css"
 
 const plusJakarta = localFont({
@@ -16,8 +17,34 @@ const plusJakarta = localFont({
 })
 
 export const metadata: Metadata = {
-  title: "NexusOS — Business Suite",
-  description: "One operating system for every part of your business.",
+  title: "TeamSync AI — Business Suite",
+  description: "One AI-powered operating system for every part of your business.",
+  applicationName: "TeamSync AI",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "TeamSync AI",
+  },
+  icons: {
+    icon: [
+      { url: "/icon-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/icon-96.png", sizes: "96x96", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icon-180.png", sizes: "180x180", type: "image/png" }],
+  },
+  formatDetection: {
+    telephone: false,
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: "#4338ca",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 }
 
 export default function RootLayout({
@@ -32,6 +59,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans">
         <TooltipProvider>{children}</TooltipProvider>
+        <PwaRegister />
       </body>
     </html>
   )

@@ -16,7 +16,7 @@ export const maxDuration = 300
  * Body: { accountId?: string, max?: number, onlyUncategorized?: boolean }
  *
  * Classifies recent INBOX messages into the fixed AI category taxonomy and
- * applies `NexusOS/<Category>` Gmail labels. If `accountId` is omitted we
+ * applies `TeamSync/<Category>` Gmail labels. If `accountId` is omitted we
  * fall back to the primary account.
  */
 export async function POST(req: NextRequest) {

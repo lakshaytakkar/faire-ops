@@ -6,7 +6,7 @@
  *
  * Two public entry points:
  *   - categorizeMessages(accountId, options) — classifies recent INBOX
- *     messages into a fixed taxonomy and applies `NexusOS/<Category>`
+ *     messages into a fixed taxonomy and applies `TeamSync/<Category>`
  *     Gmail labels.
  *   - draftReply(messageRowId, options) — generates a reply body with
  *     Gemini and stores a Gmail draft (both in Gmail and in the local
@@ -42,7 +42,7 @@ export const AI_CATEGORIES = [
 export type AiCategory = (typeof AI_CATEGORIES)[number]
 
 const CATEGORY_SET: Set<string> = new Set(AI_CATEGORIES)
-const LABEL_PREFIX = "NexusOS/"
+const LABEL_PREFIX = "TeamSync/"
 
 export interface CategorizeOptions {
   max?: number

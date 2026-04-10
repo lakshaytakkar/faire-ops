@@ -12,10 +12,6 @@ export default function PortalLayout({
   return (
     <BrandFilterProvider>
       <div className="flex h-screen w-full flex-col">
-        {/* Full-width utility bar — sits across the entire viewport, above
-            both docks, visually separating the chrome from the workspace. */}
-        <UtilityBar />
-
         {/* Dock + content row */}
         <div className="flex flex-1 min-h-0">
           <BrandDock />
@@ -27,6 +23,11 @@ export default function PortalLayout({
           </div>
           <WorkspaceDock />
         </div>
+
+        {/* Full-width utility bar — pinned to the bottom of the viewport,
+            spans across both docks. Acts as a global status / quick-actions
+            strip. */}
+        <UtilityBar />
       </div>
     </BrandFilterProvider>
   )
