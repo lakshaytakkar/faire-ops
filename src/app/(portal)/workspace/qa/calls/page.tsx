@@ -18,6 +18,16 @@ import {
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase"
 import { matchContactsByPhone, normalizePhone, type MatchedContact } from "@/lib/contact-matcher"
+import { SubNav } from "@/components/shared/sub-nav"
+
+const SUB_NAV_ITEMS = [
+  { title: "Dashboard", href: "/workspace/qa/dashboard" },
+  { title: "Calls", href: "/workspace/qa/calls" },
+  { title: "Flags", href: "/workspace/qa/flags" },
+  { title: "Reviews", href: "/workspace/qa/reviews" },
+  { title: "Employees", href: "/workspace/qa/employees" },
+  { title: "Sync", href: "/workspace/qa/sync" },
+]
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -350,6 +360,8 @@ export default function CallsListPage() {
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
+      <SubNav items={SUB_NAV_ITEMS} />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

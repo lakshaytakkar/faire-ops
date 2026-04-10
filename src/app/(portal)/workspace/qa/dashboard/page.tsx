@@ -15,6 +15,16 @@ import {
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
+import { SubNav } from "@/components/shared/sub-nav"
+
+const SUB_NAV_ITEMS = [
+  { title: "Dashboard", href: "/workspace/qa/dashboard" },
+  { title: "Calls", href: "/workspace/qa/calls" },
+  { title: "Flags", href: "/workspace/qa/flags" },
+  { title: "Reviews", href: "/workspace/qa/reviews" },
+  { title: "Employees", href: "/workspace/qa/employees" },
+  { title: "Sync", href: "/workspace/qa/sync" },
+]
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -643,6 +653,8 @@ export default function QaDashboardPage() {
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
+      <SubNav items={SUB_NAV_ITEMS} />
+
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">
         <div>
