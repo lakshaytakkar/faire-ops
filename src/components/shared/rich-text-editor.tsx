@@ -19,7 +19,7 @@ import {
 interface RichTextEditorProps {
   value: string
   onChange: (html: string) => void
-  onSubmit?: () => void
+  onSubmit?: (html: string) => void
   placeholder?: string
   disabled?: boolean
   minHeight?: string
@@ -68,6 +68,7 @@ function RichTextEditorImpl({
   const onChangeRef = useRef(onChange)
   const onSubmitRef = useRef(onSubmit)
   const lastEmittedRef = useRef<string>(value || "")
+  const editorRef = useRef<ReturnType<typeof useEditor>>(null)
 
   useEffect(() => {
     onChangeRef.current = onChange
@@ -98,10 +99,16 @@ function RichTextEditorImpl({
         class: `prose prose-sm max-w-none focus:outline-none px-4 py-2.5 text-sm`,
         style: `min-height: ${minHeight};`,
       },
-      handleKeyDown: (_view, event) => {
+      handleKeyDown: (view, event) => {
         if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault()
-          onSubmitRef.current?.()
+          // Read latest HTML directly from editor view, not from React state
+          // (state may not have updated yet for the most recent keystroke)
+          const html = editorRef.current?.getHTML() ?? ""
+          const normalized = html === "<p></p>" ? "" : html
+          lastEmittedRef.current = normalized
+          onChangeRef.current(normalized)
+          onSubmitRef.current?.(normalized)
           return true
         }
         return false
@@ -128,6 +135,7 @@ function RichTextEditorImpl({
   // Sync editable state without recreating the editor
   useEffect(() => {
     if (!editor) return
+    editorRef.current = editor
     editor.setEditable(!disabled)
   }, [disabled, editor])
 

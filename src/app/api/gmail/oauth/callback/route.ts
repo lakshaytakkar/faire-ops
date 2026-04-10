@@ -61,10 +61,11 @@ export async function GET(request: Request) {
     )
   }
 
-  const clientId = process.env.GOOGLE_CLIENT_ID ?? ""
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET ?? ""
-  const redirectUri =
+  const clientId = (process.env.GOOGLE_CLIENT_ID ?? "").trim()
+  const clientSecret = (process.env.GOOGLE_CLIENT_SECRET ?? "").trim()
+  const redirectUri = (
     process.env.GOOGLE_OAUTH_REDIRECT_URL ?? `${url.origin}/api/gmail/oauth/callback`
+  ).trim()
 
   if (!clientId || !clientSecret) {
     return NextResponse.redirect(
@@ -117,6 +118,14 @@ export async function GET(request: Request) {
       .eq("email", profile.email)
       .maybeSingle()
 
+    // Determine if there's already a real (token-bearing) connected account
+    const { count: realCount } = await supabase
+      .from("gmail_accounts")
+      .select("*", { count: "exact", head: true })
+      .not("refresh_token", "is", null)
+
+    const shouldBecomePrimary = (realCount ?? 0) === 0
+
     if (existing) {
       await supabase
         .from("gmail_accounts")
@@ -129,14 +138,10 @@ export async function GET(request: Request) {
           profile_photo: profile.picture,
           is_active: true,
           last_synced_at: new Date().toISOString(),
+          ...(shouldBecomePrimary ? { is_primary: true } : {}),
         })
         .eq("id", existing.id)
     } else {
-      // First account becomes primary
-      const { count } = await supabase
-        .from("gmail_accounts")
-        .select("*", { count: "exact", head: true })
-
       await supabase.from("gmail_accounts").insert({
         email: profile.email,
         display_name: profile.name,
@@ -144,12 +149,21 @@ export async function GET(request: Request) {
         refresh_token: tokenData.refresh_token ?? null,
         token_expiry: expiry,
         profile_photo: profile.picture,
-        is_primary: (count ?? 0) === 0,
+        is_primary: shouldBecomePrimary,
         is_active: true,
         total_messages: 0,
         unread_count: 0,
         last_synced_at: new Date().toISOString(),
       })
+    }
+
+    // If the new account became primary, demote any other accounts so they
+    // don't conflict in the UI's "is_primary" sort order.
+    if (shouldBecomePrimary) {
+      await supabase
+        .from("gmail_accounts")
+        .update({ is_primary: false })
+        .neq("email", profile.email)
     }
 
     const res = NextResponse.redirect(

@@ -116,15 +116,21 @@ export default function GmailPage() {
   const [sending, setSending] = useState(false)
   const [statusBanner, setStatusBanner] = useState<{ kind: "success" | "error"; text: string } | null>(null)
 
+  const [pendingAutoSync, setPendingAutoSync] = useState(false)
+
   /* ---- Read OAuth result from query params ---- */
   useEffect(() => {
     if (typeof window === "undefined") return
     const params = new URLSearchParams(window.location.search)
     if (params.get("oauth") === "success") {
       setStatusBanner({ kind: "success", text: `Connected ${params.get("email") ?? "account"}` })
+      setPendingAutoSync(true)
       window.history.replaceState({}, "", window.location.pathname)
     } else if (params.get("oauth_error")) {
-      setStatusBanner({ kind: "error", text: `Connection failed: ${params.get("oauth_error")}` })
+      setStatusBanner({
+        kind: "error",
+        text: `Connection failed: ${params.get("oauth_error")}`,
+      })
       window.history.replaceState({}, "", window.location.pathname)
     }
   }, [])
@@ -135,6 +141,7 @@ export default function GmailPage() {
       const { data } = await supabase
         .from("gmail_accounts")
         .select("id, email, display_name, profile_photo, is_primary, is_active, unread_count, total_messages")
+        .eq("is_active", true)
         .order("is_primary", { ascending: false })
       if (data && data.length > 0) {
         setAccounts(data)
@@ -203,6 +210,15 @@ export default function GmailPage() {
   }, [activeAccount, fetchMessages])
 
   useEffect(() => { fetchMessages() }, [fetchMessages])
+
+  /* ---- Auto-sync once after a fresh OAuth connection ---- */
+  useEffect(() => {
+    if (pendingAutoSync && activeAccount) {
+      setPendingAutoSync(false)
+      handleSync()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingAutoSync, activeAccount])
 
   /* ---- Derived ---- */
   const unreadCount = useMemo(() => messages.filter((m) => !m.is_read).length, [messages])

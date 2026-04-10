@@ -169,8 +169,8 @@ export default function RemoteTeamPage() {
   /* ---- Send message ---- */
   const [showTyping, setShowTyping] = useState(false)
 
-  async function handleSend() {
-    const text = draft.trim()
+  async function handleSend(htmlOverride?: string) {
+    const text = (htmlOverride ?? draft).trim()
     if (!text || !selectedEmployee || sending) return
 
     setSending(true)
@@ -521,7 +521,7 @@ export default function RemoteTeamPage() {
                   disabled={sending}
                 />
                 <button
-                  onClick={handleSend}
+                  onClick={() => handleSend()}
                   disabled={!richTextToPlain(draft).trim() || sending}
                   className="inline-flex items-center justify-center gap-2 h-10 px-4 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:pointer-events-none cursor-pointer shrink-0"
                 >

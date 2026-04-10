@@ -13,9 +13,12 @@ import crypto from "crypto"
  */
 export async function GET(request: Request) {
   const url = new URL(request.url)
-  const clientId = process.env.GOOGLE_CLIENT_ID ?? ""
-  const redirectUri =
+  // .trim() defensively — if env values are pasted with a stray newline they
+  // will URL-encode to %0A and Google will reject the redirect_uri as malformed.
+  const clientId = (process.env.GOOGLE_CLIENT_ID ?? "").trim()
+  const redirectUri = (
     process.env.GOOGLE_OAUTH_REDIRECT_URL ?? `${url.origin}/api/gmail/oauth/callback`
+  ).trim()
 
   if (!clientId) {
     return NextResponse.json(

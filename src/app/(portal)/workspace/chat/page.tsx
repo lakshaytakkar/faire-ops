@@ -557,8 +557,8 @@ export default function ChatPage() {
   }
 
   // ---- send message (files already uploaded) ----
-  async function handleSend() {
-    const text = inputValue.trim()
+  async function handleSend(htmlOverride?: string) {
+    const text = (htmlOverride ?? inputValue).trim()
     const plainText = richTextToPlain(text)
     const readyFiles = pendingFiles.filter((p) => p.uploaded)
     if (!plainText && readyFiles.length === 0) return
@@ -1176,7 +1176,7 @@ export default function ChatPage() {
               }
             />
             <button
-              onClick={handleSend}
+              onClick={() => handleSend()}
               disabled={
                 (!richTextToPlain(inputValue).trim() && !pendingFiles.some((p) => p.uploaded)) ||
                 pendingFiles.some((p) => p.uploading) ||
