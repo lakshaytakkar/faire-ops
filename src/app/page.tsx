@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import { listSpaces, type Space } from "@/lib/spaces"
 import { WallpaperSwitcher } from "@/components/home/wallpaper-switcher"
+import { InstallButton } from "@/components/home/install-button"
 
 export const dynamic = "force-dynamic"
 
@@ -27,6 +28,7 @@ const WP_BASE =
   "https://eeoesllyceegmzfqfbyu.supabase.co/storage/v1/object/public/nexus-assets"
 
 const WALLPAPERS = [
+  { id: "vestrahorn", name: "Vestrahorn Sunset", url: "/wallpaper-vestrahorn.jpg" },
   { id: "floating-friends", name: "Floating Friends", url: `${WP_BASE}/wallpaper-floating-friends.png` },
   { id: "cartoon-clouds", name: "Cartoon Clouds", url: `${WP_BASE}/homepage-hero.png` },
   { id: "sunrise-hills", name: "Sunrise Hills", url: `${WP_BASE}/wallpaper-sunrise-hills.png` },
@@ -192,34 +194,26 @@ export default async function HomePage() {
           shuffle button pinned to the top-right corner of the viewport. */}
       <WallpaperSwitcher wallpapers={WALLPAPERS} />
 
-      {/* Top corners */}
-      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-5 py-4">
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/80 bg-card shadow-sm">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground">
-            TeamSync AI
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <Link
-            href="/workspace/knowledge"
-            className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-border/80 bg-card shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
-            title="Help"
-          >
-            <HelpCircle className="h-4 w-4" />
-          </Link>
-        </div>
+      {/* Top-right corner — Help button. The wallpaper shuffle button is
+          rendered by <WallpaperSwitcher> just to the left of this. */}
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-1">
+        <Link
+          href="/workspace/knowledge"
+          className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-border/80 bg-card shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+          title="Help"
+        >
+          <HelpCircle className="h-4 w-4" />
+        </Link>
       </div>
 
       {/* Centered content */}
       <div className="relative min-h-screen flex flex-col items-center justify-center px-5 py-20">
         <div className="w-full max-w-md flex flex-col items-center">
           {/* Wordmark */}
-          <h1 className="text-4xl md:text-5xl font-bold font-heading tracking-tight text-center text-foreground drop-shadow-[0_2px_4px_rgba(255,255,255,0.7)]">
-            TeamSync<span className="text-primary"> AI</span>
+          <h1 className="text-4xl md:text-5xl font-bold font-heading tracking-tight text-center text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
+            TeamSync<span className="text-violet-300"> AI</span>
           </h1>
-          <p className="mt-1.5 text-sm text-foreground/80 text-center drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">
+          <p className="mt-1.5 text-sm text-white/90 text-center drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">
             Every operation, one place.
           </p>
 
@@ -247,13 +241,16 @@ export default async function HomePage() {
       <div className="absolute bottom-4 left-4 z-10">
         <div className="rounded-md border border-border/80 bg-card shadow-sm px-3 py-2 max-w-[220px]">
           <p className="text-[11px] font-semibold text-foreground leading-tight">
-            Floating friends
+            Vestrahorn Sunset
           </p>
           <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
-            Wallpaper artwork
+            Iceland · Stokksnes
           </p>
         </div>
       </div>
+
+      {/* Bottom-right install / download button (client) */}
+      <InstallButton />
     </main>
   )
 }
