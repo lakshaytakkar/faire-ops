@@ -21,6 +21,8 @@ import {
   Mail,
   Sparkles,
   Phone,
+  Grid3x3,
+  Telescope,
 } from "lucide-react"
 
 const WORKSPACE_ITEMS = [
@@ -31,6 +33,7 @@ const WORKSPACE_ITEMS = [
   { href: "/workspace/qa/calls", icon: Phone, label: "Calls (QA)", color: "#0ea5e9", bg: "rgba(14,165,233,0.15)" },
   { href: "/workspace/inbox", icon: Bell, label: "Inbox", color: "#ef4444", bg: "rgba(239,68,68,0.15)" },
   null, // separator
+  { href: "/workspace/research", icon: Telescope, label: "Research", color: "#6366f1", bg: "rgba(99,102,241,0.15)" },
   { href: "/workspace/training", icon: GraduationCap, label: "Learning", color: "#14b8a6", bg: "rgba(20,184,166,0.15)" },
   { href: "/workspace/knowledge", icon: BookOpen, label: "Help", color: "#06b6d4", bg: "rgba(6,182,212,0.15)" },
   { href: "/workspace/links", icon: Link2, label: "Links", color: "#a855f7", bg: "rgba(168,85,247,0.15)" },
@@ -74,6 +77,9 @@ export function WorkspaceDock() {
               </div>
             </div>
             <div className="py-1">
+              <Link href="/" onClick={() => setShowProfile(false)} className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-muted transition-colors">
+                <Grid3x3 className="size-3" /> All Spaces
+              </Link>
               <Link href="/workspace/account" onClick={() => setShowProfile(false)} className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-muted transition-colors">
                 <Settings className="size-3" /> Account
               </Link>

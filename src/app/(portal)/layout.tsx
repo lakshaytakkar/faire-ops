@@ -1,6 +1,7 @@
 import { TopNavigation } from "@/components/layout/top-navigation"
 import { BrandDock } from "@/components/layout/brand-dock"
 import { WorkspaceDock } from "@/components/layout/workspace-dock"
+import { UtilityBar } from "@/components/layout/utility-bar"
 import { BrandFilterProvider } from "@/lib/brand-filter-context"
 
 export default function PortalLayout({
@@ -13,6 +14,7 @@ export default function PortalLayout({
       <div className="flex h-screen w-full">
         <BrandDock />
         <div className="flex flex-1 flex-col overflow-hidden">
+          <UtilityBar />
           <TopNavigation />
           <main className="flex-1 overflow-auto px-4 py-5 md:px-6 lg:px-8">
             {children}

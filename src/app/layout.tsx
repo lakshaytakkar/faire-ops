@@ -16,8 +16,8 @@ const plusJakarta = localFont({
 })
 
 export const metadata: Metadata = {
-  title: "Faire Ops · Suprans",
-  description: "Internal operations portal for 6 Faire brand stores",
+  title: "NexusOS — Business Suite",
+  description: "One operating system for every part of your business.",
 }
 
 export default function RootLayout({
