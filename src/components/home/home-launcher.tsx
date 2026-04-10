@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
 import {
   ShoppingBag,
@@ -14,6 +14,7 @@ import {
   Wallet,
   HelpCircle,
   Puzzle,
+  FolderKanban,
   Home as HomeIcon,
   Building2,
   Scale,
@@ -25,9 +26,11 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Space } from "@/lib/spaces"
+import type { Project, ChecklistSummary } from "@/lib/projects"
 import { WallpaperSwitcher } from "@/components/home/wallpaper-switcher"
 import { InstallButton } from "@/components/home/install-button"
 import { PluginsCatalogue } from "@/components/home/plugins-catalogue"
+import { ProjectsGrid } from "@/components/home/projects-grid"
 import {
   PLUGIN_CATEGORIES,
   countInstalled,
@@ -369,17 +372,49 @@ function PluginsView() {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Projects view — same wallpaper, scrollable glass panel             */
+/* ------------------------------------------------------------------ */
+
+function ProjectsView({
+  projects,
+  summaries,
+}: {
+  projects: Project[]
+  summaries: Map<string, ChecklistSummary>
+}) {
+  return (
+    <div className="relative min-h-screen flex flex-col items-center px-5 py-20">
+      <div className="w-full max-w-6xl rounded-2xl border border-white/10 bg-black/45 backdrop-blur-xl shadow-2xl p-6 md:p-10">
+        <ProjectsGrid projects={projects} summaries={summaries} tone="glass" />
+      </div>
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
 /*  Launcher root — owns view state, renders wallpaper + view          */
 /* ------------------------------------------------------------------ */
 
-type View = "home" | "plugins"
+type View = "home" | "plugins" | "projects"
 
 interface HomeLauncherProps {
   activeApps: Space[]
+  projects: Project[]
+  /** Array of [projectId, ChecklistSummary] so we can pass a Map across the
+      server→client boundary (Maps aren't serializable as props). */
+  projectSummaries: Array<[string, ChecklistSummary]>
 }
 
-export function HomeLauncher({ activeApps }: HomeLauncherProps) {
+export function HomeLauncher({
+  activeApps,
+  projects,
+  projectSummaries,
+}: HomeLauncherProps) {
   const [view, setView] = useState<View>("home")
+  const summaryMap = useMemo(
+    () => new Map(projectSummaries),
+    [projectSummaries]
+  )
 
   return (
     <main className="relative min-h-screen overflow-hidden">
@@ -396,7 +431,7 @@ export function HomeLauncher({ activeApps }: HomeLauncherProps) {
 
       {/* Top-right corner — view tabs + Help button */}
       <div className="absolute top-4 right-4 z-10 flex items-center gap-1">
-        {/* Tab pill — Home / Plugins */}
+        {/* Tab pill — Home / Plugins / Projects */}
         <div className="inline-flex items-center gap-0.5 h-8 p-0.5 rounded-md border border-border/80 bg-card shadow-sm">
           <button
             type="button"
@@ -426,6 +461,20 @@ export function HomeLauncher({ activeApps }: HomeLauncherProps) {
             <Puzzle className="h-3.5 w-3.5" />
             Plugins
           </button>
+          <button
+            type="button"
+            onClick={() => setView("projects")}
+            className={cn(
+              "inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-xs font-medium transition-colors",
+              view === "projects"
+                ? "bg-foreground text-background"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+            )}
+            title="Projects"
+          >
+            <FolderKanban className="h-3.5 w-3.5" />
+            Projects
+          </button>
         </div>
 
         <Link
@@ -438,7 +487,11 @@ export function HomeLauncher({ activeApps }: HomeLauncherProps) {
       </div>
 
       {/* View content — wallpaper stays the same underneath */}
-      {view === "home" ? <HomeHero activeApps={activeApps} /> : <PluginsView />}
+      {view === "home" && <HomeHero activeApps={activeApps} />}
+      {view === "plugins" && <PluginsView />}
+      {view === "projects" && (
+        <ProjectsView projects={projects} summaries={summaryMap} />
+      )}
 
       {/* Bottom-left wallpaper attribution (Home view only) */}
       {view === "home" && (
