@@ -34,6 +34,7 @@ interface GmailMessage {
   recipients: string | null
   snippet: string | null
   body_text: string | null
+  body_html: string | null
   label_ids: string[] | null
   is_read: boolean
   is_starred: boolean
@@ -145,16 +146,16 @@ export default function GmailPage() {
     load()
   }, [])
 
-  /* ---- Fetch messages ---- */
+  /* ---- Fetch messages from Supabase cache ---- */
   const fetchMessages = useCallback(async () => {
     if (!activeAccount) return
     setLoading(true)
     let query = supabase
       .from("gmail_messages")
-      .select("id, account_id, gmail_id, thread_id, subject, sender, sender_email, recipients, snippet, body_text, label_ids, is_read, is_starred, has_attachment, received_at")
+      .select("id, account_id, gmail_id, thread_id, subject, sender, sender_email, recipients, snippet, body_text, body_html, label_ids, is_read, is_starred, has_attachment, received_at")
       .eq("account_id", activeAccount.id)
       .order("received_at", { ascending: false })
-      .limit(100)
+      .limit(200)
 
     if (activeFolder === "STARRED") {
       query = query.eq("is_starred", true)
@@ -166,6 +167,40 @@ export default function GmailPage() {
     setMessages(data ?? [])
     setLoading(false)
   }, [activeAccount, activeFolder])
+
+  /* ---- Pull from Gmail API into Supabase, then re-read ---- */
+  const [syncing, setSyncing] = useState(false)
+  const handleSync = useCallback(async () => {
+    if (!activeAccount) return
+    setSyncing(true)
+    try {
+      const res = await fetch("/api/gmail/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accountId: activeAccount.id, max: 50 }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setStatusBanner({
+          kind: "success",
+          text: `Synced — ${data.inserted} new, ${data.updated} updated`,
+        })
+        await fetchMessages()
+      } else if (res.status === 401) {
+        setStatusBanner({
+          kind: "error",
+          text: "Reconnect required — your Google session expired",
+        })
+      } else {
+        setStatusBanner({ kind: "error", text: data.error ?? "Sync failed" })
+      }
+    } catch (err) {
+      console.error(err)
+      setStatusBanner({ kind: "error", text: "Network error during sync" })
+    } finally {
+      setSyncing(false)
+    }
+  }, [activeAccount, fetchMessages])
 
   useEffect(() => { fetchMessages() }, [fetchMessages])
 
@@ -183,21 +218,77 @@ export default function GmailPage() {
     )
   }, [messages, searchQuery])
 
-  /* ---- Mutations ---- */
+  /* ---- Mutations (call our API which updates Gmail + Supabase) ---- */
+  async function modifyLabels(
+    msgId: string,
+    addLabelIds: string[],
+    removeLabelIds: string[]
+  ) {
+    try {
+      const res = await fetch(`/api/gmail/messages/${msgId}/modify`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ addLabelIds, removeLabelIds }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setStatusBanner({ kind: "error", text: data.error ?? "Update failed" })
+      }
+    } catch {
+      setStatusBanner({ kind: "error", text: "Network error" })
+    }
+  }
+
   async function toggleStar(msg: GmailMessage, e?: React.MouseEvent) {
     e?.stopPropagation()
     const newVal = !msg.is_starred
+    // Optimistic UI
     setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, is_starred: newVal } : m)))
     if (selectedMessage?.id === msg.id) setSelectedMessage({ ...msg, is_starred: newVal })
-    await supabase.from("gmail_messages").update({ is_starred: newVal }).eq("id", msg.id)
+    await modifyLabels(
+      msg.id,
+      newVal ? ["STARRED"] : [],
+      newVal ? [] : ["STARRED"]
+    )
   }
 
   function openMessage(msg: GmailMessage) {
     setSelectedMessage(msg)
     if (!msg.is_read) {
       setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, is_read: true } : m)))
-      supabase.from("gmail_messages").update({ is_read: true }).eq("id", msg.id)
+      modifyLabels(msg.id, [], ["UNREAD"])
     }
+  }
+
+  async function trashMessage(msg: GmailMessage, e?: React.MouseEvent) {
+    e?.stopPropagation()
+    // Optimistic remove
+    setMessages((prev) => prev.filter((m) => m.id !== msg.id))
+    if (selectedMessage?.id === msg.id) setSelectedMessage(null)
+    try {
+      const res = await fetch(`/api/gmail/messages/${msg.id}/trash`, { method: "POST" })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setStatusBanner({ kind: "error", text: data.error ?? "Move to trash failed" })
+        await fetchMessages()
+      }
+    } catch {
+      setStatusBanner({ kind: "error", text: "Network error" })
+      await fetchMessages()
+    }
+  }
+
+  async function disconnectAccount() {
+    if (!activeAccount) return
+    if (!confirm(`Disconnect ${activeAccount.email}? Cached messages will remain.`)) return
+    await supabase
+      .from("gmail_accounts")
+      .update({ is_active: false, access_token: null, refresh_token: null })
+      .eq("id", activeAccount.id)
+    setStatusBanner({ kind: "success", text: "Account disconnected" })
+    setAccounts((prev) => prev.filter((a) => a.id !== activeAccount.id))
+    setActiveAccount(null)
+    setMessages([])
   }
 
   function toggleSelect(id: string, e: React.MouseEvent) {
@@ -278,11 +369,12 @@ export default function GmailPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={fetchMessages}
-            className="inline-flex items-center gap-1.5 rounded-md bg-card border border-border/80 shadow-sm px-3 h-9 text-sm font-medium text-foreground hover:bg-muted/60 hover:border-border transition-colors"
+            onClick={handleSync}
+            disabled={syncing || !activeAccount}
+            className="inline-flex items-center gap-1.5 rounded-md bg-card border border-border/80 shadow-sm px-3 h-9 text-sm font-medium text-foreground hover:bg-muted/60 hover:border-border transition-colors disabled:opacity-50"
           >
-            <RefreshCw className="h-4 w-4 text-muted-foreground" />
-            Sync
+            <RefreshCw className={`h-4 w-4 text-muted-foreground ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Syncing..." : "Sync"}
           </button>
           <button
             onClick={connectAccount}
@@ -416,6 +508,15 @@ export default function GmailPage() {
                     <Plus className="h-4 w-4" />
                     Add another account
                   </button>
+                  {activeAccount && (
+                    <button
+                      onClick={disconnectAccount}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-muted/50 transition-colors border-t border-border/80"
+                    >
+                      <X className="h-4 w-4" />
+                      Disconnect {activeAccount.email}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -522,6 +623,7 @@ export default function GmailPage() {
                     <button
                       onClick={() => toggleStar(selectedMessage)}
                       className="p-1.5 rounded-md hover:bg-muted/60 transition-colors"
+                      title={selectedMessage.is_starred ? "Unstar" : "Star"}
                     >
                       <Star
                         className={`h-4 w-4 ${
@@ -530,6 +632,13 @@ export default function GmailPage() {
                             : "text-muted-foreground"
                         }`}
                       />
+                    </button>
+                    <button
+                      onClick={() => trashMessage(selectedMessage)}
+                      className="p-1.5 rounded-md hover:bg-muted/60 transition-colors"
+                      title="Move to trash"
+                    >
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </button>
                     <button className="p-1.5 rounded-md hover:bg-muted/60 transition-colors">
                       <MoreVertical className="h-4 w-4 text-muted-foreground" />
@@ -559,9 +668,20 @@ export default function GmailPage() {
                       </div>
 
                       <div className="rounded-md border border-border/80 bg-background p-5">
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
-                          {selectedMessage.body_text || selectedMessage.snippet || "No content"}
-                        </p>
+                        {selectedMessage.body_html ? (
+                          <iframe
+                            // Sandboxed so remote scripts cannot run, no top-nav, no forms.
+                            // Only allow same-origin so we can access the doc to size it.
+                            sandbox=""
+                            srcDoc={`<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><style>body{font-family:-apple-system,system-ui,sans-serif;font-size:14px;line-height:1.5;color:#0f172a;margin:0;padding:0;}img{max-width:100%;height:auto;}a{color:#3b82f6;}</style></head><body>${selectedMessage.body_html}</body></html>`}
+                            className="w-full min-h-[400px] border-0"
+                            title="Email body"
+                          />
+                        ) : (
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
+                            {selectedMessage.body_text || selectedMessage.snippet || "No content"}
+                          </p>
+                        )}
                       </div>
 
                       <button

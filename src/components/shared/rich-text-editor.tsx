@@ -1,10 +1,10 @@
 "use client"
 
-import { useEditor, EditorContent, type Editor } from "@tiptap/react"
+import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Underline from "@tiptap/extension-underline"
 import Link from "@tiptap/extension-link"
-import { useEffect, useCallback } from "react"
+import { useEffect, useCallback, useRef, memo } from "react"
 import {
   Bold as BoldIcon,
   Italic as ItalicIcon,
@@ -56,7 +56,7 @@ function ToolbarButton({
   )
 }
 
-export function RichTextEditor({
+function RichTextEditorImpl({
   value,
   onChange,
   onSubmit,
@@ -64,6 +64,16 @@ export function RichTextEditor({
   disabled = false,
   minHeight = "40px",
 }: RichTextEditorProps) {
+  // Refs to keep latest callbacks accessible without recreating editor
+  const onChangeRef = useRef(onChange)
+  const onSubmitRef = useRef(onSubmit)
+  const lastEmittedRef = useRef<string>(value || "")
+
+  useEffect(() => {
+    onChangeRef.current = onChange
+    onSubmitRef.current = onSubmit
+  })
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -80,7 +90,7 @@ export function RichTextEditor({
         },
       }),
     ],
-    content: value,
+    content: value || "",
     editable: !disabled,
     immediatelyRender: false,
     editorProps: {
@@ -91,7 +101,7 @@ export function RichTextEditor({
       handleKeyDown: (_view, event) => {
         if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault()
-          onSubmit?.()
+          onSubmitRef.current?.()
           return true
         }
         return false
@@ -99,20 +109,27 @@ export function RichTextEditor({
     },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML()
-      // Treat empty paragraph as empty
-      onChange(html === "<p></p>" ? "" : html)
+      const normalized = html === "<p></p>" ? "" : html
+      lastEmittedRef.current = normalized
+      onChangeRef.current(normalized)
     },
   })
 
-  // Sync external value changes (e.g. clearing after send)
+  // Only sync external resets (e.g. parent cleared value after send)
+  // Skip when the incoming value matches what the editor itself just emitted.
   useEffect(() => {
     if (!editor) return
-    const current = editor.getHTML()
-    const incoming = value || "<p></p>"
-    if (current !== incoming) {
-      editor.commands.setContent(incoming, { emitUpdate: false })
-    }
+    if (value === lastEmittedRef.current) return
+    const incoming = value || ""
+    editor.commands.setContent(incoming, { emitUpdate: false })
+    lastEmittedRef.current = incoming
   }, [value, editor])
+
+  // Sync editable state without recreating the editor
+  useEffect(() => {
+    if (!editor) return
+    editor.setEditable(!disabled)
+  }, [disabled, editor])
 
   const setLink = useCallback(() => {
     if (!editor) return
@@ -204,6 +221,18 @@ export function RichTextEditor({
     </div>
   )
 }
+
+export const RichTextEditor = memo(RichTextEditorImpl, (prev, next) => {
+  // Only re-render when these specific props change. Ignore value changes —
+  // the editor manages its own content internally and only resyncs on resets.
+  return (
+    prev.disabled === next.disabled &&
+    prev.placeholder === next.placeholder &&
+    prev.minHeight === next.minHeight &&
+    // Re-render only when value transitions to/from empty (e.g. after clear)
+    (prev.value === "" || next.value === "" ? prev.value === next.value : true)
+  )
+})
 
 /* ------------------------------------------------------------------ */
 /*  Renderer for displaying rich text messages                         */
