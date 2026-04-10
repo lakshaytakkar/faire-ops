@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react"
 import { Users, Send, Search, MessageSquare, FileText } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import { RichTextEditor, RichTextRenderer, richTextToPlain } from "@/components/shared/rich-text-editor"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -468,9 +469,9 @@ export default function RemoteTeamPage() {
                               <span className="text-xs text-muted-foreground">{formatTime(msg.created_at)}</span>
                             </div>
                           )}
-                          <p className="text-sm text-foreground mt-0.5 whitespace-pre-wrap break-words">
-                            {msg.content}
-                          </p>
+                          <div className="mt-0.5">
+                            <RichTextRenderer content={msg.content} />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -512,19 +513,16 @@ export default function RemoteTeamPage() {
 
               {/* Input Bar */}
               <div className="px-5 py-3 border-t flex items-end gap-3">
-                <textarea
-                  ref={inputRef}
+                <RichTextEditor
                   value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={handleKeyDown}
+                  onChange={setDraft}
+                  onSubmit={handleSend}
                   placeholder={`Message ${selectedEmployee.name}...`}
-                  rows={1}
-                  className="flex-1 min-h-[40px] max-h-[120px] rounded-lg border px-4 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50 resize-none"
-                  style={{ minHeight: "40px" }}
+                  disabled={sending}
                 />
                 <button
                   onClick={handleSend}
-                  disabled={!draft.trim() || sending}
+                  disabled={!richTextToPlain(draft).trim() || sending}
                   className="inline-flex items-center justify-center gap-2 h-10 px-4 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:pointer-events-none cursor-pointer shrink-0"
                 >
                   {sending ? (

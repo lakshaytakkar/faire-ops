@@ -7,6 +7,7 @@ import {
   ChevronDown, MessageSquare, Search,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import { RichTextEditor, RichTextRenderer, richTextToPlain } from "@/components/shared/rich-text-editor"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -558,8 +559,9 @@ export default function ChatPage() {
   // ---- send message (files already uploaded) ----
   async function handleSend() {
     const text = inputValue.trim()
+    const plainText = richTextToPlain(text)
     const readyFiles = pendingFiles.filter((p) => p.uploaded)
-    if (!text && readyFiles.length === 0) return
+    if (!plainText && readyFiles.length === 0) return
     if (!activeChatId) return
     setSending(true)
 
@@ -980,7 +982,7 @@ export default function ChatPage() {
                         <div className="flex items-center gap-1.5 mb-1 text-xs text-muted-foreground">
                           <Reply className="w-3 h-3 rotate-180" />
                           <span className="font-medium">{replySrc.sender_name}</span>
-                          <span className="truncate max-w-xs opacity-70">{replySrc.body.slice(0, 80)}</span>
+                          <span className="truncate max-w-xs opacity-70">{richTextToPlain(replySrc.body).slice(0, 80)}</span>
                         </div>
                       )}
 
@@ -1013,9 +1015,9 @@ export default function ChatPage() {
                       ) : (
                         <>
                           {msg.body && (
-                            <p className="text-sm text-foreground mt-0.5 whitespace-pre-wrap break-words">
-                              {msg.body}
-                            </p>
+                            <div className="mt-0.5">
+                              <RichTextRenderer content={msg.body} />
+                            </div>
                           )}
                           {/* Attachments */}
                           {msg.attachments && msg.attachments.length > 0 && (
@@ -1116,7 +1118,7 @@ export default function ChatPage() {
               <Reply className="w-4 h-4 text-muted-foreground shrink-0 rotate-180" />
               <div className="flex-1 min-w-0">
                 <span className="text-xs font-semibold">{replyTo.sender_name}</span>
-                <p className="text-xs text-muted-foreground truncate">{replyTo.body.slice(0, 100)}</p>
+                <p className="text-xs text-muted-foreground truncate">{richTextToPlain(replyTo.body).slice(0, 100)}</p>
               </div>
               <button
                 onClick={() => setReplyTo(null)}
@@ -1156,8 +1158,11 @@ export default function ChatPage() {
             >
               <Paperclip className="w-4 h-4" />
             </button>
-            <textarea
-              ref={textareaRef}
+            <RichTextEditor
+              value={inputValue}
+              onChange={setInputValue}
+              onSubmit={handleSend}
+              disabled={!activeChatId}
               placeholder={
                 activeChatId
                   ? selectedChannelId
@@ -1169,17 +1174,11 @@ export default function ChatPage() {
                         : "Type a message..."
                   : "Select a channel..."
               }
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={!activeChatId}
-              rows={1}
-              className="flex-1 min-h-[40px] max-h-[120px] rounded-lg border px-4 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50 resize-none"
             />
             <button
               onClick={handleSend}
               disabled={
-                (!inputValue.trim() && !pendingFiles.some((p) => p.uploaded)) ||
+                (!richTextToPlain(inputValue).trim() && !pendingFiles.some((p) => p.uploaded)) ||
                 pendingFiles.some((p) => p.uploading) ||
                 !activeChatId ||
                 sending
