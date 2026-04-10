@@ -37,9 +37,15 @@ yarn-error.log*
 *.png
 *.zip
 !public/favicon.png
+!public/logos/*.png
+!public/icon-*.png
+!public/wallpaper-*.png
 
 # vercel
 .vercel
+
+# External standalone projects (separate Vercel deployments, separate git repos)
+external/
 
 # claude
 .claude/

@@ -35,9 +35,12 @@ The day we actually start building **the second app** (e.g. `legalnations.com` s
 
 ## Phase 7 — Schema Migration (`public.* → b2b.*`)
 
-### Status: SPLIT
-- ✅ **Phase B (empty schemas)** — DONE on 2026-04-10. The 7 schemas `b2b`, `hq`, `legal`, `goyo`, `usdrop`, `vendor`, `client` now exist in the database with `USAGE` granted to standard Supabase roles. All are empty. No tables moved.
-- ⚠️ **Phase C (actually moving tables)** — Deferred. Reasoning below.
+### Status: COMPLETE
+- ✅ **Phase B (empty schemas)** — DONE on 2026-04-10. The 7 schemas `b2b`, `hq`, `legal`, `goyo`, `usdrop`, `vendor`, `client` exist with `USAGE` granted.
+- ✅ **Phase C (actual table migration)** — DONE on 2026-04-10 via `ALTER TABLE SET SCHEMA` + auto-updatable forwarding views in `public`. All 28 Faire/B2B tables physically moved to `b2b.*`. Verified preserved: 1,815 orders, 4,487 products, 7 stores, $330,359.73 all-time revenue, all RLS policies, all FKs (incl. cross-schema `public.user_brand_access → b2b.faire_stores`). Zero file edits in app code — `supabase.from("faire_orders")` continues to work via the views.
+- ⚠️ **Phase C cleanup (drop forwarding views in public)** — Still deferred. Dropping the views would require updating all ~150 `supabase.from(...)` call sites to `supabase.schema('b2b').from(...)` AND adding `b2b` to Supabase's exposed schemas in the dashboard. The views cost nothing functionally and provide a safety net, so they stay.
+
+The original "deferred" reasoning below is preserved for historical context but no longer applies to the table-move step.
 
 ### What the guide proposed
 Move every Faire/B2B-specific table from the `public` schema into a new `b2b` schema (and create empty `hq`, `legal`, `goyo`, `vendor`, `client` schemas for future use).

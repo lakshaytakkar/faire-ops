@@ -19,6 +19,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/lib/auth-context"
 import {
   ShoppingBag,
   Building2,
@@ -123,6 +124,14 @@ export function getActiveSpaceSlug(pathname: string): string {
 export function SpaceDock() {
   const pathname = usePathname()
   const activeSlug = getActiveSpaceSlug(pathname)
+  const { hasSpaceAccess, isSuperadmin, loading } = useAuth()
+
+  // Filter to spaces the current user has access to. Superadmin sees all.
+  // While loading, show all (otherwise the dock briefly empties on first render).
+  const visibleSpaces = SPACES.filter((s) => {
+    if (loading || isSuperadmin) return true
+    return hasSpaceAccess(s.slug)
+  })
 
   return (
     <aside className="shrink-0 w-12 bg-black flex flex-col border-r border-white/10">
@@ -135,7 +144,7 @@ export function SpaceDock() {
         <Grid3x3 className="size-4" />
       </Link>
 
-      {SPACES.map((space) => {
+      {visibleSpaces.map((space) => {
         const isActive = activeSlug === space.slug
         const Icon = space.icon
         const inner = (

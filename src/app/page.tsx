@@ -116,12 +116,10 @@ const EXTERNAL_APPS: ExternalApp[] = [
 function ActiveSpaceCard({ space }: { space: Space }) {
   const Icon = resolveIcon(space.icon)
   const color = space.color || "#3b82f6"
+  const isExternal = /^https?:\/\//i.test(space.entry_url)
 
-  return (
-    <Link
-      href={space.entry_url}
-      className="group flex items-center gap-4 rounded-lg border border-border/80 bg-card shadow-sm px-5 py-4 transition-colors hover:bg-muted/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
+  const inner = (
+    <>
       <div
         className="h-10 w-10 rounded-md flex items-center justify-center shrink-0 ring-1 ring-black/[0.04]"
         style={{
@@ -141,9 +139,30 @@ function ActiveSpaceCard({ space }: { space: Space }) {
       </div>
 
       <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground shrink-0">
-        Open
-        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+        {isExternal ? "Visit" : "Open"}
+        {isExternal ? (
+          <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+        ) : (
+          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+        )}
       </span>
+    </>
+  )
+
+  const className =
+    "group flex items-center gap-4 rounded-lg border border-border/80 bg-card shadow-sm px-5 py-4 transition-colors hover:bg-muted/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+
+  if (isExternal) {
+    return (
+      <a href={space.entry_url} target="_blank" rel="noopener noreferrer" className={className}>
+        {inner}
+      </a>
+    )
+  }
+
+  return (
+    <Link href={space.entry_url} className={className}>
+      {inner}
     </Link>
   )
 }
@@ -203,6 +222,75 @@ function ExternalAppCard({ app }: { app: ExternalApp }) {
         </span>
       )}
     </Wrapper>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Brand logo grid — all the brands operating under TeamSync HQ      */
+/* ------------------------------------------------------------------ */
+
+interface BrandLogo {
+  slug: string
+  name: string
+  url?: string
+}
+
+const BRAND_LOGOS: BrandLogo[] = [
+  { slug: "teamsync-ai", name: "TeamSync AI", url: "/overview" },
+  { slug: "legalnations", name: "Legal Nations", url: "https://www.legalnations.com" },
+  { slug: "suprans", name: "Suprans", url: "https://suprans.in" },
+  { slug: "goyotours", name: "GoyoTours" },
+  { slug: "usdrop-ai", name: "USDrop AI" },
+  { slug: "eazysell", name: "EazySell" },
+  { slug: "toysinbulk", name: "ToysInBulk" },
+]
+
+function BrandLogoGrid() {
+  return (
+    <div className="mt-6 w-full">
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-2">
+        Brands & Ventures
+      </p>
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm p-3">
+        <div className="grid grid-cols-3 gap-2">
+          {BRAND_LOGOS.map((brand) => {
+            const inner = (
+              <div className="h-16 flex items-center justify-center rounded-md bg-white border border-border/60 hover:border-foreground/20 hover:shadow-sm transition-all p-2 group">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/logos/${brand.slug}.png`}
+                  alt={brand.name}
+                  className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform"
+                />
+              </div>
+            )
+            if (brand.url) {
+              const isExternal = /^https?:\/\//i.test(brand.url)
+              return isExternal ? (
+                <a
+                  key={brand.slug}
+                  href={brand.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={brand.name}
+                >
+                  {inner}
+                </a>
+              ) : (
+                <Link key={brand.slug} href={brand.url} title={brand.name}>
+                  {inner}
+                </Link>
+              )
+            }
+            return (
+              <div key={brand.slug} title={`${brand.name} (coming soon)`} className="opacity-70">
+                {inner}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -278,7 +366,7 @@ export default async function HomePage() {
           {/* The team portal HQ — single entry point for every internal space */}
           <div className="mt-6 w-full flex flex-col gap-2">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-1">
-              Internal app
+              Spaces
             </p>
             {activeApps.length === 0 ? (
               <EmptyState />
@@ -288,6 +376,9 @@ export default async function HomePage() {
               ))
             )}
           </div>
+
+          {/* Brand logos — all the brands that operate under TeamSync HQ */}
+          <BrandLogoGrid />
 
           {/* External apps — separately deployed sites and portals */}
           <div className="mt-6 w-full flex flex-col gap-2">

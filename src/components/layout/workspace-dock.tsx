@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { UserDockMenu } from "@/components/layout/user-dock-menu"
 import {
   Calendar,
   ClipboardList,
@@ -18,9 +19,10 @@ import {
   Zap,
   Mail,
   Sparkles,
-  Phone,
   Telescope,
   LifeBuoy,
+  ShieldCheck,
+  Megaphone,
 } from "lucide-react"
 
 const WORKSPACE_ITEMS = [
@@ -28,7 +30,8 @@ const WORKSPACE_ITEMS = [
   { href: "/operations/tasks", icon: ClipboardList, label: "Tasks", color: "#f59e0b", bg: "rgba(245,158,11,0.15)" },
   { href: "/workspace/team", icon: Users, label: "Team", color: "#8b5cf6", bg: "rgba(139,92,246,0.15)" },
   { href: "/workspace/chat", icon: MessageCircle, label: "Chat", color: "#10b981", bg: "rgba(16,185,129,0.15)" },
-  { href: "/workspace/qa/calls", icon: Phone, label: "Calls (QA)", color: "#0ea5e9", bg: "rgba(14,165,233,0.15)" },
+  { href: "/workspace/qa/dashboard", icon: ShieldCheck, label: "QA", color: "#0ea5e9", bg: "rgba(14,165,233,0.15)" },
+  { href: "/workspace/emails/dashboard", icon: Megaphone, label: "Comms", color: "#d946ef", bg: "rgba(217,70,239,0.15)" },
   { href: "/workspace/tickets", icon: LifeBuoy, label: "Tickets", color: "#ef4444", bg: "rgba(239,68,68,0.15)" },
   { href: "/workspace/inbox", icon: Bell, label: "Inbox", color: "#f43f5e", bg: "rgba(244,63,94,0.15)" },
   { href: "/workspace/research", icon: Telescope, label: "Research", color: "#6366f1", bg: "rgba(99,102,241,0.15)" },
@@ -59,6 +62,9 @@ export function WorkspaceDock() {
 
   return (
     <aside className="shrink-0 w-12 bg-black flex flex-col border-l border-r border-white/15 overflow-y-auto">
+      {/* User menu at the top — was previously in the bottom utility bar */}
+      <UserDockMenu />
+
       {WORKSPACE_ITEMS.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
 

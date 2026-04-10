@@ -10,13 +10,16 @@ import {
   Users,
   Wallet,
   Blocks,
-  Megaphone,
   Target,
-  Phone,
+  ChevronDown,
+  Layers,
+  Check,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 import { supabase } from "@/lib/supabase"
+import { useRef } from "react"
+import { getActiveSpaceSlug } from "@/components/layout/space-dock"
 
 interface SubItem {
   title: string
@@ -32,6 +35,44 @@ interface NavItem {
   centralOnly?: boolean
   countKey?: string
 }
+
+// ============================================================================
+// Per-space top navigation. The nav switches based on which Space the user
+// is currently inside (resolved via `getActiveSpaceSlug(pathname)`). The
+// `b2b-ecommerce` space has the full Faire portal nav. Other spaces start
+// with a small placeholder nav until they are built out.
+// ============================================================================
+
+const PLACEHOLDER_HQ: NavItem[] = [
+  { title: "Overview", url: "/hq/overview", icon: LayoutDashboard },
+  { title: "People", url: "/hq/people", icon: Users },
+  { title: "Finance", url: "/hq/finance", icon: Wallet },
+  { title: "Projects", url: "/hq/projects", icon: Blocks },
+  { title: "Compliance", url: "/hq/compliance", icon: Target },
+]
+
+const PLACEHOLDER_LEGAL: NavItem[] = [
+  { title: "Clients", url: "/legal/clients", icon: Users },
+  { title: "Cases", url: "/legal/cases", icon: Blocks },
+  { title: "Documents", url: "/legal/documents", icon: Package },
+  { title: "Payments", url: "/legal/payments", icon: Wallet },
+  { title: "Compliance", url: "/legal/compliance", icon: Target },
+]
+
+const PLACEHOLDER_GOYO: NavItem[] = [
+  { title: "Bookings", url: "/goyo/bookings", icon: ShoppingCart },
+  { title: "Tours", url: "/goyo/tours", icon: Package },
+  { title: "Guides", url: "/goyo/guides", icon: Users },
+  { title: "Payments", url: "/goyo/payments", icon: Wallet },
+  { title: "Analytics", url: "/goyo/analytics", icon: LayoutDashboard },
+]
+
+const PLACEHOLDER_USDROP: NavItem[] = [
+  { title: "Orders", url: "/usdrop/orders", icon: ShoppingCart },
+  { title: "Products", url: "/usdrop/products", icon: Package },
+  { title: "Vendors", url: "/usdrop/vendors", icon: Users },
+  { title: "Analytics", url: "/usdrop/analytics", icon: LayoutDashboard },
+]
 
 const NAV_ITEMS: NavItem[] = [
   {
@@ -86,22 +127,6 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    title: "Comms",
-    url: "/workspace/emails",
-    icon: Megaphone,
-    centralOnly: true,
-    subItems: [
-      { title: "Dashboard", url: "/workspace/emails/dashboard" },
-      { title: "Compose", url: "/workspace/emails/compose" },
-      { title: "Email Templates", url: "/workspace/emails/templates" },
-      { title: "Email Logs", url: "/workspace/emails/logs" },
-      { title: "SMS", url: "/workspace/messaging/sms" },
-      { title: "WhatsApp", url: "/workspace/messaging/whatsapp" },
-      { title: "MSG Templates", url: "/workspace/messaging/templates" },
-      { title: "MSG Logs", url: "/workspace/messaging/logs" },
-    ],
-  },
-  {
     title: "Finance",
     url: "/finance",
     icon: Wallet,
@@ -121,20 +146,6 @@ const NAV_ITEMS: NavItem[] = [
     subItems: [
       { title: "All Stores", url: "/workspace/stores/all" },
       { title: "Applications", url: "/workspace/applications", countKey: "draftApps" },
-    ],
-  },
-  {
-    title: "QA",
-    url: "/workspace/qa",
-    icon: Phone,
-    centralOnly: true,
-    subItems: [
-      { title: "Dashboard", url: "/workspace/qa/dashboard" },
-      { title: "Calls", url: "/workspace/qa/calls" },
-      { title: "Reviews", url: "/workspace/qa/reviews" },
-      { title: "Flags", url: "/workspace/qa/flags" },
-      { title: "Employees", url: "/workspace/qa/employees" },
-      { title: "Sync", url: "/workspace/qa/sync" },
     ],
   },
   {
@@ -188,6 +199,192 @@ function CountBadge({ count }: { count: number }) {
   )
 }
 
+/**
+ * Brand filter cell — pinned as the FIRST item in the dark top nav.
+ * Renders the active brand (or "All Brands") with a chevron, opens a dark
+ * dropdown matching the nav theme. UX-friendly: shows brand logo + name,
+ * plus All Brands option at top, and inactive stores at bottom.
+ */
+function BrandFilterCell() {
+  const { activeBrand, setActiveBrand, stores, inactiveStores, activeStore } =
+    useBrandFilter()
+  const [open, setOpen] = useState(false)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onClick(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", onClick)
+    return () => document.removeEventListener("mousedown", onClick)
+  }, [open])
+
+  const isAll = activeBrand === "all"
+  const label = isAll ? "All Brands" : activeStore?.name ?? "All Brands"
+
+  return (
+    <div ref={wrapperRef} className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          "flex items-center gap-2 h-12 px-4 text-sm font-medium border-r border-white/10 transition-colors min-w-[180px]",
+          open ? "bg-white/15 text-white" : "text-white hover:bg-white/15"
+        )}
+      >
+        {isAll ? (
+          <span className="flex items-center justify-center h-6 w-6 rounded bg-white/10 text-white shrink-0">
+            <Layers className="h-3.5 w-3.5" />
+          </span>
+        ) : activeStore?.logo_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={activeStore.logo_url}
+            alt=""
+            className="h-6 w-6 rounded object-cover ring-1 ring-white/30 shrink-0"
+          />
+        ) : (
+          <span
+            className="flex items-center justify-center h-6 w-6 rounded text-[10px] font-bold text-white shrink-0"
+            style={{ backgroundColor: activeStore?.color ?? "#64748b" }}
+          >
+            {activeStore?.short ?? "?"}
+          </span>
+        )}
+        <span className="flex-1 text-left truncate leading-none">{label}</span>
+        <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full mt-0 w-72 rounded-b-md border border-border/80 bg-card shadow-xl ring-1 ring-black/10 overflow-hidden z-50">
+          <div className="px-3 py-2 border-b border-border/80 bg-muted/30">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Filter by brand
+            </p>
+          </div>
+          <div className="py-1 max-h-[60vh] overflow-y-auto">
+            {/* All Brands */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveBrand("all")
+                setOpen(false)
+              }}
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors",
+                isAll && "bg-muted/40"
+              )}
+            >
+              <span className="flex items-center justify-center h-8 w-8 rounded-md bg-primary/10 text-primary shrink-0">
+                <Layers className="h-4 w-4" />
+              </span>
+              <div className="flex-1 text-left min-w-0">
+                <p className="font-semibold text-foreground leading-tight">All Brands</p>
+                <p className="text-[11px] text-muted-foreground leading-tight">
+                  {stores.length} active store{stores.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+              {isAll && <Check className="h-4 w-4 text-primary shrink-0" />}
+            </button>
+
+            {/* Active stores */}
+            {stores.length > 0 && (
+              <div className="border-t border-border/60 mt-1 pt-1">
+                <p className="px-3 pb-1 text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                  Stores
+                </p>
+                {stores.map((store) => {
+                  const isActiveStore = activeBrand === store.id
+                  return (
+                    <button
+                      key={store.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveBrand(store.id)
+                        setOpen(false)
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors",
+                        isActiveStore && "bg-muted/40"
+                      )}
+                    >
+                      {store.logo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={store.logo_url}
+                          alt=""
+                          className="h-8 w-8 rounded-md object-cover shrink-0 ring-1 ring-border/60"
+                        />
+                      ) : (
+                        <span
+                          className="flex items-center justify-center h-8 w-8 rounded-md text-[11px] font-bold text-white shrink-0"
+                          style={{ backgroundColor: store.color }}
+                        >
+                          {store.short}
+                        </span>
+                      )}
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="font-semibold text-foreground leading-tight truncate">
+                          {store.name}
+                        </p>
+                        {store.category && (
+                          <p className="text-[11px] text-muted-foreground leading-tight truncate">
+                            {store.category}
+                          </p>
+                        )}
+                      </div>
+                      {isActiveStore && (
+                        <Check className="h-4 w-4 text-primary shrink-0" />
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Inactive stores */}
+            {inactiveStores.length > 0 && (
+              <div className="border-t border-border/60 mt-1 pt-1">
+                <p className="px-3 pb-1 text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                  Inactive
+                </p>
+                {inactiveStores.map((store) => (
+                  <div
+                    key={store.id}
+                    className="flex items-center gap-3 px-3 py-2 text-sm opacity-50 cursor-not-allowed"
+                  >
+                    {store.logo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={store.logo_url}
+                        alt=""
+                        className="h-8 w-8 rounded-md object-cover shrink-0 grayscale"
+                      />
+                    ) : (
+                      <span
+                        className="flex items-center justify-center h-8 w-8 rounded-md text-[11px] font-bold text-white shrink-0 grayscale"
+                        style={{ backgroundColor: store.color }}
+                      >
+                        {store.short}
+                      </span>
+                    )}
+                    <span className="flex-1 text-left text-muted-foreground truncate">
+                      {store.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function TopNavigation() {
   const pathname = usePathname()
   const { activeBrand } = useBrandFilter()
@@ -217,20 +414,39 @@ export function TopNavigation() {
     return () => clearTimeout(timer)
   }, [activeBrand])
 
-  const visibleItems = activeBrand === "all"
-    ? NAV_ITEMS
-    : NAV_ITEMS.filter((item) => !item.centralOnly)
+  // Pick the nav set based on which Space the user is currently in.
+  // The b2b-ecommerce space gets the full Faire portal nav; other spaces
+  // get their lightweight placeholder nav until they're built.
+  const activeSpaceSlug = getActiveSpaceSlug(pathname)
+  const spaceNavItems: NavItem[] = (() => {
+    switch (activeSpaceSlug) {
+      case "hq":     return PLACEHOLDER_HQ
+      case "legal":  return PLACEHOLDER_LEGAL
+      case "goyo":   return PLACEHOLDER_GOYO
+      case "usdrop": return PLACEHOLDER_USDROP
+      case "b2b-ecommerce":
+      default:       return NAV_ITEMS
+    }
+  })()
+
+  const isB2BSpace = activeSpaceSlug === "b2b-ecommerce"
+
+  const visibleItems = isB2BSpace && activeBrand !== "all"
+    ? spaceNavItems.filter((item) => !item.centralOnly)
+    : spaceNavItems
 
   const activeItem = getActiveNavItem(pathname, visibleItems)
   const subItems = activeItem?.subItems
 
   return (
     <div className="shrink-0">
-      {/* Primary nav bar */}
-      <nav
-        className="grid bg-black"
-        style={{ gridTemplateColumns: `repeat(${visibleItems.length}, 1fr)` }}
-      >
+      {/* Primary nav bar — brand filter pinned as first cell (B2B only), modules fill remaining width */}
+      <nav className="flex bg-black">
+        {isB2BSpace && <BrandFilterCell />}
+        <div
+          className="flex-1 grid"
+          style={{ gridTemplateColumns: `repeat(${visibleItems.length}, 1fr)` }}
+        >
         {visibleItems.map((item) => {
           const isActive = activeItem?.url === item.url
           const Icon = item.icon
@@ -256,6 +472,7 @@ export function TopNavigation() {
             </Link>
           )
         })}
+        </div>
       </nav>
 
       {/* Sub-nav bar */}
