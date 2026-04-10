@@ -1,7 +1,8 @@
 import { TopNavigation } from "@/components/layout/top-navigation"
-import { BrandDock } from "@/components/layout/brand-dock"
+import { SpaceDock } from "@/components/layout/space-dock"
 import { WorkspaceDock } from "@/components/layout/workspace-dock"
 import { UtilityBar } from "@/components/layout/utility-bar"
+import { BrandFilterPill } from "@/components/layout/brand-filter-pill"
 import { BrandFilterProvider } from "@/lib/brand-filter-context"
 
 export default function PortalLayout({
@@ -14,10 +15,15 @@ export default function PortalLayout({
       <div className="flex h-screen w-full flex-col">
         {/* Dock + content row */}
         <div className="flex flex-1 min-h-0">
-          <BrandDock />
+          {/* Left dock — space switcher (was: brand dock) */}
+          <SpaceDock />
           <div className="flex flex-1 flex-col overflow-hidden">
             <TopNavigation />
             <main className="flex-1 overflow-auto px-4 py-5 md:px-6 lg:px-8">
+              {/* Pinned brand filter pill — visible only inside the b2b space */}
+              <div className="mb-4 max-w-[1440px] mx-auto w-full">
+                <BrandFilterPill />
+              </div>
               {children}
             </main>
           </div>
