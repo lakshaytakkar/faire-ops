@@ -119,8 +119,9 @@ export interface OrderStats {
  * were derived from a row-limited batch fetch and therefore capped at ~1000.
  *
  * - Counts: `Promise.all` of per-state `count: "exact", head: true` queries.
- * - Revenue: single `select("total_cents")` with a wide `.range(0, 50000)` cap
- *   so we can sum client-side (Supabase has no native SUM without an RPC).
+ * - Revenue: server-side `get_orders_revenue_cents` Postgres RPC. The earlier
+ *   "fetch all rows + reduce" pattern was capped at PostgREST's max-rows
+ *   (default 1000), producing wrong totals once order count exceeded 1k.
  */
 export function useOrderStats(storeId?: string, dateFilter: string = "All Time") {
   const [stats, setStats] = useState<OrderStats>({
@@ -156,17 +157,19 @@ export function useOrderStats(storeId?: string, dateFilter: string = "All Time")
         return q.then(({ count }) => count ?? 0)
       })()
 
-      const revenuePromise = (() => {
-        let q = supabase.from("faire_orders").select("total_cents").range(0, 50000)
-        if (storeId) q = q.eq("store_id", storeId)
-        if (dateStart) q = q.gte("faire_created_at", dateStart)
-        return q.then(({ data }) =>
-          (data ?? []).reduce(
-            (sum: number, o: { total_cents: number | null }) => sum + (o.total_cents ?? 0),
-            0
-          )
-        )
-      })()
+      const revenuePromise = supabase
+        .rpc("get_orders_revenue_cents", {
+          p_store_id: storeId ?? null,
+          p_date_start: dateStart ?? null,
+        })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error("[useOrderStats] revenue RPC error:", error)
+            return 0
+          }
+          // RPC returns a bigint (number). Coerce defensively.
+          return typeof data === "number" ? data : Number(data ?? 0)
+        })
 
       const [
         total,

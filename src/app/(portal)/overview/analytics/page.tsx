@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, Fragment } from "react"
 import Link from "next/link"
 import {
   DollarSign,
@@ -8,10 +8,30 @@ import {
   Store as StoreIcon,
   TrendingUp,
   ArrowRight,
+  ArrowUpDown,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 import { useOrderStats } from "@/lib/use-faire-data"
 import { supabase } from "@/lib/supabase"
+import { ComposableMap, Geographies, Geography } from "react-simple-maps"
+
+/* ------------------------------------------------------------------ */
+/*  Constants                                                          */
+/* ------------------------------------------------------------------ */
+
+const GEO_URL = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json"
+
+const LINE_COLORS = [
+  "#3b82f6",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#ec4899",
+  "#06b6d4",
+]
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -47,17 +67,12 @@ interface BestsellerRow {
   revenueCents: number
 }
 
-interface DailyRevenuePoint {
-  date: string
-  revenueCents: number
-}
-
 interface CategoryRow {
   name: string
   orders: number
 }
 
-interface StateRow {
+interface StateRowTop {
   state: string
   revenueCents: number
   orders: number
@@ -78,6 +93,53 @@ interface OrderRowLite {
   raw_data: Record<string, unknown> | null
 }
 
+interface ViewRow {
+  store_id: string
+  view_date: string
+  view_count: number
+}
+
+interface CityAgg {
+  orders: number
+  revenue: number
+}
+
+interface StateAgg {
+  orders: number
+  revenue: number
+  cities: Record<string, CityAgg>
+}
+
+type StateSortField =
+  | "rank"
+  | "state"
+  | "orders"
+  | "revenue"
+  | "cities"
+  | "avgOrder"
+  | "share"
+type SortDirection = "asc" | "desc"
+
+type StoreTableSortField =
+  | "name"
+  | "orders"
+  | "products"
+  | "aov"
+  | "orderShare"
+  | "lastSynced"
+
+interface DailyStorePoint {
+  date: string
+  label: string
+  values: Record<string, number>
+  total: number
+}
+
+interface MonthlyRow {
+  month: string
+  value: number
+}
+
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
@@ -93,6 +155,17 @@ function formatCurrencyExact(cents: number): string {
   return `$${(cents / 100).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
 }
 
+function formatCurrencyFull(cents: number): string {
+  return `$${(cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+function formatCurrencyCompact(cents: number): string {
+  const dollars = cents / 100
+  if (dollars >= 1_000_000) return `$${(dollars / 1_000_000).toFixed(1)}M`
+  if (dollars >= 1_000) return `$${(dollars / 1_000).toFixed(1)}K`
+  return `$${dollars.toFixed(0)}`
+}
+
 function periodStartIso(period: PeriodKey): string | null {
   const opt = PERIODS.find((p) => p.key === period)
   if (!opt || opt.days === null) return null
@@ -101,93 +174,47 @@ function periodStartIso(period: PeriodKey): string | null {
   return d.toISOString()
 }
 
-function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded bg-muted ${className}`} />
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
 }
 
-/* ------------------------------------------------------------------ */
-/*  Daily revenue sparkline                                            */
-/* ------------------------------------------------------------------ */
-
-function DailyRevenueChart({ points }: { points: DailyRevenuePoint[] }) {
-  if (points.length === 0) {
-    return (
-      <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground">
-        No revenue data available for the selected period.
-      </div>
-    )
+function smoothPath(points: [number, number][]): string {
+  if (points.length < 2) return ""
+  let d = `M ${points[0][0]},${points[0][1]}`
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1]
+    const curr = points[i]
+    const cpx = (prev[0] + curr[0]) / 2
+    d += ` C ${cpx},${prev[1]} ${cpx},${curr[1]} ${curr[0]},${curr[1]}`
   }
+  return d
+}
 
-  const width = 1200
-  const height = 180
-  const padX = 16
-  const padY = 20
-  const innerW = width - padX * 2
-  const innerH = height - padY * 2
+function timeAgo(dateStr: string | null): string {
+  if (!dateStr) return "Never"
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return "Just now"
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `${days}d ago`
+  return new Date(dateStr).toLocaleDateString()
+}
 
-  const maxVal = Math.max(1, ...points.map((p) => p.revenueCents))
-  const stepX = points.length > 1 ? innerW / (points.length - 1) : 0
+function syncStatus(lastSynced: string | null): "synced" | "stale" | "never" {
+  if (!lastSynced) return "never"
+  const diff = Date.now() - new Date(lastSynced).getTime()
+  const hours = diff / (1000 * 60 * 60)
+  return hours < 24 ? "synced" : "stale"
+}
 
-  const coords: [number, number][] = points.map((p, i) => [
-    padX + i * stepX,
-    padY + innerH - (p.revenueCents / maxVal) * innerH,
-  ])
-
-  const linePath = coords
-    .map((c, i) => (i === 0 ? `M ${c[0]},${c[1]}` : `L ${c[0]},${c[1]}`))
-    .join(" ")
-
-  const areaPath =
-    `M ${coords[0][0]},${padY + innerH} ` +
-    coords.map((c) => `L ${c[0]},${c[1]}`).join(" ") +
-    ` L ${coords[coords.length - 1][0]},${padY + innerH} Z`
-
-  const firstDate = points[0]?.date ?? ""
-  const lastDate = points[points.length - 1]?.date ?? ""
-  const total = points.reduce((s, p) => s + p.revenueCents, 0)
-
-  return (
-    <div>
-      <div className="flex items-end justify-between mb-2 px-1">
-        <div>
-          <p className="text-xs text-muted-foreground">Total (30 days)</p>
-          <p className="text-xl font-bold font-heading">{formatCurrencyExact(total)}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs text-muted-foreground">Peak day</p>
-          <p className="text-sm font-medium">{formatCurrency(maxVal)}</p>
-        </div>
-      </div>
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="none"
-        className="w-full h-[180px]"
-      >
-        <defs>
-          <linearGradient id="revenue-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#225aea" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#225aea" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d={areaPath} fill="url(#revenue-grad)" />
-        <path
-          d={linePath}
-          fill="none"
-          stroke="#225aea"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        {coords.map((c, i) => (
-          <circle key={i} cx={c[0]} cy={c[1]} r="1.5" fill="#225aea" />
-        ))}
-      </svg>
-      <div className="flex justify-between px-1 mt-1 text-xs text-muted-foreground tabular-nums">
-        <span>{firstDate}</span>
-        <span>{lastDate}</span>
-      </div>
-    </div>
-  )
+function Skeleton({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse rounded bg-muted ${className}`} />
 }
 
 /* ------------------------------------------------------------------ */
@@ -199,17 +226,16 @@ export default function ConsolidatedAnalyticsPage() {
   const [period, setPeriod] = useState<PeriodKey>("30d")
 
   const storeFilter = activeBrand === "all" ? undefined : activeBrand
+
   // Map our period to useOrderStats's dateFilter wording
   const orderStatsDateFilter = useMemo(() => {
     if (period === "all") return "All Time"
-    if (period === "7d") return "Today" // custom handled below via direct queries; fallback
+    if (period === "7d") return "Today"
     if (period === "30d") return "This Month"
     if (period === "90d") return "3 Months"
     return "All Time"
   }, [period])
 
-  // We'll use useOrderStats ONLY for "all time" or general snapshot.
-  // For period-scoped revenue / order counts, run our own parallel queries.
   const { stats: allTimeStats, loading: statsLoading } = useOrderStats(
     storeFilter,
     orderStatsDateFilter,
@@ -226,14 +252,12 @@ export default function ConsolidatedAnalyticsPage() {
       setPeriodCountsLoading(true)
       const startIso = periodStartIso(period)
 
-      // count: exact, head: true — real count, no .length
       let countQ = supabase
         .from("faire_orders")
         .select("*", { count: "exact", head: true })
       if (storeFilter) countQ = countQ.eq("store_id", storeFilter)
       if (startIso) countQ = countQ.gte("faire_created_at", startIso)
 
-      // Revenue sum — Supabase has no native SUM w/o RPC, so fetch total_cents
       let revQ = supabase
         .from("faire_orders")
         .select("total_cents")
@@ -276,14 +300,12 @@ export default function ConsolidatedAnalyticsPage() {
 
       const rows = await Promise.all(
         scopedStores.map(async (store) => {
-          // Real count per store
           let cq = supabase
             .from("faire_orders")
             .select("*", { count: "exact", head: true })
             .eq("store_id", store.id)
           if (startIso) cq = cq.gte("faire_created_at", startIso)
 
-          // Revenue per store
           let rq = supabase
             .from("faire_orders")
             .select("total_cents")
@@ -317,7 +339,7 @@ export default function ConsolidatedAnalyticsPage() {
     }
   }, [stores, activeBrand, period])
 
-  /* -------------- Orders pool for bestsellers / categories / states -------------- */
+  /* -------------- Orders pool for bestsellers / categories / states / map -------------- */
   const [recentOrders, setRecentOrders] = useState<OrderRowLite[]>([])
   const [recentOrdersLoading, setRecentOrdersLoading] = useState(true)
 
@@ -346,58 +368,65 @@ export default function ConsolidatedAnalyticsPage() {
     }
   }, [period, storeFilter])
 
-  /* -------------- Daily revenue (last 30 days, always) -------------- */
-  const [dailyRevenue, setDailyRevenue] = useState<DailyRevenuePoint[]>([])
-  const [dailyRevenueLoading, setDailyRevenueLoading] = useState(true)
+  /* -------------- Orders for daily/monthly charts (last 6 months) -------------- */
+  const [chartOrders, setChartOrders] = useState<OrderRowLite[]>([])
+  const [chartOrdersLoading, setChartOrdersLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
     async function run() {
-      setDailyRevenueLoading(true)
-      const since = new Date()
-      since.setDate(since.getDate() - 30)
-      const sinceIso = since.toISOString()
+      setChartOrdersLoading(true)
+      const sixMonthsAgo = new Date()
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
 
       let q = supabase
         .from("faire_orders")
-        .select("total_cents, faire_created_at")
-        .gte("faire_created_at", sinceIso)
-        .order("faire_created_at", { ascending: true })
-        .range(0, 20000)
+        .select("store_id, total_cents, faire_created_at, shipping_address, raw_data")
+        .gte("faire_created_at", sixMonthsAgo.toISOString())
+        .order("faire_created_at", { ascending: false })
+        .limit(2000)
       if (storeFilter) q = q.eq("store_id", storeFilter)
 
       const { data } = await q
       if (cancelled) return
-
-      // Build 30 buckets, one per day
-      const buckets: DailyRevenuePoint[] = []
-      for (let i = 29; i >= 0; i--) {
-        const d = new Date()
-        d.setDate(d.getDate() - i)
-        const key = d.toISOString().slice(0, 10)
-        buckets.push({ date: key, revenueCents: 0 })
-      }
-      const index = new Map(buckets.map((b, i) => [b.date, i]))
-
-      for (const row of (data ?? []) as Array<{
-        total_cents: number | null
-        faire_created_at: string | null
-      }>) {
-        if (!row.faire_created_at) continue
-        const key = row.faire_created_at.slice(0, 10)
-        const idx = index.get(key)
-        if (idx === undefined) continue
-        buckets[idx].revenueCents += row.total_cents ?? 0
-      }
-
-      setDailyRevenue(buckets)
-      setDailyRevenueLoading(false)
+      setChartOrders((data ?? []) as OrderRowLite[])
+      setChartOrdersLoading(false)
     }
     run()
     return () => {
       cancelled = true
     }
   }, [storeFilter])
+
+  /* -------------- Daily store views -------------- */
+  const [views, setViews] = useState<ViewRow[]>([])
+  const [viewsLoading, setViewsLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    async function run() {
+      setViewsLoading(true)
+      const daysBack = period === "7d" ? 7 : period === "90d" ? 90 : 30
+      const since = new Date()
+      since.setDate(since.getDate() - daysBack)
+
+      let query = supabase
+        .from("store_daily_views")
+        .select("store_id, view_date, view_count")
+        .gte("view_date", since.toISOString().slice(0, 10))
+        .order("view_date", { ascending: true })
+      if (storeFilter) query = query.eq("store_id", storeFilter)
+
+      const { data } = await query
+      if (cancelled) return
+      setViews((data ?? []) as ViewRow[])
+      setViewsLoading(false)
+    }
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [period, storeFilter])
 
   /* -------------- Bestsellers (from recentOrders.raw_data.items) -------------- */
   const bestsellers: BestsellerRow[] = useMemo(() => {
@@ -427,11 +456,10 @@ export default function ConsolidatedAnalyticsPage() {
       .slice(0, 5)
   }, [recentOrders])
 
-  /* -------------- Bestsellers fallback: top products by faire_updated_at -------------- */
+  /* -------------- Bestsellers fallback -------------- */
   const [fallbackProducts, setFallbackProducts] = useState<BestsellerRow[]>([])
 
   useEffect(() => {
-    // Only load fallback if we have zero aggregated bestsellers after orders loaded
     if (recentOrdersLoading) return
     if (bestsellers.length > 0) {
       setFallbackProducts([])
@@ -471,7 +499,7 @@ export default function ConsolidatedAnalyticsPage() {
   const displayBestsellers =
     bestsellers.length > 0 ? bestsellers : fallbackProducts
 
-  /* -------------- Top categories (from product catalog, weighted by order count) -------------- */
+  /* -------------- Top categories -------------- */
   const [topCategories, setTopCategories] = useState<CategoryRow[]>([])
   const [topCategoriesLoading, setTopCategoriesLoading] = useState(true)
 
@@ -487,7 +515,6 @@ export default function ConsolidatedAnalyticsPage() {
       const { data } = await q
       if (cancelled) return
 
-      // Build product -> category index
       const prodCat = new Map<string, string>()
       for (const row of (data ?? []) as Array<{
         faire_product_id: string
@@ -514,7 +541,6 @@ export default function ConsolidatedAnalyticsPage() {
         prodCat.set(row.faire_product_id, cat)
       }
 
-      // Aggregate orders by category using recentOrders
       const catOrders = new Map<string, number>()
       for (const order of recentOrders) {
         const raw = order.raw_data as Record<string, unknown> | null
@@ -541,15 +567,15 @@ export default function ConsolidatedAnalyticsPage() {
     }
   }, [recentOrders, storeFilter])
 
-  /* -------------- Top states (aggregated client-side from recentOrders) -------------- */
-  const topStates: StateRow[] = useMemo(() => {
-    const map = new Map<string, StateRow>()
+  /* -------------- Top states text list -------------- */
+  const topStatesList: StateRowTop[] = useMemo(() => {
+    const map = new Map<string, StateRowTop>()
     for (const order of recentOrders) {
       const addr = order.shipping_address as Record<string, unknown> | null
       if (!addr) continue
-      const country =
-        (addr.country as string | undefined) ?? "US"
-      const isUS = country === "US" || country === "United States" || country === "USA"
+      const country = (addr.country as string | undefined) ?? "US"
+      const isUS =
+        country === "US" || country === "United States" || country === "USA"
       if (!isUS) continue
       const state =
         (addr.state as string | undefined) ??
@@ -564,6 +590,299 @@ export default function ConsolidatedAnalyticsPage() {
       .sort((a, b) => b.revenueCents - a.revenueCents)
       .slice(0, 5)
   }, [recentOrders])
+
+  /* -------------- US Map: State aggregation from recentOrders -------------- */
+  const stateData: Record<string, StateAgg> = useMemo(() => {
+    const sd: Record<string, StateAgg> = {}
+    for (const order of recentOrders) {
+      const addr = order.shipping_address as Record<string, unknown> | null
+      if (!addr) continue
+      const country = (addr.country as string) || "US"
+      const stateName =
+        (addr.state as string) || (addr.state_code as string) || "Unknown"
+      const city = (addr.city as string) || "Unknown"
+      const isUS =
+        country === "US" || country === "United States" || country === "USA"
+      if (!isUS) continue
+      if (!sd[stateName]) sd[stateName] = { orders: 0, revenue: 0, cities: {} }
+      sd[stateName].orders++
+      sd[stateName].revenue += order.total_cents ?? 0
+      if (!sd[stateName].cities[city]) {
+        sd[stateName].cities[city] = { orders: 0, revenue: 0 }
+      }
+      sd[stateName].cities[city].orders++
+      sd[stateName].cities[city].revenue += order.total_cents ?? 0
+    }
+    return sd
+  }, [recentOrders])
+
+  const mapMaxOrders = useMemo(() => {
+    let m = 0
+    for (const s of Object.values(stateData)) {
+      if (s.orders > m) m = s.orders
+    }
+    return m || 1
+  }, [stateData])
+
+  const domesticRevenue = useMemo(
+    () => Object.values(stateData).reduce((s, d) => s + d.revenue, 0),
+    [stateData],
+  )
+
+  const [stateSort, setStateSort] = useState<StateSortField>("orders")
+  const [stateSortDir, setStateSortDir] = useState<SortDirection>("desc")
+  const [expandedState, setExpandedState] = useState<string | null>(null)
+
+  function handleStateSort(field: StateSortField) {
+    if (stateSort === field) {
+      setStateSortDir((d) => (d === "asc" ? "desc" : "asc"))
+    } else {
+      setStateSort(field)
+      setStateSortDir("desc")
+    }
+  }
+
+  const stateRankings = useMemo(() => {
+    const entries = Object.entries(stateData).map(([name, d]) => ({
+      name,
+      orders: d.orders,
+      revenue: d.revenue,
+      cities: Object.keys(d.cities).length,
+      avgOrder: d.orders > 0 ? d.revenue / d.orders : 0,
+      share: domesticRevenue > 0 ? (d.revenue / domesticRevenue) * 100 : 0,
+    }))
+
+    entries.sort((a, b) => b.orders - a.orders)
+    const ranked = entries.slice(0, 10).map((e, i) => ({ ...e, rank: i + 1 }))
+
+    const dir = stateSortDir === "asc" ? 1 : -1
+    ranked.sort((a, b) => {
+      switch (stateSort) {
+        case "rank":
+          return dir * (a.rank - b.rank)
+        case "state":
+          return dir * a.name.localeCompare(b.name)
+        case "orders":
+          return dir * (a.orders - b.orders)
+        case "revenue":
+          return dir * (a.revenue - b.revenue)
+        case "cities":
+          return dir * (a.cities - b.cities)
+        case "avgOrder":
+          return dir * (a.avgOrder - b.avgOrder)
+        case "share":
+          return dir * (a.share - b.share)
+        default:
+          return 0
+      }
+    })
+
+    return ranked
+  }, [stateData, stateSort, stateSortDir, domesticRevenue])
+
+  function getTopCitiesForState(stateName: string) {
+    const cities = stateData[stateName]?.cities ?? {}
+    return Object.entries(cities)
+      .map(([name, d]) => ({ name, orders: d.orders, revenue: d.revenue }))
+      .sort((a, b) => b.orders - a.orders)
+      .slice(0, 5)
+  }
+
+  /* -------------- Storewise comparison table -------------- */
+  const filteredStores = useMemo(
+    () =>
+      activeBrand === "all" ? stores : stores.filter((s) => s.id === activeBrand),
+    [activeBrand, stores],
+  )
+
+  const storeAggregates = useMemo(() => {
+    const map: Record<string, { revenue: number; orders: number }> = {}
+    for (const order of chartOrders) {
+      if (!map[order.store_id]) map[order.store_id] = { revenue: 0, orders: 0 }
+      map[order.store_id].revenue += order.total_cents ?? 0
+      map[order.store_id].orders += 1
+    }
+    return map
+  }, [chartOrders])
+
+  const [storeTableSort, setStoreTableSort] =
+    useState<StoreTableSortField>("orders")
+  const [storeTableSortDir, setStoreTableSortDir] =
+    useState<SortDirection>("desc")
+
+  function handleStoreTableSort(field: StoreTableSortField) {
+    if (storeTableSort === field) {
+      setStoreTableSortDir((d) => (d === "asc" ? "desc" : "asc"))
+    } else {
+      setStoreTableSort(field)
+      setStoreTableSortDir("desc")
+    }
+  }
+
+  const storeTableRows = useMemo(() => {
+    const totalOrdersAll = filteredStores.reduce(
+      (s, b) => s + b.total_orders,
+      0,
+    )
+    const rows = filteredStores.map((store) => {
+      const agg = storeAggregates[store.id] ?? { revenue: 0, orders: 0 }
+      const aovCents = agg.orders > 0 ? Math.round(agg.revenue / agg.orders) : 0
+      const orderShare =
+        totalOrdersAll > 0 ? (store.total_orders / totalOrdersAll) * 100 : 0
+      return {
+        id: store.id,
+        name: store.name,
+        short: store.short,
+        color: store.color,
+        category: store.category,
+        orders: store.total_orders,
+        products: store.total_products,
+        aovCents,
+        orderShare,
+        last_synced_at: store.last_synced_at,
+      }
+    })
+
+    const dir = storeTableSortDir === "asc" ? 1 : -1
+    rows.sort((a, b) => {
+      switch (storeTableSort) {
+        case "name":
+          return dir * a.name.localeCompare(b.name)
+        case "orders":
+          return dir * (a.orders - b.orders)
+        case "products":
+          return dir * (a.products - b.products)
+        case "aov":
+          return dir * (a.aovCents - b.aovCents)
+        case "orderShare":
+          return dir * (a.orderShare - b.orderShare)
+        case "lastSynced":
+          return (
+            dir *
+            (new Date(a.last_synced_at ?? 0).getTime() -
+              new Date(b.last_synced_at ?? 0).getTime())
+          )
+        default:
+          return 0
+      }
+    })
+    return rows
+  }, [filteredStores, storeAggregates, storeTableSort, storeTableSortDir])
+
+  /* -------------- Daily sales multi-store comparison -------------- */
+  const dailySalesByStore: DailyStorePoint[] = useMemo(() => {
+    const days = period === "7d" ? 7 : period === "90d" ? 90 : 30
+    const now = new Date()
+    const dayMap: Record<string, Record<string, number>> = {}
+
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now)
+      d.setDate(d.getDate() - i)
+      dayMap[toLocalDateStr(d)] = {}
+    }
+
+    for (const order of chartOrders) {
+      if (!order.faire_created_at) continue
+      const key = toLocalDateStr(new Date(order.faire_created_at))
+      if (key in dayMap) {
+        dayMap[key][order.store_id] =
+          (dayMap[key][order.store_id] ?? 0) + (order.total_cents ?? 0)
+      }
+    }
+
+    return Object.entries(dayMap).map(([date, values]) => {
+      const d = new Date(date + "T00:00:00")
+      return {
+        date,
+        label: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        values,
+        total: Object.values(values).reduce((s, v) => s + v, 0),
+      }
+    })
+  }, [chartOrders, period])
+
+  const dailySalesMax = useMemo(() => {
+    let m = 1
+    for (const row of dailySalesByStore) {
+      if (row.total > m) m = row.total
+    }
+    return m
+  }, [dailySalesByStore])
+
+  const dailySalesTotal = useMemo(
+    () => dailySalesByStore.reduce((s, d) => s + d.total, 0),
+    [dailySalesByStore],
+  )
+
+  /* -------------- Daily views multi-store -------------- */
+  const viewLines = useMemo(() => {
+    const dateMap = new Map<string, Record<string, number>>()
+    for (const v of views) {
+      const entry = dateMap.get(v.view_date) ?? {}
+      entry[v.store_id] = v.view_count
+      dateMap.set(v.view_date, entry)
+    }
+    const dates = [...dateMap.keys()].sort()
+    return dates.map((d) => ({ date: d, stores: dateMap.get(d)! }))
+  }, [views])
+
+  const viewStores = useMemo(() => {
+    if (activeBrand !== "all") return stores.filter((s) => s.id === activeBrand)
+    return stores
+  }, [stores, activeBrand])
+
+  const maxViewCount = useMemo(() => {
+    let max = 1
+    for (const row of viewLines) {
+      for (const count of Object.values(row.stores)) {
+        if (count > max) max = count
+      }
+    }
+    return max
+  }, [viewLines])
+
+  /* -------------- Monthly revenue (horizontal bars) -------------- */
+  const monthlyRevenue: MonthlyRow[] = useMemo(() => {
+    const monthMap: Record<string, number> = {}
+    for (const order of chartOrders) {
+      if (!order.faire_created_at) continue
+      const d = new Date(order.faire_created_at)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+      monthMap[key] = (monthMap[key] ?? 0) + (order.total_cents ?? 0)
+    }
+    const sorted = Object.entries(monthMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-6)
+    const shortMonths = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ]
+    return sorted.map(([key, value]) => {
+      const month = parseInt(key.split("-")[1], 10) - 1
+      return { month: shortMonths[month], value }
+    })
+  }, [chartOrders])
+
+  const maxMonthlyRevenue =
+    monthlyRevenue.length > 0 ? Math.max(...monthlyRevenue.map((m) => m.value)) : 1
+
+  const momGrowth = useMemo(() => {
+    if (monthlyRevenue.length < 2) return null
+    const current = monthlyRevenue[monthlyRevenue.length - 1].value
+    const previous = monthlyRevenue[monthlyRevenue.length - 2].value
+    if (previous === 0) return null
+    return ((current - previous) / previous) * 100
+  }, [monthlyRevenue])
 
   /* -------------- Derived stat card values -------------- */
   const activeBrandStores =
@@ -581,7 +900,8 @@ export default function ConsolidatedAnalyticsPage() {
     periodCountsLoading ||
     topStoresLoading ||
     recentOrdersLoading ||
-    dailyRevenueLoading ||
+    chartOrdersLoading ||
+    viewsLoading ||
     topCategoriesLoading
 
   /* -------------- Skeleton loading -------------- */
@@ -605,11 +925,56 @@ export default function ConsolidatedAnalyticsPage() {
           <Skeleton className="h-[260px] rounded-lg" />
         </div>
         <Skeleton className="h-[260px] rounded-lg" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Skeleton className="h-[260px] rounded-lg" />
-          <Skeleton className="h-[260px] rounded-lg" />
-        </div>
+        <Skeleton className="h-[320px] rounded-lg" />
+        <Skeleton className="h-[320px] rounded-lg" />
+        <Skeleton className="h-[260px] rounded-lg" />
+        <Skeleton className="h-[500px] rounded-lg" />
       </div>
+    )
+  }
+
+  /* -------------- SortableHeader helpers -------------- */
+  function StateSortHeader({
+    field,
+    label,
+    align = "left",
+  }: {
+    field: StateSortField
+    label: string
+    align?: "left" | "right"
+  }) {
+    return (
+      <th
+        className={`px-3 py-2 text-[11px] font-medium text-muted-foreground tracking-wide uppercase cursor-pointer select-none hover:text-foreground transition-colors ${align === "right" ? "text-right" : "text-left"}`}
+        onClick={() => handleStateSort(field)}
+      >
+        <span className="inline-flex items-center gap-0.5">
+          {label}
+          {stateSort === field && <ArrowUpDown className="size-3" />}
+        </span>
+      </th>
+    )
+  }
+
+  function StoreSortHeader({
+    field,
+    label,
+    align = "left",
+  }: {
+    field: StoreTableSortField
+    label: string
+    align?: "left" | "right"
+  }) {
+    return (
+      <th
+        className={`px-4 py-3 text-xs font-medium text-muted-foreground tracking-wide uppercase cursor-pointer select-none hover:text-foreground transition-colors ${align === "right" ? "text-right" : "text-left"}`}
+        onClick={() => handleStoreTableSort(field)}
+      >
+        <span className="inline-flex items-center gap-1">
+          {label}
+          {storeTableSort === field && <ArrowUpDown className="h-3 w-3" />}
+        </span>
+      </th>
     )
   }
 
@@ -790,13 +1155,446 @@ export default function ConsolidatedAnalyticsPage() {
         </div>
       </div>
 
-      {/* ---- Daily revenue chart ---- */}
+      {/* ========================================================== */}
+      {/*  1. STOREWISE COMPARISON TABLE                              */}
+      {/* ========================================================== */}
       <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
-        <div className="px-5 py-3.5 border-b">
-          <h2 className="text-sm font-semibold">Daily revenue (last 30 days)</h2>
+        <div className="px-5 py-3.5 border-b flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold">Storewise comparison</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              All active stores &middot; orders, products, AOV and sync status
+            </p>
+          </div>
+          <Link
+            href="/analytics/stores"
+            className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline"
+          >
+            Full table <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b bg-muted/40">
+                <StoreSortHeader field="name" label="Store" />
+                <StoreSortHeader field="orders" label="Orders" align="right" />
+                <StoreSortHeader field="products" label="Products" align="right" />
+                <StoreSortHeader field="aov" label="Avg Order Value" align="right" />
+                <StoreSortHeader field="orderShare" label="Order Share %" align="right" />
+                <StoreSortHeader field="lastSynced" label="Last Synced" />
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground tracking-wide uppercase text-left">
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {storeTableRows.map((store) => {
+                const status = syncStatus(store.last_synced_at)
+                return (
+                  <tr
+                    key={store.id}
+                    className="border-b last:border-b-0 hover:bg-muted/20 transition-colors"
+                  >
+                    <td className="px-4 py-3.5 text-sm">
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className="h-7 w-7 rounded-full shrink-0 flex items-center justify-center text-[10px] font-bold text-white"
+                          style={{ backgroundColor: store.color }}
+                        >
+                          {store.short?.slice(0, 2).toUpperCase() ??
+                            store.name.slice(0, 2).toUpperCase()}
+                        </span>
+                        <div className="min-w-0">
+                          <span className="font-medium block truncate">
+                            {store.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {store.category}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5 text-sm text-right tabular-nums font-medium">
+                      {store.orders.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3.5 text-sm text-right tabular-nums">
+                      {store.products.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3.5 text-sm text-right tabular-nums">
+                      {store.aovCents > 0 ? formatCurrencyFull(store.aovCents) : "--"}
+                    </td>
+                    <td className="px-4 py-3.5 text-sm text-right tabular-nums">
+                      {store.orderShare.toFixed(1)}%
+                    </td>
+                    <td className="px-4 py-3.5 text-sm text-muted-foreground">
+                      {timeAgo(store.last_synced_at)}
+                    </td>
+                    <td className="px-4 py-3.5 text-sm">
+                      {status === "synced" && (
+                        <span className="border-0 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+                          Synced
+                        </span>
+                      )}
+                      {status === "stale" && (
+                        <span className="border-0 text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
+                          Stale
+                        </span>
+                      )}
+                      {status === "never" && (
+                        <span className="border-0 text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-700">
+                          Never
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+              {storeTableRows.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-4 py-12 text-center text-sm text-muted-foreground"
+                  >
+                    No stores found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ========================================================== */}
+      {/*  2. DAILY SALES COMPARISON (multi-store)                    */}
+      {/* ========================================================== */}
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between border-b px-5 py-3.5">
+          <div>
+            <h2 className="text-sm font-semibold">Daily sales by store</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {formatCurrencyCompact(dailySalesTotal)} total &middot;{" "}
+              {dailySalesByStore.length} days
+            </p>
+          </div>
+          <div className="hidden md:flex items-center gap-2 flex-wrap max-w-md">
+            {filteredStores.map((s) => (
+              <span
+                key={s.id}
+                className="flex items-center gap-1 text-[10px] text-muted-foreground"
+              >
+                <span
+                  className="w-2.5 h-2.5 rounded-sm"
+                  style={{ backgroundColor: s.color }}
+                />
+                {s.name}
+              </span>
+            ))}
+          </div>
         </div>
         <div className="p-5">
-          <DailyRevenueChart points={dailyRevenue} />
+          {dailySalesByStore.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">No data</p>
+          ) : (
+            <>
+              <div className="flex gap-2">
+                <div className="flex flex-col justify-between h-56 shrink-0 w-14 text-right pr-1">
+                  <span className="text-[10px] text-muted-foreground">
+                    {formatCurrencyCompact(dailySalesMax)}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {formatCurrencyCompact(dailySalesMax / 2)}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">$0</span>
+                </div>
+                <div className="flex-1 relative">
+                  <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                    <div className="border-b border-dashed border-muted/50" />
+                    <div className="border-b border-dashed border-muted/50" />
+                    <div className="border-b border-muted/30" />
+                  </div>
+                  <div className="flex items-end gap-px h-56 relative z-10">
+                    {dailySalesByStore.map((day) => {
+                      const totalPct =
+                        dailySalesMax > 0 ? (day.total / dailySalesMax) * 100 : 0
+                      return (
+                        <div
+                          key={day.date}
+                          className="flex-1 flex flex-col justify-end group relative h-full"
+                        >
+                          <div
+                            className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block z-20 pointer-events-none"
+                          >
+                            <div className="bg-foreground text-background text-[10px] rounded px-2 py-1 shadow-lg whitespace-nowrap">
+                              <p className="font-semibold">{day.label}</p>
+                              <p>Total: {formatCurrencyFull(day.total)}</p>
+                              {filteredStores
+                                .filter((s) => (day.values[s.id] ?? 0) > 0)
+                                .map((s) => (
+                                  <p
+                                    key={s.id}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <span
+                                      className="w-2 h-2 rounded-sm"
+                                      style={{ backgroundColor: s.color }}
+                                    />
+                                    {s.name}:{" "}
+                                    {formatCurrencyFull(day.values[s.id] ?? 0)}
+                                  </p>
+                                ))}
+                            </div>
+                          </div>
+                          <div
+                            className="w-full flex flex-col-reverse rounded-t-sm overflow-hidden"
+                            style={{
+                              height: `${Math.max(totalPct, day.total > 0 ? 2 : 0.5)}%`,
+                              minHeight: day.total > 0 ? "2px" : "1px",
+                            }}
+                          >
+                            {filteredStores.map((s) => {
+                              const v = day.values[s.id] ?? 0
+                              if (v === 0) return null
+                              const segPct = day.total > 0 ? (v / day.total) * 100 : 0
+                              return (
+                                <div
+                                  key={s.id}
+                                  style={{
+                                    height: `${segPct}%`,
+                                    backgroundColor: s.color,
+                                  }}
+                                />
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-1">
+                <div className="w-14 shrink-0" />
+                <div className="flex-1 flex justify-between">
+                  {dailySalesByStore
+                    .filter(
+                      (_, i) =>
+                        i === 0 ||
+                        i === dailySalesByStore.length - 1 ||
+                        (i + 1) % 7 === 0,
+                    )
+                    .map((day) => (
+                      <span
+                        key={day.date}
+                        className="text-[9px] text-muted-foreground"
+                      >
+                        {day.label}
+                      </span>
+                    ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ========================================================== */}
+      {/*  3. DAILY VIEWS TREND                                       */}
+      {/* ========================================================== */}
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between border-b px-5 py-3.5">
+          <div>
+            <h2 className="text-sm font-semibold">Daily store views</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {activeBrand === "all"
+                ? "All stores"
+                : viewStores[0]?.name ?? "Store"}{" "}
+              &middot; {viewLines.length} days tracked
+            </p>
+          </div>
+          <div className="hidden md:flex items-center gap-2 flex-wrap max-w-md">
+            {viewStores.map((s, i) => (
+              <span
+                key={s.id}
+                className="flex items-center gap-1 text-[10px] text-muted-foreground"
+              >
+                <span
+                  className="w-2.5 h-[3px] rounded-full"
+                  style={{
+                    backgroundColor:
+                      s.color || LINE_COLORS[i % LINE_COLORS.length],
+                  }}
+                />
+                {s.name}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="p-5">
+          {viewLines.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              No view data available.
+            </p>
+          ) : (
+            <>
+              <div className="flex gap-2">
+                <div className="flex flex-col justify-between h-64 shrink-0 w-10 text-right pr-1">
+                  <span className="text-[10px] text-muted-foreground">
+                    {maxViewCount}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {Math.round(maxViewCount / 2)}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">0</span>
+                </div>
+                <div className="flex-1 relative h-64">
+                  <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                    <div className="border-b border-dashed border-muted/40" />
+                    <div className="border-b border-dashed border-muted/40" />
+                    <div className="border-b border-muted/30" />
+                  </div>
+                  <svg
+                    viewBox={`0 0 ${Math.max(viewLines.length - 1, 1)} 100`}
+                    className="absolute inset-0 w-full h-full"
+                    preserveAspectRatio="none"
+                  >
+                    {viewStores.map((store, si) => {
+                      const color =
+                        store.color || LINE_COLORS[si % LINE_COLORS.length]
+                      const pointsArray: [number, number][] = viewLines.map(
+                        (row, i) => {
+                          const val = row.stores[store.id] ?? 0
+                          const y = 100 - (val / maxViewCount) * 100
+                          return [i, y] as [number, number]
+                        },
+                      )
+                      return (
+                        <g key={store.id}>
+                          <path
+                            d={smoothPath(pointsArray)}
+                            fill="none"
+                            stroke={color}
+                            strokeWidth="1.5"
+                            vectorEffect="non-scaling-stroke"
+                            strokeLinejoin="round"
+                          />
+                        </g>
+                      )
+                    })}
+                  </svg>
+                  <div className="absolute inset-0 flex">
+                    {viewLines.map((row) => {
+                      const d = new Date(row.date + "T00:00:00")
+                      const label = d.toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })
+                      return (
+                        <div key={row.date} className="flex-1 group relative">
+                          <div className="absolute top-0 left-1/2 -translate-x-1/2 hidden group-hover:block z-20">
+                            <div className="bg-foreground text-background text-[10px] rounded px-2 py-1.5 shadow-lg whitespace-nowrap">
+                              <p className="font-semibold mb-0.5">{label}</p>
+                              {viewStores.map((s, si) => (
+                                <p
+                                  key={s.id}
+                                  className="flex items-center gap-1"
+                                >
+                                  <span
+                                    className="w-2 h-[2px] rounded"
+                                    style={{
+                                      backgroundColor:
+                                        s.color ||
+                                        LINE_COLORS[si % LINE_COLORS.length],
+                                    }}
+                                  />
+                                  {s.name}: {row.stores[s.id] ?? 0}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="w-px h-full mx-auto bg-muted/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-1">
+                <div className="w-10 shrink-0" />
+                <div className="flex-1 flex justify-between">
+                  {viewLines
+                    .filter(
+                      (_, i) =>
+                        i === 0 ||
+                        i === viewLines.length - 1 ||
+                        (i + 1) % 7 === 0,
+                    )
+                    .map((row) => {
+                      const d = new Date(row.date + "T00:00:00")
+                      return (
+                        <span
+                          key={row.date}
+                          className="text-[9px] text-muted-foreground"
+                        >
+                          {d.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+                      )
+                    })}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ========================================================== */}
+      {/*  4. MONTHLY SALES HORIZONTAL BAR CHART                      */}
+      {/* ========================================================== */}
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between border-b px-5 py-3.5">
+          <div>
+            <h2 className="text-sm font-semibold">Sales by month</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Last {monthlyRevenue.length} months
+            </p>
+          </div>
+          {momGrowth !== null && (
+            <span
+              className={`text-xs font-semibold px-2 py-0.5 rounded-full ${momGrowth >= 0 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}
+            >
+              {momGrowth >= 0 ? "+" : ""}
+              {momGrowth.toFixed(1)}% MoM
+            </span>
+          )}
+        </div>
+        <div className="p-5">
+          {monthlyRevenue.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">No data</p>
+          ) : (
+            <div className="space-y-2">
+              {monthlyRevenue.map((item) => (
+                <div key={item.month} className="flex items-center gap-3">
+                  <span className="text-xs font-medium text-muted-foreground w-8 shrink-0">
+                    {item.month}
+                  </span>
+                  <div className="flex-1 h-8 bg-muted/20 rounded overflow-hidden">
+                    <div
+                      className="h-full rounded bg-emerald-500"
+                      style={{
+                        width: `${(item.value / maxMonthlyRevenue) * 100}%`,
+                      }}
+                    />
+                  </div>
+                  <span className="text-sm font-semibold w-20 text-right shrink-0 tabular-nums">
+                    {formatCurrencyCompact(item.value)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -845,18 +1643,18 @@ export default function ConsolidatedAnalyticsPage() {
           </div>
         </div>
 
-        {/* Top states */}
+        {/* Top states (text list) */}
         <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
           <div className="px-5 py-3.5 border-b">
             <h2 className="text-sm font-semibold">Top states</h2>
           </div>
           <div className="divide-y">
-            {topStates.length === 0 ? (
+            {topStatesList.length === 0 ? (
               <div className="px-5 py-8 text-center text-sm text-muted-foreground">
                 No shipping data yet.
               </div>
             ) : (
-              topStates.map((st, i) => (
+              topStatesList.map((st, i) => (
                 <div
                   key={st.state}
                   className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted/20 transition-colors"
@@ -876,6 +1674,210 @@ export default function ConsolidatedAnalyticsPage() {
                 </div>
               ))
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================== */}
+      {/*  5. US MAP (GEOGRAPHY) + state-by-revenue table             */}
+      {/* ========================================================== */}
+      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+        <div className="px-5 py-3.5 border-b flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold">US geography</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Orders by state &middot; click a row to see top cities
+            </p>
+          </div>
+          <Link
+            href="/analytics/geography"
+            className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline"
+          >
+            Full geography <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+          {/* Map */}
+          <div className="relative h-[500px] border-b lg:border-b-0 lg:border-r border-border/80">
+            <ComposableMap projection="geoAlbersUsa" className="w-full h-full">
+              <Geographies geography={GEO_URL}>
+                {({
+                  geographies,
+                }: {
+                  geographies: Array<{
+                    rsmKey: string
+                    properties: { name: string }
+                  }>
+                }) =>
+                  geographies.map((geo) => {
+                    const stateName = geo.properties.name
+                    const data = stateData[stateName]
+                    const intensity = data
+                      ? Math.min(data.orders / mapMaxOrders, 1)
+                      : 0
+                    return (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        onClick={() =>
+                          setExpandedState(
+                            expandedState === stateName ? null : stateName,
+                          )
+                        }
+                        style={{
+                          default: {
+                            fill:
+                              intensity > 0
+                                ? `hsl(223, 83%, ${80 - intensity * 50}%)`
+                                : "#e2e8f0",
+                            stroke: "#fff",
+                            strokeWidth: 0.5,
+                            outline: "none",
+                          },
+                          hover: {
+                            fill: "hsl(223, 83%, 53%)",
+                            stroke: "#fff",
+                            strokeWidth: 1,
+                            outline: "none",
+                            cursor: "pointer",
+                          },
+                          pressed: {
+                            fill: "hsl(223, 83%, 40%)",
+                            outline: "none",
+                          },
+                        }}
+                      />
+                    )
+                  })
+                }
+              </Geographies>
+            </ComposableMap>
+
+            {/* Legend */}
+            <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded border bg-card/90 backdrop-blur-sm px-2 py-1 shadow-sm">
+              <span className="text-[9px] text-muted-foreground">0</span>
+              <div className="flex h-2">
+                <div
+                  className="w-4 rounded-l"
+                  style={{ backgroundColor: "#e2e8f0" }}
+                />
+                <div
+                  className="w-4"
+                  style={{ backgroundColor: "hsl(223, 83%, 75%)" }}
+                />
+                <div
+                  className="w-4"
+                  style={{ backgroundColor: "hsl(223, 83%, 62%)" }}
+                />
+                <div
+                  className="w-4"
+                  style={{ backgroundColor: "hsl(223, 83%, 49%)" }}
+                />
+                <div
+                  className="w-4 rounded-r"
+                  style={{ backgroundColor: "hsl(223, 83%, 30%)" }}
+                />
+              </div>
+              <span className="text-[9px] text-muted-foreground">
+                {mapMaxOrders.toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          {/* State revenue table */}
+          <div className="overflow-auto max-h-[500px]">
+            <table className="w-full">
+              <thead className="sticky top-0 bg-card border-b">
+                <tr>
+                  <StateSortHeader field="rank" label="#" />
+                  <StateSortHeader field="state" label="State" />
+                  <StateSortHeader field="orders" label="Orders" align="right" />
+                  <StateSortHeader field="revenue" label="Revenue" align="right" />
+                  <StateSortHeader field="share" label="Share %" align="right" />
+                </tr>
+              </thead>
+              <tbody>
+                {stateRankings.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="px-3 py-10 text-center text-sm text-muted-foreground"
+                    >
+                      No state data available.
+                    </td>
+                  </tr>
+                ) : (
+                  stateRankings.map((s) => {
+                    const isExpanded = expandedState === s.name
+                    const topCities = isExpanded ? getTopCitiesForState(s.name) : []
+                    return (
+                      <Fragment key={s.name}>
+                        <tr
+                          className={`border-b last:border-b-0 hover:bg-muted/20 transition-colors cursor-pointer ${
+                            isExpanded ? "bg-muted/10" : ""
+                          }`}
+                          onClick={() =>
+                            setExpandedState(isExpanded ? null : s.name)
+                          }
+                        >
+                          <td className="px-3 py-2.5 text-sm tabular-nums text-muted-foreground">
+                            {s.rank}
+                          </td>
+                          <td className="px-3 py-2.5 text-sm font-medium text-primary">
+                            <span className="inline-flex items-center gap-1">
+                              {s.name}
+                              {isExpanded ? (
+                                <ChevronUp className="size-3" />
+                              ) : (
+                                <ChevronDown className="size-3 opacity-40" />
+                              )}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 text-sm text-right tabular-nums">
+                            {s.orders.toLocaleString()}
+                          </td>
+                          <td className="px-3 py-2.5 text-sm text-right tabular-nums">
+                            {formatCurrencyFull(s.revenue)}
+                          </td>
+                          <td className="px-3 py-2.5 text-sm text-right tabular-nums">
+                            {s.share.toFixed(1)}%
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr className="bg-muted/10">
+                            <td colSpan={5} className="px-6 py-3">
+                              <div className="space-y-1">
+                                <p className="text-xs font-medium text-muted-foreground mb-2">
+                                  Top cities in {s.name}
+                                </p>
+                                {topCities.length > 0 ? (
+                                  topCities.map((city) => (
+                                    <div
+                                      key={city.name}
+                                      className="flex items-center justify-between text-xs py-1"
+                                    >
+                                      <span>{city.name}</span>
+                                      <span className="text-muted-foreground">
+                                        {city.orders} orders &middot;{" "}
+                                        {formatCurrencyFull(city.revenue)}
+                                      </span>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <p className="text-xs text-muted-foreground">
+                                    No city data.
+                                  </p>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
