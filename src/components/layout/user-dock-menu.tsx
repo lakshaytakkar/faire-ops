@@ -5,24 +5,15 @@
  * (right dock). Opens a popover to the LEFT (since it's pinned to the right
  * edge of the viewport).
  *
- * Accepts a `collapsed` prop so it can adapt to the dock's two widths:
- *   - collapsed (`w-12`): avatar-only, centered
- *   - expanded  (`w-44`): avatar + display name + subtitle
- *
- * Styled dark to match the rest of the dock and the top navigation.
+ * Replaces the user menu that previously lived in the bottom utility bar.
  */
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
-import { cn } from "@/lib/utils"
 import { Grid3x3, User, Settings, LogOut } from "lucide-react"
 
-interface UserDockMenuProps {
-  collapsed?: boolean
-}
-
-export function UserDockMenu({ collapsed = false }: UserDockMenuProps) {
+export function UserDockMenu() {
   const { user, isSuperadmin } = useAuth()
   const [open, setOpen] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -47,32 +38,19 @@ export function UserDockMenu({ collapsed = false }: UserDockMenuProps) {
     : user?.job_title || user?.user_type || "Member"
 
   return (
-    <div ref={wrapperRef} className="relative border-b border-white/10">
+    <div ref={wrapperRef} className="relative w-12 h-12 border-b border-white/10">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={cn(
-          "flex items-center w-full h-12 group hover:bg-white/15 transition-colors text-left",
-          collapsed ? "justify-center" : "gap-2 px-3"
-        )}
+        className="flex items-center justify-center w-12 h-12 group hover:bg-white/10 transition-colors"
         title={displayName}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={avatarUrl}
           alt={displayName}
-          className="h-7 w-7 rounded-full object-cover ring-1 ring-white/30 shrink-0"
+          className="h-7 w-7 rounded-full object-cover ring-1 ring-white/30"
         />
-        {!collapsed && (
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-white leading-tight truncate">
-              {displayName}
-            </p>
-            <p className="text-[10px] text-white/60 leading-tight truncate mt-0.5">
-              {subtitle}
-            </p>
-          </div>
-        )}
         {open && (
           <span className="absolute right-0 top-0 bottom-0 w-[2px] bg-white" />
         )}
