@@ -20,6 +20,7 @@ import {
   Zap,
   Mail,
   Sparkles,
+  Phone,
 } from "lucide-react"
 
 const WORKSPACE_ITEMS = [
@@ -27,6 +28,7 @@ const WORKSPACE_ITEMS = [
   { href: "/operations/tasks", icon: ClipboardList, label: "Tasks", color: "#f59e0b", bg: "rgba(245,158,11,0.15)" },
   { href: "/workspace/team", icon: Users, label: "Team", color: "#8b5cf6", bg: "rgba(139,92,246,0.15)" },
   { href: "/workspace/chat", icon: MessageCircle, label: "Chat", color: "#10b981", bg: "rgba(16,185,129,0.15)" },
+  { href: "/workspace/qa/calls", icon: Phone, label: "Calls (QA)", color: "#0ea5e9", bg: "rgba(14,165,233,0.15)" },
   { href: "/workspace/inbox", icon: Bell, label: "Inbox", color: "#ef4444", bg: "rgba(239,68,68,0.15)" },
   null, // separator
   { href: "/workspace/training", icon: GraduationCap, label: "Learning", color: "#14b8a6", bg: "rgba(20,184,166,0.15)" },

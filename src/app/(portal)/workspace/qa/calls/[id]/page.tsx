@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { AudioPlayer } from "@/components/shared/audio-player"
 import { supabase } from "@/lib/supabase"
+import { matchContactByPhone, type MatchedContact } from "@/lib/contact-matcher"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -187,6 +188,7 @@ export default function CallDetailPage() {
   const [flags, setFlags] = useState<CallFlag[]>([])
   const [reviews, setReviews] = useState<QaReview[]>([])
   const [users, setUsers] = useState<Record<string, UserRow>>({})
+  const [matchedContact, setMatchedContact] = useState<MatchedContact | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -229,6 +231,15 @@ export default function CallDetailPage() {
       setTranscription((trRes.data ?? null) as Transcription | null)
       setFlags((flagsRes.data ?? []) as CallFlag[])
       setReviews((reviewsRes.data ?? []) as QaReview[])
+
+      // Auto-match client number to existing contact
+      const callData = callRes.data as CallRow
+      if (callData.client_number) {
+        const matched = await matchContactByPhone(callData.client_number)
+        setMatchedContact(matched)
+      } else {
+        setMatchedContact(null)
+      }
 
       // Load user names
       const userIds = new Set<string>()
@@ -408,7 +419,16 @@ export default function CallDetailPage() {
               <p className="text-sm text-muted-foreground mt-1">
                 <span className="font-medium text-foreground">{call.emp_name ?? "Unknown employee"}</span>
                 {" • "}
-                <span>{call.client_name ?? "Unknown"}</span>
+                {matchedContact ? (
+                  <Link href={matchedContact.link} className="font-medium text-primary hover:underline inline-flex items-center gap-1.5">
+                    {matchedContact.name}
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${matchedContact.badgeClass}`}>
+                      {matchedContact.type}
+                    </span>
+                  </Link>
+                ) : (
+                  <span>{call.client_name ?? "Unknown"}</span>
+                )}
                 {call.client_number && <span className="font-mono"> ({call.client_number})</span>}
                 {" • "}
                 <span>{formatDateTime(call.call_started_at)}</span>
@@ -534,6 +554,21 @@ export default function CallDetailPage() {
               <InfoRow label="Date" value={call.call_date ?? (call.call_started_at ? new Date(call.call_started_at).toLocaleDateString() : "—")} />
               <InfoRow label="Time" value={call.call_time ?? (call.call_started_at ? new Date(call.call_started_at).toLocaleTimeString() : "—")} />
               <InfoRow label="Employee" value={call.emp_name} />
+              <InfoRow
+                label="Contact"
+                value={
+                  matchedContact ? (
+                    <Link href={matchedContact.link} className="inline-flex items-center gap-1.5 text-primary hover:underline">
+                      {matchedContact.name}
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${matchedContact.badgeClass}`}>
+                        {matchedContact.type}
+                      </span>
+                    </Link>
+                  ) : (
+                    <span className="text-muted-foreground italic">Not in contacts</span>
+                  )
+                }
+              />
               <InfoRow label="Client Number" value={call.client_number ? <span className="font-mono">{call.client_number}</span> : "—"} />
               <InfoRow label="CRM Status" value={call.crm_status} />
               <InfoRow label="Lead ID" value={call.callyzer_lead_id} />

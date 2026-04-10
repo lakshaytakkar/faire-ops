@@ -246,6 +246,86 @@ function NewCollectionDialog({
 }
 
 /* ------------------------------------------------------------------ */
+/*  Collection Collage Thumbnail                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Renders up to 9 product thumbnails as a 3x3 collage. While the thumb
+ * cache hasn't loaded yet, shows a faint pulsing skeleton. If the
+ * collection has zero products, falls back to the icon + gradient.
+ */
+function CollectionCollage({
+  imageUrls,
+  fallbackGradient,
+  fallbackIcon,
+}: {
+  imageUrls: string[] | undefined
+  fallbackGradient: string
+  fallbackIcon: React.ReactNode
+}) {
+  // Loading state — cache hasn't returned yet
+  if (imageUrls === undefined) {
+    return (
+      <div className="aspect-square grid grid-cols-3 grid-rows-3 gap-px bg-border/50 animate-pulse">
+        {Array.from({ length: 9 }).map((_, i) => (
+          <div key={i} className="bg-muted" />
+        ))}
+      </div>
+    )
+  }
+
+  // Empty state — no products in this collection
+  if (imageUrls.length === 0) {
+    return (
+      <div
+        className={`aspect-square w-full bg-gradient-to-br ${fallbackGradient} flex items-center justify-center`}
+      >
+        {fallbackIcon}
+      </div>
+    )
+  }
+
+  // Single product — fill the whole tile (collage of 1 doesn't make sense)
+  if (imageUrls.length === 1) {
+    return (
+      <div className="aspect-square relative bg-muted overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imageUrls[0]}
+          alt=""
+          className="w-full h-full object-cover"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    )
+  }
+
+  // 2-9 products: pad to 9 cells (we'll repeat the last image to keep the grid full)
+  const cells: string[] = []
+  for (let i = 0; i < 9; i++) {
+    cells.push(imageUrls[i % imageUrls.length])
+  }
+
+  return (
+    <div className="aspect-square grid grid-cols-3 grid-rows-3 gap-px bg-border/50">
+      {cells.map((url, i) => (
+        <div key={i} className="bg-muted overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={url}
+            alt=""
+            className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
@@ -263,13 +343,17 @@ export default function CollectionsPage() {
   const [collectionProducts, setCollectionProducts] = useState<FaireProduct[]>([])
   const [loadingProducts, setLoadingProducts] = useState(false)
 
-  const openCollectionModal = useCallback(async (col: Collection) => {
-    setSelectedCollection(col)
-    setCollectionProducts([])
-    setLoadingProducts(true)
+  // Thumbnail collage cache: collection id → up to 9 image URLs
+  const [thumbCache, setThumbCache] = useState<Record<string, string[]>>({})
 
-    try {
-      let query = supabase.from("faire_products").select("*").eq("store_id", col.store_id)
+  /**
+   * Builds a Supabase query that pulls products belonging to a collection
+   * according to its type + filter_rules. Used both by the modal (full
+   * details) and the grid (just images).
+   */
+  const buildCollectionQuery = useCallback(
+    (col: Collection, fields: string, productLimit: number) => {
+      let query = supabase.from("faire_products").select(fields).eq("store_id", col.store_id)
 
       switch (col.collection_type) {
         case "category": {
@@ -277,6 +361,7 @@ export default function CollectionsPage() {
           if (categoryName) {
             query = query.like("category", `%${categoryName}%`)
           }
+          query = query.order("faire_updated_at", { ascending: false })
           break
         }
         case "price_range": {
@@ -287,25 +372,37 @@ export default function CollectionsPage() {
           if (rules.max_price_cents != null) {
             query = query.lte("wholesale_price_cents", rules.max_price_cents)
           }
+          query = query.order("faire_updated_at", { ascending: false })
           break
         }
         case "bestseller":
-          query = query.order("faire_updated_at", { ascending: false }).limit(20)
+          query = query.order("faire_updated_at", { ascending: false })
           break
         case "curated":
         case "seasonal":
         default:
-          query = query.order("faire_created_at", { ascending: false }).limit(20)
+          query = query.order("faire_created_at", { ascending: false })
           break
       }
 
-      const { data } = await query
-      setCollectionProducts(data ?? [])
+      return query.limit(productLimit)
+    },
+    []
+  )
+
+  const openCollectionModal = useCallback(async (col: Collection) => {
+    setSelectedCollection(col)
+    setCollectionProducts([])
+    setLoadingProducts(true)
+
+    try {
+      const { data } = await buildCollectionQuery(col, "*", 20)
+      setCollectionProducts((data ?? []) as unknown as FaireProduct[])
     } catch (err) {
       console.error("Error fetching collection products:", err)
     }
     setLoadingProducts(false)
-  }, [])
+  }, [buildCollectionQuery])
 
   // Pagination state
   const [page, setPage] = useState(1)
@@ -334,6 +431,42 @@ export default function CollectionsPage() {
   useEffect(() => {
     fetchCollections()
   }, [activeBrand])
+
+  // Lazy-load top 9 product image URLs for each visible collection.
+  // Only loads collections we don't already have in cache.
+  useEffect(() => {
+    if (collections.length === 0) return
+    const visibleSlice = collections.slice(0, page * ITEMS_PER_PAGE)
+    const missing = visibleSlice.filter((c) => !thumbCache[c.id])
+    if (missing.length === 0) return
+
+    let cancelled = false
+    ;(async () => {
+      const results = await Promise.all(
+        missing.map(async (col) => {
+          try {
+            const { data } = await buildCollectionQuery(col, "primary_image_url", 9)
+            const urls = ((data ?? []) as unknown as { primary_image_url: string | null }[])
+              .map((p) => p.primary_image_url)
+              .filter((u): u is string => !!u)
+            return [col.id, urls] as const
+          } catch {
+            return [col.id, [] as string[]] as const
+          }
+        })
+      )
+      if (cancelled) return
+      setThumbCache((prev) => {
+        const next = { ...prev }
+        for (const [id, urls] of results) next[id] = urls
+        return next
+      })
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [collections, page, buildCollectionQuery, thumbCache])
 
   // Generate collections
   async function handleGenerate() {
@@ -474,22 +607,12 @@ export default function CollectionsPage() {
                 onClick={() => openCollectionModal(col)}
                 className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden hover:shadow-sm cursor-pointer transition-shadow"
               >
-                {/* Thumbnail */}
-                <div className="aspect-square relative">
-                  {col.thumbnail_url ? (
-                    <img
-                      src={col.thumbnail_url}
-                      alt={col.name}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  ) : (
-                    <div className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>
-                      <Icon className="size-8 text-muted-foreground/40" />
-                    </div>
-                  )}
-                </div>
+                {/* Thumbnail collage — top 9 products in this collection */}
+                <CollectionCollage
+                  imageUrls={thumbCache[col.id]}
+                  fallbackGradient={gradient}
+                  fallbackIcon={<Icon className="size-8 text-muted-foreground/40" />}
+                />
 
                 {/* Body */}
                 <div className="p-3">

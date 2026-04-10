@@ -103,8 +103,27 @@ function getDateFilterStart(dateFilter: string): string | null {
   return null
 }
 
+export interface OrderStats {
+  total: number
+  newOrders: number
+  processing: number
+  inTransit: number
+  delivered: number
+  canceled: number
+  totalRevenueCents: number
+}
+
+/**
+ * Computes order stats using parallel count queries (one per state) plus a
+ * separate totals fetch for revenue. This avoids the prior bug where counts
+ * were derived from a row-limited batch fetch and therefore capped at ~1000.
+ *
+ * - Counts: `Promise.all` of per-state `count: "exact", head: true` queries.
+ * - Revenue: single `select("total_cents")` with a wide `.range(0, 50000)` cap
+ *   so we can sum client-side (Supabase has no native SUM without an RPC).
+ */
 export function useOrderStats(storeId?: string, dateFilter: string = "All Time") {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<OrderStats>({
     total: 0,
     newOrders: 0,
     processing: 0,
@@ -119,32 +138,64 @@ export function useOrderStats(storeId?: string, dateFilter: string = "All Time")
     async function fetchStats() {
       setLoading(true)
       const dateStart = getDateFilterStart(dateFilter)
-      // Fetch all in batches to avoid 1000-row limit
-      const pageSize = 1000
-      const all: { state: string; total_cents: number }[] = []
-      let from = 0
-      let hasMore = true
-      while (hasMore) {
-        let query = supabase.from("faire_orders").select("state, total_cents").range(from, from + pageSize - 1)
-        if (storeId) query = query.eq("store_id", storeId)
-        if (dateStart) query = query.gte("faire_created_at", dateStart)
-        const { data } = await query
-        if (data && data.length > 0) {
-          all.push(...data)
-          from += pageSize
-          if (data.length < pageSize) hasMore = false
-        } else {
-          hasMore = false
-        }
+
+      const countForState = (state: string) => {
+        let q = supabase
+          .from("faire_orders")
+          .select("*", { count: "exact", head: true })
+          .eq("state", state)
+        if (storeId) q = q.eq("store_id", storeId)
+        if (dateStart) q = q.gte("faire_created_at", dateStart)
+        return q.then(({ count }) => count ?? 0)
       }
+
+      const totalCountPromise = (() => {
+        let q = supabase.from("faire_orders").select("*", { count: "exact", head: true })
+        if (storeId) q = q.eq("store_id", storeId)
+        if (dateStart) q = q.gte("faire_created_at", dateStart)
+        return q.then(({ count }) => count ?? 0)
+      })()
+
+      const revenuePromise = (() => {
+        let q = supabase.from("faire_orders").select("total_cents").range(0, 50000)
+        if (storeId) q = q.eq("store_id", storeId)
+        if (dateStart) q = q.gte("faire_created_at", dateStart)
+        return q.then(({ data }) =>
+          (data ?? []).reduce(
+            (sum: number, o: { total_cents: number | null }) => sum + (o.total_cents ?? 0),
+            0
+          )
+        )
+      })()
+
+      const [
+        total,
+        newOrders,
+        processing,
+        preTransit,
+        inTransit,
+        delivered,
+        canceled,
+        totalRevenueCents,
+      ] = await Promise.all([
+        totalCountPromise,
+        countForState("NEW"),
+        countForState("PROCESSING"),
+        countForState("PRE_TRANSIT"),
+        countForState("IN_TRANSIT"),
+        countForState("DELIVERED"),
+        countForState("CANCELED"),
+        revenuePromise,
+      ])
+
       setStats({
-        total: all.length,
-        newOrders: all.filter((o) => o.state === "NEW").length,
-        processing: all.filter((o) => o.state === "PROCESSING").length,
-        inTransit: all.filter((o) => o.state === "IN_TRANSIT" || o.state === "PRE_TRANSIT").length,
-        delivered: all.filter((o) => o.state === "DELIVERED").length,
-        canceled: all.filter((o) => o.state === "CANCELED").length,
-        totalRevenueCents: all.reduce((sum, o) => sum + (o.total_cents ?? 0), 0),
+        total,
+        newOrders,
+        processing,
+        inTransit: inTransit + preTransit,
+        delivered,
+        canceled,
+        totalRevenueCents,
       })
       setLoading(false)
     }
@@ -310,4 +361,44 @@ export function useSyncLogs(storeId?: string) {
   }, [storeId])
 
   return { logs, loading }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Generic count helper                                               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Fetches a row count from a Supabase table with an optional set of equality
+ * filters. Returns 0 on error. Use this for stat-card counters instead of
+ * fetching rows and calling .length.
+ *
+ * Filter semantics:
+ * - `null` value  → translated to `.is(col, null)`
+ * - any other     → translated to `.eq(col, value)`
+ */
+export async function countRows(
+  table: string,
+  filters?: Record<string, string | number | boolean | null>
+): Promise<number> {
+  try {
+    let query = supabase.from(table).select("*", { count: "exact", head: true })
+    if (filters) {
+      for (const [col, value] of Object.entries(filters)) {
+        if (value === null) {
+          query = query.is(col, null)
+        } else {
+          query = query.eq(col, value)
+        }
+      }
+    }
+    const { count, error } = await query
+    if (error) {
+      console.error(`countRows(${table}) error:`, error)
+      return 0
+    }
+    return count ?? 0
+  } catch (err) {
+    console.error(`countRows(${table}) exception:`, err)
+    return 0
+  }
 }

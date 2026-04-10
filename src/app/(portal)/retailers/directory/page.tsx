@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
   Search, Users, UserPlus, DollarSign, Crown, ChevronLeft, ChevronRight,
@@ -438,6 +438,42 @@ export default function RetailersDirectoryPage() {
   const [showEnrichModal, setShowEnrichModal] = useState(false)
   const [refetchKey, setRefetchKey] = useState(0)
 
+  // Real counts (not capped by the 5000-row retailers fetch)
+  const [activeCount, setActiveCount] = useState(0)
+  const [newCount, setNewCount] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadCounts() {
+      const sixtyDaysAgo = new Date()
+      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
+      const sixtyDaysAgoISO = sixtyDaysAgo.toISOString()
+
+      let activeQuery = supabase
+        .from("faire_retailers")
+        .select("*", { count: "exact", head: true })
+        .gte("last_order_at", sixtyDaysAgoISO)
+      if (activeFaireStoreId) {
+        activeQuery = activeQuery.contains("store_ids", [activeFaireStoreId])
+      }
+
+      let newQuery = supabase
+        .from("faire_retailers")
+        .select("*", { count: "exact", head: true })
+        .eq("total_orders", 0)
+      if (activeFaireStoreId) {
+        newQuery = newQuery.contains("store_ids", [activeFaireStoreId])
+      }
+
+      const [activeRes, newRes] = await Promise.all([activeQuery, newQuery])
+      if (cancelled) return
+      setActiveCount(activeRes.count ?? 0)
+      setNewCount(newRes.count ?? 0)
+    }
+    loadCounts()
+    return () => { cancelled = true }
+  }, [activeFaireStoreId, refetchKey])
+
   // Derive statuses
   const retailersWithStatus = useMemo(
     () => retailers.map((r) => ({ ...r, status: deriveStatus(r) })),
@@ -509,19 +545,18 @@ export default function RetailersDirectoryPage() {
   const totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE))
   const paginatedRetailers = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-  // Stats
+  // Stats — counts come from server-side count queries so they aren't capped
+  // by the in-memory retailers fetch limit. totalRevenue is still derived from
+  // the loaded rows (full accuracy requires an aggregate RPC).
   const stats = useMemo(() => {
-    const sixtyDaysAgo = new Date()
-    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
-    const active = retailersWithStatus.filter((r) => {
-      if (r.total_orders === 0) return false
-      if (!r.last_order_at) return false
-      return new Date(r.last_order_at) >= sixtyDaysAgo
-    }).length
-    const newCount = retailersWithStatus.filter((r) => r.total_orders === 0).length
     const totalRevenue = retailersWithStatus.reduce((s, r) => s + r.total_spent_cents, 0)
-    return { total: totalCount || retailersWithStatus.length, active, newCount, totalRevenue }
-  }, [retailersWithStatus, totalCount])
+    return {
+      total: totalCount || retailersWithStatus.length,
+      active: activeCount,
+      newCount,
+      totalRevenue,
+    }
+  }, [retailersWithStatus, totalCount, activeCount, newCount])
 
   // Status filter counts
   const statusCounts = useMemo(() => ({

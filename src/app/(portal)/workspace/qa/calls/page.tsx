@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase"
+import { matchContactsByPhone, normalizePhone, type MatchedContact } from "@/lib/contact-matcher"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -244,6 +245,7 @@ export default function CallsListPage() {
   const [sentiment, setSentiment] = useState<SentimentFilter>("all")
   const [flag, setFlag] = useState<FlagFilter>("all")
   const [page, setPage] = useState(1)
+  const [contactMap, setContactMap] = useState<Map<string, MatchedContact>>(new Map())
 
   useEffect(() => {
     setPage(1)
@@ -276,8 +278,18 @@ export default function CallsListPage() {
         if (dbError) {
           setError(dbError.message)
           setCalls([])
+          setContactMap(new Map())
         } else {
-          setCalls((data ?? []) as unknown as CallRow[])
+          const rows = (data ?? []) as unknown as CallRow[]
+          setCalls(rows)
+          // Fetch contact matches for all client numbers in parallel
+          const phones = rows.map((r) => r.client_number).filter(Boolean) as string[]
+          if (phones.length > 0) {
+            const map = await matchContactsByPhone(phones)
+            if (!cancelled) setContactMap(map)
+          } else {
+            setContactMap(new Map())
+          }
         }
       } catch (e) {
         if (cancelled) return
@@ -504,8 +516,32 @@ export default function CallsListPage() {
                         {c.emp_name ?? "—"}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="text-sm text-foreground leading-tight">{c.client_name ?? "Unknown"}</div>
-                        <div className="text-xs text-muted-foreground font-mono">{c.client_number ?? ""}</div>
+                        {(() => {
+                          const matched = c.client_number ? contactMap.get(normalizePhone(c.client_number)) : null
+                          if (matched) {
+                            return (
+                              <div className="leading-tight">
+                                <Link
+                                  href={matched.link}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-sm font-medium text-foreground hover:text-primary hover:underline inline-flex items-center gap-1.5"
+                                >
+                                  {matched.name}
+                                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${matched.badgeClass}`}>
+                                    {matched.type}
+                                  </span>
+                                </Link>
+                                <div className="text-xs text-muted-foreground font-mono">{c.client_number ?? ""}</div>
+                              </div>
+                            )
+                          }
+                          return (
+                            <>
+                              <div className="text-sm text-foreground leading-tight">{c.client_name ?? "Unknown"}</div>
+                              <div className="text-xs text-muted-foreground font-mono">{c.client_number ?? ""}</div>
+                            </>
+                          )
+                        })()}
                       </td>
                       <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap">
                         {formatDuration(c.duration_seconds)}
