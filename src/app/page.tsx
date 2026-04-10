@@ -10,6 +10,7 @@ import {
   LineChart,
   Wallet,
   HelpCircle,
+  Puzzle,
   Building2,
   Scale,
   Plane,
@@ -338,9 +339,17 @@ export default async function HomePage() {
           shuffle button pinned to the top-right corner of the viewport. */}
       <WallpaperSwitcher wallpapers={WALLPAPERS} />
 
-      {/* Top-right corner — Help button. The wallpaper shuffle button is
-          rendered by <WallpaperSwitcher> just to the left of this. */}
+      {/* Top-right corner — Plugins + Help buttons. The wallpaper shuffle
+          button is rendered by <WallpaperSwitcher> just to the left of this. */}
       <div className="absolute top-4 right-4 z-10 flex items-center gap-1">
+        <Link
+          href="/plugins"
+          className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-border/80 bg-card shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+          title="Plugins"
+        >
+          <Puzzle className="h-4 w-4" />
+          <span className="text-xs font-medium">Plugins</span>
+        </Link>
         <Link
           href="/workspace/knowledge"
           className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-border/80 bg-card shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"

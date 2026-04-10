@@ -3,19 +3,22 @@
 /**
  * Left dock — space switcher.
  *
- * Replaces BrandDock as the primary purpose of the left vertical strip.
+ * Vertical extension of the top nav, mirroring the right WorkspaceDock:
+ *   - `bg-black` with white icons + text, `bg-primary` active state,
+ *     `hover:bg-white/15` hover, `h-12` cells, `size-4` icons,
+ *     `text-sm font-medium` labels.
+ *   - Home button locked at the TOP (mirrors the user menu on the right).
+ *   - Space list fills the middle and scrolls independently if overflow.
+ *   - Collapse toggle locked at the BOTTOM; preference persisted to
+ *     localStorage under `teamops:left-dock-collapsed`.
+ *
  * Each cell represents an internal Space (B2B Ecommerce, Suprans HQ,
- * LegalNations, GoyoTours, USDrop AI). Active space is highlighted with
- * the same `bg-white/10` + 2px right-edge indicator pattern used by the
- * brand dock previously.
- *
- * For now we read the available spaces from a small hardcoded array — when
- * the spaces table grows or per-user permissions land, this should be
- * fetched from `user_space_roles` instead.
- *
- * Phase 5 of the master execution plan.
+ * LegalNations, GoyoTours, USDrop AI). Active space = `bg-primary` plus a
+ * 2px colored indicator using the space's brand color on the INNER (right)
+ * edge. Coming-soon spaces are dimmed and not clickable.
  */
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -26,7 +29,9 @@ import {
   Scale,
   Plane,
   Package,
-  Grid3x3,
+  Home,
+  ChevronLeft,
+  ChevronRight,
   type LucideIcon,
 } from "lucide-react"
 
@@ -37,23 +42,19 @@ interface SpaceItem {
   icon: LucideIcon
   color: string
   entryUrl: string
-  isActive: boolean // active = built and reachable
-  // pathPrefix matches the routes that belong to this space — used to detect
-  // which space the user is currently inside.
+  isActive: boolean
   pathPrefixes: string[]
 }
 
 const SPACES: SpaceItem[] = [
   {
     slug: "b2b-ecommerce",
-    name: "B2B Ecommerce (USA)",
+    name: "B2B Ecommerce",
     shortName: "B2B",
     icon: ShoppingBag,
     color: "#3b82f6",
     entryUrl: "/dashboard",
     isActive: true,
-    // The b2b space owns the entire current portal — every existing route is
-    // implicitly under this space until we add another one.
     pathPrefixes: [
       "/dashboard",
       "/overview",
@@ -117,91 +118,164 @@ export function getActiveSpaceSlug(pathname: string): string {
       return s.slug
     }
   }
-  // Default to B2B since the existing portal routes are all under it.
   return "b2b-ecommerce"
 }
+
+const STORAGE_KEY = "teamops:left-dock-collapsed"
 
 export function SpaceDock() {
   const pathname = usePathname()
   const activeSlug = getActiveSpaceSlug(pathname)
   const { hasSpaceAccess, isSuperadmin, loading, user } = useAuth()
 
-  // Filter to spaces the current user has access to. Superadmin sees all.
-  // While loading, show all (otherwise the dock briefly empties on first render).
-  // If auth resolved to no user at all (e.g. RLS regression, network error,
-  // dev fallback misconfigured), still show all spaces — the alternative is
-  // an invisible dock with no diagnostic, which is what bit us in #S378.
+  const [collapsed, setCollapsed] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored === "1") setCollapsed(true)
+    } catch {
+      /* ignore */
+    }
+    setHydrated(true)
+  }, [])
+
+  function toggle() {
+    setCollapsed((c) => {
+      const next = !c
+      try {
+        localStorage.setItem(STORAGE_KEY, next ? "1" : "0")
+      } catch {
+        /* ignore */
+      }
+      return next
+    })
+  }
+
+  const isCollapsed = hydrated ? collapsed : false
+
   const visibleSpaces = SPACES.filter((s) => {
     if (loading || isSuperadmin || !user) return true
     return hasSpaceAccess(s.slug)
   })
 
   return (
-    <aside className="shrink-0 w-12 bg-black flex flex-col border-r border-white/10">
-      {/* All Spaces — back to homepage */}
+    <aside
+      className={cn(
+        "shrink-0 bg-black flex flex-col border-r border-white/10 transition-[width] duration-200",
+        isCollapsed ? "w-12" : "w-44"
+      )}
+    >
+      {/* Home — LOCKED at the top. Mirrors the user menu on the right dock. */}
       <Link
         href="/"
-        className="relative flex items-center justify-center w-12 h-12 border-b border-white/10 group transition-colors text-white/60 hover:text-white hover:bg-white/10"
-        title="All Spaces"
+        className={cn(
+          "relative flex items-center h-12 border-b border-white/10 text-white hover:bg-white/15 transition-colors group shrink-0",
+          isCollapsed ? "justify-center" : "gap-2 px-3"
+        )}
+        title="Home"
       >
-        <Grid3x3 className="size-4" />
+        <Home className="size-4 shrink-0" strokeWidth={2.25} />
+        {!isCollapsed && (
+          <span className="text-sm font-medium leading-none">Home</span>
+        )}
+        {isCollapsed && (
+          <span className="absolute left-full ml-2 px-2 py-1 rounded-md bg-foreground text-background text-[10px] font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 shadow-lg">
+            Home
+          </span>
+        )}
       </Link>
 
-      {visibleSpaces.map((space) => {
-        const isActive = activeSlug === space.slug
-        const Icon = space.icon
-        const inner = (
-          <span
-            className="flex items-center justify-center w-7 h-7 rounded shrink-0"
-            style={{ backgroundColor: space.color }}
-          >
-            <Icon className="size-[14px] text-white" />
-          </span>
-        )
+      {/* Scrollable space list fills remaining vertical space */}
+      <nav className="flex-1 flex flex-col overflow-y-auto">
+        {visibleSpaces.map((space) => {
+          const isActive = activeSlug === space.slug
+          const Icon = space.icon
 
-        if (space.isActive) {
-          return (
-            <Link
-              key={space.slug}
-              href={space.entryUrl}
-              className={cn(
-                "relative flex items-center justify-center w-12 h-12 border-b border-white/10 group transition-colors",
-                isActive ? "bg-white/10" : "hover:bg-white/10"
+          const inner = (
+            <>
+              <Icon className="size-4 shrink-0" />
+              {!isCollapsed && (
+                <span className="truncate leading-none">{space.name}</span>
               )}
-              title={space.name}
+              {isActive && (
+                <span
+                  className="absolute right-0 top-0 bottom-0 w-[2px]"
+                  style={{ backgroundColor: space.color }}
+                />
+              )}
+              {isCollapsed && (
+                <span className="absolute left-full ml-2 px-2 py-1 rounded-md bg-foreground text-background text-[10px] font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 shadow-lg">
+                  {space.name}
+                  {!space.isActive && " — coming soon"}
+                </span>
+              )}
+            </>
+          )
+
+          if (space.isActive) {
+            return (
+              <Link
+                key={space.slug}
+                href={space.entryUrl}
+                className={cn(
+                  "relative flex items-center h-12 text-sm font-medium transition-colors group shrink-0",
+                  isCollapsed ? "justify-center" : "gap-2 px-3",
+                  isActive
+                    ? "bg-primary text-white"
+                    : "text-white hover:bg-white/15"
+                )}
+                title={space.name}
+              >
+                {inner}
+              </Link>
+            )
+          }
+
+          return (
+            <div
+              key={space.slug}
+              className={cn(
+                "relative flex items-center h-12 text-sm font-medium text-white opacity-40 cursor-not-allowed group shrink-0",
+                isCollapsed ? "justify-center" : "gap-2 px-3"
+              )}
+              title={`${space.name} — coming soon`}
             >
               {inner}
-              {isActive && (
-                <span className="absolute right-0 top-0 bottom-0 w-[2px] bg-white" />
+              {isCollapsed && (
+                <span
+                  className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-amber-400"
+                  aria-label="Coming soon"
+                />
               )}
-              <span className="absolute left-full ml-2 px-2 py-1 rounded-md bg-foreground text-background text-[10px] font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 shadow-lg">
-                {space.name}
-              </span>
-            </Link>
+            </div>
           )
-        }
+        })}
+      </nav>
 
-        // Coming-soon space — not clickable, dimmed
-        return (
-          <div
-            key={space.slug}
-            className="relative flex items-center justify-center w-12 h-12 border-b border-white/10 group cursor-not-allowed opacity-40"
-            title={`${space.name} — coming soon`}
-          >
-            {inner}
-            <span
-              className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-amber-400"
-              aria-label="Coming soon"
-            />
-            <span className="absolute left-full ml-2 px-2 py-1 rounded-md bg-foreground text-background text-[10px] font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 shadow-lg">
-              {space.name} — coming soon
-            </span>
-          </div>
-        )
-      })}
-
-      {/* Spacer fills remaining height with the same dark background */}
-      <div className="flex-1" />
+      {/* Collapse / expand toggle — LOCKED at the bottom of the dock. */}
+      <button
+        type="button"
+        onClick={toggle}
+        className={cn(
+          "flex items-center h-9 border-t border-white/10 text-white/60 hover:text-white hover:bg-white/15 transition-colors shrink-0",
+          isCollapsed ? "justify-center" : "justify-start px-3 gap-1.5"
+        )}
+        title={isCollapsed ? "Expand dock" : "Collapse dock"}
+        aria-label={isCollapsed ? "Expand dock" : "Collapse dock"}
+      >
+        {isCollapsed ? (
+          <ChevronRight className="size-4" />
+        ) : (
+          <ChevronLeft className="size-4" />
+        )}
+        {!isCollapsed && (
+          <span className="text-[10px] font-medium uppercase tracking-wider">
+            Collapse
+          </span>
+        )}
+      </button>
     </aside>
   )
 }
