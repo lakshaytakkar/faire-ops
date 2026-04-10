@@ -149,43 +149,6 @@ function ActiveSpaceCard({ space }: { space: Space }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Coming-soon space (DB-driven) — same chrome as active card         */
-/* ------------------------------------------------------------------ */
-
-function ComingSoonSpaceCard({ space }: { space: Space }) {
-  const Icon = resolveIcon(space.icon)
-  const color = space.color || "#64748b"
-  return (
-    <div
-      className="flex items-center gap-2.5 rounded-lg border border-border/80 bg-card shadow-sm px-3 py-2 opacity-75 select-none"
-      title={`${space.name} — coming soon`}
-    >
-      <div
-        className="h-7 w-7 rounded-md flex items-center justify-center shrink-0 ring-1 ring-black/[0.04]"
-        style={{
-          background: `linear-gradient(135deg, ${color}1a, ${color}08)`,
-        }}
-      >
-        <Icon className="h-3.5 w-3.5" style={{ color }} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-foreground leading-tight truncate">
-          {space.name}
-        </p>
-        {space.tagline ? (
-          <p className="text-[10px] text-muted-foreground leading-tight mt-0.5 truncate">
-            {space.tagline}
-          </p>
-        ) : null}
-      </div>
-      <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded shrink-0">
-        Soon
-      </span>
-    </div>
-  )
-}
-
-/* ------------------------------------------------------------------ */
 /*  External app card — links to a separate deployment                 */
 /* ------------------------------------------------------------------ */
 
@@ -269,8 +232,11 @@ function EmptyState() {
 
 export default async function HomePage() {
   const spaces = await listSpaces()
-  const activeSpaces = spaces.filter((s) => s.is_active)
-  const comingSoonSpaces = spaces.filter((s) => !s.is_active)
+  // Only the active "Team Portal HQ" entry surfaces on the homepage. The
+  // 4 coming-soon spaces (HQ, Legal, Goyo, USDrop) remain in the DB and
+  // are visible inside the portal as sub-spaces in the SpaceDock — they
+  // are NOT separate apps on the launcher.
+  const activeApps = spaces.filter((s) => s.is_active)
 
   return (
     <main className="relative min-h-screen overflow-hidden">
@@ -309,30 +275,21 @@ export default async function HomePage() {
             Every operation, one place.
           </p>
 
-          {/* Active spaces */}
-          <div className="mt-6 w-full flex flex-col gap-3">
-            {activeSpaces.length === 0 ? (
+          {/* The team portal HQ — single entry point for every internal space */}
+          <div className="mt-6 w-full flex flex-col gap-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-1">
+              Internal app
+            </p>
+            {activeApps.length === 0 ? (
               <EmptyState />
             ) : (
-              activeSpaces.map((space) => (
-                <ActiveSpaceCard key={space.id} space={space} />
+              activeApps.map((app) => (
+                <ActiveSpaceCard key={app.id} space={app} />
               ))
             )}
           </div>
 
-          {/* Coming-soon internal spaces (DB-driven) */}
-          {comingSoonSpaces.length > 0 ? (
-            <div className="mt-5 w-full flex flex-col gap-2">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-1">
-                Coming soon
-              </p>
-              {comingSoonSpaces.map((space) => (
-                <ComingSoonSpaceCard key={space.id} space={space} />
-              ))}
-            </div>
-          ) : null}
-
-          {/* External apps */}
+          {/* External apps — separately deployed sites and portals */}
           <div className="mt-6 w-full flex flex-col gap-2">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-1">
               External apps

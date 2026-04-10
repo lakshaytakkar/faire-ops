@@ -44,7 +44,7 @@ export function BrandDock() {
         <span className="absolute inset-0 bg-white/0 group-hover:bg-white/15 transition-colors pointer-events-none" />
       </button>
 
-      {/* Store entries */}
+      {/* Store entries — sharp colored cells with centered initials */}
       {stores.map((store) => {
         const isActive = activeBrand === store.id
         return (
@@ -52,25 +52,15 @@ export function BrandDock() {
             key={store.id}
             onClick={() => setActiveBrand(store.id)}
             className={cn(
-              "relative flex items-center justify-center w-12 h-12 border-b border-white/15 group transition-all overflow-hidden",
+              "relative flex items-center justify-center w-12 h-12 border-b border-white/15 group transition-all",
               isActive && "ring-1 ring-inset ring-white/50"
             )}
             title={store.name}
             style={{ backgroundColor: store.color }}
           >
-            {store.logo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={store.logo_url}
-                alt={store.name}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <span className="text-sm font-bold text-white">
-                {store.short}
-              </span>
-            )}
+            <span className="text-[13px] font-extrabold text-white tracking-tight uppercase leading-none">
+              {(store.short || store.name?.slice(0, 2) || "??").slice(0, 2)}
+            </span>
             {isActive && (
               <span className="absolute right-0 top-0 bottom-0 w-[2px] bg-white z-10" />
             )}
@@ -85,23 +75,13 @@ export function BrandDock() {
           {inactiveStores.map((store) => (
             <div
               key={store.id}
-              className="relative flex items-center justify-center w-12 h-12 border-b border-white/15 opacity-35 cursor-not-allowed grayscale"
+              className="relative flex items-center justify-center w-12 h-12 border-b border-white/15 opacity-40 cursor-not-allowed"
               title={`${store.name} (inactive)`}
               style={{ backgroundColor: store.color }}
             >
-              {store.logo_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={store.logo_url}
-                  alt={store.name}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              ) : (
-                <span className="text-sm font-bold text-white/80">
-                  {store.short}
-                </span>
-              )}
+              <span className="text-[13px] font-extrabold text-white/70 tracking-tight uppercase leading-none">
+                {(store.short || store.name?.slice(0, 2) || "??").slice(0, 2)}
+              </span>
             </div>
           ))}
         </>
