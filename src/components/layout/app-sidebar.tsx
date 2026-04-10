@@ -52,7 +52,7 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "/dashboard",
+      url: "/overview",
       icon: <LayoutDashboard />,
       isActive: false,
       items: [],

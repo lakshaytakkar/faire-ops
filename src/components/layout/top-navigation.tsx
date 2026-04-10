@@ -36,12 +36,12 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   {
     title: "Overview",
-    url: "/dashboard",
+    url: "/overview",
     icon: LayoutDashboard,
     subItems: [
-      { title: "Dashboard", url: "/dashboard" },
-      { title: "Analytics", url: "/dashboard/analytics" },
-      { title: "Reports", url: "/dashboard/reports" },
+      { title: "Dashboard", url: "/overview" },
+      { title: "Analytics", url: "/overview/analytics" },
+      { title: "Reports", url: "/overview/reports" },
     ],
   },
   {

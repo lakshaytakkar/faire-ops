@@ -587,9 +587,9 @@ export default function ConsolidatedAnalyticsPage() {
 
   /* -------------- Sub-nav items -------------- */
   const subNavItems = [
-    { title: "Dashboard", href: "/dashboard" },
-    { title: "Analytics", href: "/dashboard/analytics" },
-    { title: "Reports", href: "/dashboard/reports" },
+    { title: "Dashboard", href: "/overview" },
+    { title: "Analytics", href: "/overview/analytics" },
+    { title: "Reports", href: "/overview/reports" },
   ]
 
   /* -------------- Skeleton loading -------------- */

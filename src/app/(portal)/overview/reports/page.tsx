@@ -13,9 +13,9 @@ import { SubNav } from "@/components/shared/sub-nav"
 /* ------------------------------------------------------------------ */
 
 const SUB_NAV_ITEMS = [
-  { title: "Dashboard", href: "/dashboard" },
-  { title: "Analytics", href: "/dashboard/analytics" },
-  { title: "Reports", href: "/dashboard/reports" },
+  { title: "Dashboard", href: "/overview" },
+  { title: "Analytics", href: "/overview/analytics" },
+  { title: "Reports", href: "/overview/reports" },
 ]
 
 type FilterKey = "all" | "daily" | "weekly" | "monthly" | "marketing" | "research" | "custom"

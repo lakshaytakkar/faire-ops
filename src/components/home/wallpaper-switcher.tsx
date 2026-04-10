@@ -13,7 +13,8 @@ interface WallpaperSwitcherProps {
   wallpapers: Wallpaper[]
 }
 
-const STORAGE_KEY = "teamsync.homepage.wallpaperId"
+// Bumped to v2 when midnight-blue became the new default — invalidates old saves
+const STORAGE_KEY = "teamsync.homepage.wallpaperId.v2"
 
 /**
  * Renders the active homepage wallpaper as a fixed background layer and

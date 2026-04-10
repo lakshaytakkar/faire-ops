@@ -28,6 +28,7 @@ const WP_BASE =
   "https://eeoesllyceegmzfqfbyu.supabase.co/storage/v1/object/public/nexus-assets"
 
 const WALLPAPERS = [
+  { id: "midnight-blue", name: "Midnight Blue", url: `${WP_BASE}/wallpaper-midnight-blue.png` },
   { id: "vestrahorn", name: "Vestrahorn Sunset", url: "/wallpaper-vestrahorn.jpg" },
 ]
 

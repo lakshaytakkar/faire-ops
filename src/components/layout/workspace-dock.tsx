@@ -60,10 +60,10 @@ export function WorkspaceDock() {
   const pathname = usePathname()
 
   return (
-    <aside className="shrink-0 w-12 bg-black flex flex-col border-l border-white/10 overflow-y-auto">
+    <aside className="shrink-0 w-12 bg-black flex flex-col border-l border-r border-white/15 overflow-y-auto">
       {WORKSPACE_ITEMS.map((item, i) => {
         if (item === null) {
-          return <div key={`sep-${i}`} className="w-12 h-12 border-b border-white/10" />
+          return <div key={`sep-${i}`} className="w-12 h-12 border-b border-white/15 bg-black" />
         }
 
         const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
@@ -73,13 +73,13 @@ export function WorkspaceDock() {
             key={item.href}
             href={item.href}
             className={cn(
-              "relative flex items-center justify-center w-12 h-12 border-b border-white/10 group transition-all",
-              isActive && "ring-1 ring-inset ring-white/40"
+              "relative flex items-center justify-center w-12 h-12 border-b border-white/15 group transition-all",
+              isActive && "ring-1 ring-inset ring-white/50"
             )}
             title={item.label}
             style={{ backgroundColor: item.color }}
           >
-            <item.icon className="size-7 text-white" strokeWidth={2.25} />
+            <item.icon className="size-[18px] text-white" strokeWidth={2} />
             {isActive && (
               <span className="absolute left-0 top-0 bottom-0 w-[2px] bg-white" />
             )}
