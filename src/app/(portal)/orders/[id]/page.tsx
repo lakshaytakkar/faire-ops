@@ -269,7 +269,7 @@ export default function OrderDetailPage() {
       .from("shipment_tracking")
       .select("*")
       .eq("order_id", order.faire_order_id)
-      .single()
+      .maybeSingle()
       .then(({ data }) => setTrackingData(data))
   }, [order])
 

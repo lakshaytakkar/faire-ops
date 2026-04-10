@@ -9,7 +9,8 @@ const NEW_CASE_SIZE = 6
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  { db: { schema: "b2b" } }
 )
 
 function roundUpToMultiple(n: number, mult: number): number {

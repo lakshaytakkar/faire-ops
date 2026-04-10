@@ -21,7 +21,9 @@ if (!SUPABASE_URL) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL")
 if (!SUPABASE_KEY) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY / NEXT_PUBLIC_SUPABASE_ANON_KEY")
 
 const genAI = new GoogleGenerativeAI(GEMINI_KEY)
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  db: { schema: "b2b" },
+})
 
 /* ------------------------------------------------------------------ */
 /*  Stores to process                                                  */
