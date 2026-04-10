@@ -14,7 +14,7 @@ import {
   ArrowUp,
   ArrowDown,
 } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 
 interface DailyReportRow {
   id: string
@@ -118,7 +118,7 @@ export default function DailyReportPage() {
 
   const fetchHistory = useCallback(async () => {
     setHistoryLoading(true)
-    const { data, error } = await supabase
+    const { data, error } = await supabaseB2B
       .from("daily_reports")
       .select("*")
       .order("report_date", { ascending: false })
@@ -178,7 +178,7 @@ export default function DailyReportPage() {
     const now = new Date()
     const timeStr = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase()
 
-    const { error } = await supabase.from("daily_reports").insert({
+    const { error } = await supabaseB2B.from("daily_reports").insert({
       report_date: now.toISOString().slice(0, 10),
       orders_data: { received: ordersReceived, accepted: ordersAccepted, shipped: ordersShipped, late: lateOrdersActioned },
       catalog_data: { added: newListings, ready: movedToReady, published: publishedToFaire, images: imagesProcessed },

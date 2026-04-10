@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { FileText, Plus, X, Sparkles } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 
 /* ------------------------------------------------------------------ */
@@ -105,7 +105,7 @@ export default function DashboardReportsPage() {
     const brandId = activeBrand !== "all" ? activeBrand : null
     const monthStart = startOfMonthIso()
 
-    const listBase = supabase
+    const listBase = supabaseB2B
       .from("reports")
       .select(
         "id, title, report_type, period_start, period_end, summary, generated_by, status, store_id, created_at"
@@ -114,16 +114,16 @@ export default function DashboardReportsPage() {
       .limit(200)
     const listQuery = brandId ? listBase.eq("store_id", brandId) : listBase
 
-    const totalBase = supabase.from("reports").select("*", { count: "exact", head: true })
+    const totalBase = supabaseB2B.from("reports").select("*", { count: "exact", head: true })
     const totalQuery = brandId ? totalBase.eq("store_id", brandId) : totalBase
 
-    const monthBase = supabase
+    const monthBase = supabaseB2B
       .from("reports")
       .select("*", { count: "exact", head: true })
       .gte("created_at", monthStart)
     const monthQuery = brandId ? monthBase.eq("store_id", brandId) : monthBase
 
-    const latestBase = supabase
+    const latestBase = supabaseB2B
       .from("reports")
       .select("created_at")
       .order("created_at", { ascending: false })

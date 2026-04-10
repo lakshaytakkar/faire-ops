@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, FileBarChart, Loader2, RefreshCw, Download, Share2 } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 
 /* ---------- types ---------- */
 interface ReportContent {
@@ -102,7 +102,7 @@ export default function ReportDetailPage() {
 
   const fetchReport = useCallback(async () => {
     setLoading(true)
-    const { data, error } = await supabase
+    const { data, error } = await supabaseB2B
       .from("reports")
       .select("*")
       .eq("id", id)
@@ -132,7 +132,7 @@ Orders: ${c.orders.total}, Revenue: $${(c.orders.revenue_cents / 100).toFixed(0)
 Period: ${c.period.start} to ${c.period.end}
 Keep it professional, highlight key metrics and any concerns. No markdown formatting.`
         )
-        await supabase.from("reports").update({ summary: newSummary }).eq("id", report.id)
+        await supabaseB2B.from("reports").update({ summary: newSummary }).eq("id", report.id)
         setReport({ ...report, summary: newSummary })
       }
     } catch (e) {

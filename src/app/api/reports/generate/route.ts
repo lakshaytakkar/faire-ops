@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { supabase, supabaseB2B } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { generateText } from "@/lib/gemini"
 
 export async function POST(req: NextRequest) {
@@ -174,7 +174,7 @@ Keep it professional, highlight key metrics and any concerns. No markdown format
     const title = `${typeLabel} Report — ${dateLabel}`
 
     // Insert into reports table
-    const { data: report, error: insertError } = await supabase
+    const { data: report, error: insertError } = await supabaseB2B
       .from("reports")
       .insert({
         title,

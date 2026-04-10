@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { FileBarChart, Plus, Calendar, Clock, Loader2, X, CheckCircle, Timer, Zap } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 
 interface Report {
@@ -58,7 +58,7 @@ export default function ReportsPage() {
 
   const fetchReports = useCallback(async () => {
     setLoading(true)
-    const { data, error } = await supabase
+    const { data, error } = await supabaseB2B
       .from("reports")
       .select("id, title, report_type, period_start, period_end, summary, generated_by, status, store_id, created_at")
       .order("created_at", { ascending: false })
