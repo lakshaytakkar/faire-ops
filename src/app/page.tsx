@@ -28,8 +28,25 @@ const WP_BASE =
   "https://eeoesllyceegmzfqfbyu.supabase.co/storage/v1/object/public/nexus-assets"
 
 const WALLPAPERS = [
+  // Default — keep first
   { id: "midnight-blue", name: "Midnight Blue", url: `${WP_BASE}/wallpaper-midnight-blue.png` },
+
+  // Realistic dark backgrounds
+  { id: "aurora-snowfield", name: "Aurora Snowfield", url: `${WP_BASE}/wallpaper-aurora-snowfield.png` },
+  { id: "deep-sea-bioluminescence", name: "Bioluminescent Deep", url: `${WP_BASE}/wallpaper-deep-sea-bioluminescence.png` },
+  { id: "nebula-galaxy", name: "Nebula Galaxy", url: `${WP_BASE}/wallpaper-nebula-galaxy.png` },
+  { id: "moonlit-lake", name: "Moonlit Lake", url: `${WP_BASE}/wallpaper-moonlit-lake.png` },
   { id: "vestrahorn", name: "Vestrahorn Sunset", url: "/wallpaper-vestrahorn.jpg" },
+
+  // Cartoon dark scenes
+  { id: "city-skyline-dusk", name: "City at Dusk", url: `${WP_BASE}/wallpaper-city-skyline-dusk.png` },
+  { id: "firefly-forest", name: "Firefly Forest", url: `${WP_BASE}/wallpaper-firefly-forest.png` },
+  { id: "volcano-glow", name: "Volcano Glow", url: `${WP_BASE}/wallpaper-volcano-glow.png` },
+
+  // Abstract dark
+  { id: "indigo-geometric", name: "Indigo Geometric", url: `${WP_BASE}/wallpaper-indigo-geometric.png` },
+  { id: "synthwave-grid", name: "Synthwave Grid", url: `${WP_BASE}/wallpaper-synthwave-grid.png` },
+  { id: "liquid-marble", name: "Liquid Marble", url: `${WP_BASE}/wallpaper-liquid-marble.png` },
 ]
 
 /* ------------------------------------------------------------------ */

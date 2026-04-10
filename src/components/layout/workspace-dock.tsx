@@ -31,20 +31,18 @@ const WORKSPACE_ITEMS = [
   { href: "/workspace/qa/calls", icon: Phone, label: "Calls (QA)", color: "#0ea5e9", bg: "rgba(14,165,233,0.15)" },
   { href: "/workspace/tickets", icon: LifeBuoy, label: "Tickets", color: "#ef4444", bg: "rgba(239,68,68,0.15)" },
   { href: "/workspace/inbox", icon: Bell, label: "Inbox", color: "#f43f5e", bg: "rgba(244,63,94,0.15)" },
-  null, // separator
   { href: "/workspace/research", icon: Telescope, label: "Research", color: "#6366f1", bg: "rgba(99,102,241,0.15)" },
   { href: "/workspace/training", icon: GraduationCap, label: "Learning", color: "#14b8a6", bg: "rgba(20,184,166,0.15)" },
   { href: "/workspace/knowledge", icon: BookOpen, label: "Help", color: "#06b6d4", bg: "rgba(6,182,212,0.15)" },
   { href: "/workspace/links", icon: Link2, label: "Links", color: "#a855f7", bg: "rgba(168,85,247,0.15)" },
   { href: "/workspace/files", icon: FolderOpen, label: "Files", color: "#f59e0b", bg: "rgba(245,158,11,0.15)" },
-  null, // separator
   { href: "/automations/overview", icon: Zap, label: "Automations", color: "#f97316", bg: "rgba(249,115,22,0.15)" },
   { href: "/analytics/revenue", icon: BarChart3, label: "Analytics", color: "#3b82f6", bg: "rgba(59,130,246,0.15)" },
   { href: "/workspace/ai-tools", icon: Sparkles, label: "AI Tools", color: "#f59e0b", bg: "rgba(245,158,11,0.15)" },
   { href: "/workspace/ai-team", icon: Users, label: "Remote Team", color: "#8b5cf6", bg: "rgba(139,92,246,0.15)" },
   { href: "/workspace/gmail", icon: Mail, label: "Gmail", color: "#EA4335", bg: "rgba(234,67,53,0.15)" },
   { href: "/workspace/settings", icon: Settings, label: "Settings", color: "#64748b", bg: "rgba(100,116,139,0.15)" },
-]
+] as const
 
 /**
  * Right workspace dock — vertical strip of 48px square cells, mirroring the
@@ -61,11 +59,7 @@ export function WorkspaceDock() {
 
   return (
     <aside className="shrink-0 w-12 bg-black flex flex-col border-l border-r border-white/15 overflow-y-auto">
-      {WORKSPACE_ITEMS.map((item, i) => {
-        if (item === null) {
-          return <div key={`sep-${i}`} className="w-12 h-12 border-b border-white/15 bg-black" />
-        }
-
+      {WORKSPACE_ITEMS.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
 
         return (
