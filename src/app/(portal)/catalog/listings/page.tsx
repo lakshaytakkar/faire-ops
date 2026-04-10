@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { PageResourcesButton } from "@/components/shared/page-resources"
 import {
@@ -18,7 +18,7 @@ import {
 } from "lucide-react"
 import { useProducts } from "@/lib/use-faire-data"
 import { useBrandFilter } from "@/lib/brand-filter-context"
-import type { FaireProduct } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase"
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -109,6 +109,27 @@ export default function ListingsPage() {
   const [sortKey, setSortKey] = useState<SortKey>("name")
   const [sortDir, setSortDir] = useState<SortDir>("asc")
 
+  // Accurate published count via a server-side count query (the loaded
+  // `products` array is capped at the useProducts limit).
+  const [publishedCount, setPublishedCount] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadPublishedCount() {
+      let query = supabase
+        .from("faire_products")
+        .select("*", { count: "exact", head: true })
+        .eq("lifecycle_state", "PUBLISHED")
+      if (activeBrand !== "all") {
+        query = query.eq("store_id", activeBrand)
+      }
+      const { count } = await query
+      if (!cancelled) setPublishedCount(count ?? 0)
+    }
+    loadPublishedCount()
+    return () => { cancelled = true }
+  }, [activeBrand])
+
   // Status + search filtered
   const filtered = useMemo(() => {
     let list = products
@@ -175,10 +196,11 @@ export default function ListingsPage() {
     return sortDir === "asc" ? <ArrowUp className="size-3 inline ml-1" /> : <ArrowDown className="size-3 inline ml-1" />
   }
 
-  // Stats
-  const totalProducts = products.length
-  const publishedCount = products.filter((p) => p.lifecycle_state === "PUBLISHED").length
-  const avgWs = totalProducts > 0 ? products.reduce((s, p) => s + p.wholesale_price_cents, 0) / totalProducts / 100 : 0
+  // Stats — totalProducts uses the real totalCount (not the loaded-rows length),
+  // and publishedCount comes from a dedicated count query above.
+  const totalProducts = totalCount
+  const loadedCount = products.length
+  const avgWs = loadedCount > 0 ? products.reduce((s, p) => s + p.wholesale_price_cents, 0) / loadedCount / 100 : 0
   const totalInventory = products.reduce((s, p) => s + p.total_inventory, 0)
 
   // Store lookup helper
@@ -189,7 +211,7 @@ export default function ListingsPage() {
   const statCards = [
     { label: "Total Products", value: String(totalProducts), trend: `${new Set(products.map((p) => p.store_id)).size} brand${new Set(products.map((p) => p.store_id)).size !== 1 ? "s" : ""}`, icon: <Package className="h-4 w-4" />, bg: "rgba(59,130,246,0.1)", color: "#3B82F6" },
     { label: "Published", value: String(publishedCount), trend: `${totalProducts > 0 ? Math.round((publishedCount / totalProducts) * 100) : 0}% of catalog`, icon: <TrendingUp className="h-4 w-4" />, bg: "rgba(16,185,129,0.1)", color: "#10B981" },
-    { label: "Avg WS Price", value: fmt(avgWs), trend: `${totalProducts} products`, icon: <BarChart3 className="h-4 w-4" />, bg: "rgba(139,92,246,0.1)", color: "#8B5CF6" },
+    { label: "Avg WS Price", value: fmt(avgWs), trend: `${loadedCount} products sampled`, icon: <BarChart3 className="h-4 w-4" />, bg: "rgba(139,92,246,0.1)", color: "#8B5CF6" },
     { label: "Total Inventory", value: totalInventory.toLocaleString(), trend: "Units across all SKUs", icon: <Boxes className="h-4 w-4" />, bg: "rgba(245,158,11,0.1)", color: "#F59E0B" },
   ]
 

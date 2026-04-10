@@ -72,6 +72,13 @@ export default function ScrapingReviewPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState<"all" | "new" | "reviewed" | "queued" | "rejected">("all")
+  const [counts, setCounts] = useState({
+    total: 0,
+    new: 0,
+    reviewed: 0,
+    rejected: 0,
+    queued: 0,
+  })
 
   type SortKey = "score" | "price"
   type SortDir = "asc" | "desc"
@@ -91,12 +98,47 @@ export default function ScrapingReviewPage() {
   /* ---- fetch ---- */
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from("scraped_products")
-      .select("*")
-      .order("scraped_at", { ascending: false })
-    if (error) console.error("fetchScraped:", error)
-    setProducts(data ?? [])
+    const [
+      listRes,
+      totalRes,
+      newRes,
+      reviewedRes,
+      rejectedRes,
+      queuedRes,
+    ] = await Promise.all([
+      supabase
+        .from("scraped_products")
+        .select("*")
+        .order("scraped_at", { ascending: false }),
+      supabase
+        .from("scraped_products")
+        .select("*", { count: "exact", head: true }),
+      supabase
+        .from("scraped_products")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "new"),
+      supabase
+        .from("scraped_products")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "reviewed"),
+      supabase
+        .from("scraped_products")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "rejected"),
+      supabase
+        .from("scraped_products")
+        .select("*", { count: "exact", head: true })
+        .eq("queued_to_pipeline", true),
+    ])
+    if (listRes.error) console.error("fetchScraped:", listRes.error)
+    setProducts(listRes.data ?? [])
+    setCounts({
+      total: totalRes.count ?? 0,
+      new: newRes.count ?? 0,
+      reviewed: reviewedRes.count ?? 0,
+      rejected: rejectedRes.count ?? 0,
+      queued: queuedRes.count ?? 0,
+    })
     setLoading(false)
   }, [])
 
@@ -135,11 +177,12 @@ export default function ScrapingReviewPage() {
     return result
   }, [products, activeTab, searchQuery, sortKey, sortDir])
 
-  /* ---- stats ---- */
-  const totalScraped = products.length
-  const newCount = products.filter((p) => p.status === "new").length
-  const approvedCount = products.filter((p) => p.status === "reviewed").length
-  const rejectedCount = products.filter((p) => p.status === "rejected").length
+  /* ---- stats (real counts, not capped by the list fetch above) ---- */
+  const totalScraped = counts.total
+  const newCount = counts.new
+  const approvedCount = counts.reviewed
+  const rejectedCount = counts.rejected
+  const queuedCount = counts.queued
 
   /* ---- actions ---- */
   async function handleApprove(id: string) {
@@ -185,7 +228,7 @@ export default function ScrapingReviewPage() {
     { key: "all" as const, label: "All", count: totalScraped },
     { key: "new" as const, label: "New", count: newCount },
     { key: "reviewed" as const, label: "Reviewed", count: approvedCount },
-    { key: "queued" as const, label: "Queued", count: products.filter((p) => p.queued_to_pipeline).length },
+    { key: "queued" as const, label: "Queued", count: queuedCount },
     { key: "rejected" as const, label: "Rejected", count: rejectedCount },
   ]
 

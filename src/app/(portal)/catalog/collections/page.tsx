@@ -338,6 +338,10 @@ export default function CollectionsPage() {
   const [showNewDialog, setShowNewDialog] = useState(false)
   const [generating, setGenerating] = useState(false)
 
+  // Real counts, independent of the capped collections fetch
+  const [totalCount, setTotalCount] = useState(0)
+  const [activeCount, setActiveCount] = useState(0)
+
   // Collection detail modal state
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
   const [collectionProducts, setCollectionProducts] = useState<FaireProduct[]>([])
@@ -411,19 +415,40 @@ export default function CollectionsPage() {
   // Fetch collections
   const fetchCollections = async () => {
     setLoading(true)
-    let query = supabase
+
+    // List fetch — bumped to 2000 so the in-memory sums (product_count /
+    // distinct store_ids) are accurate for practically all workspaces.
+    let listQuery = supabase
       .from("collections")
       .select("*")
       .order("sort_order", { ascending: true })
-      .limit(100)
+      .limit(2000)
+
+    // Count queries — unaffected by the list limit
+    let totalQuery = supabase
+      .from("collections")
+      .select("*", { count: "exact", head: true })
+
+    let activeQuery = supabase
+      .from("collections")
+      .select("*", { count: "exact", head: true })
+      .eq("is_active", true)
 
     if (activeBrand !== "all") {
-      query = query.eq("store_id", activeBrand)
+      listQuery = listQuery.eq("store_id", activeBrand)
+      totalQuery = totalQuery.eq("store_id", activeBrand)
+      activeQuery = activeQuery.eq("store_id", activeBrand)
     }
 
-    const { data } = await query
-    const cols = data ?? []
+    const [listRes, totalRes, activeRes] = await Promise.all([
+      listQuery,
+      totalQuery,
+      activeQuery,
+    ])
+    const cols = listRes.data ?? []
     setCollections(cols)
+    setTotalCount(totalRes.count ?? 0)
+    setActiveCount(activeRes.count ?? 0)
     setPage(1)
     setLoading(false)
   }
@@ -493,9 +518,12 @@ export default function CollectionsPage() {
   const visible = filtered.slice(0, visibleCount)
   const hasMore = visibleCount < filtered.length
 
-  // Stats
-  const totalCollections = collections.length
-  const activeCollections = collections.filter((c) => c.is_active).length
+  // Stats — totalCollections and activeCollections come from count queries
+  // so they aren't capped by the in-memory collections fetch. storeCount and
+  // totalProducts are computed from the loaded rows (now fetched with a 2000
+  // row limit, so effectively accurate for typical workspaces).
+  const totalCollections = totalCount
+  const activeCollections = activeCount
   const storeCount = new Set(collections.map((c) => c.store_id)).size
   const totalProducts = collections.reduce((s, c) => s + c.product_count, 0)
 

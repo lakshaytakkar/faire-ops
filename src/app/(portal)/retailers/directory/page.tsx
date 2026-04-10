@@ -438,9 +438,17 @@ export default function RetailersDirectoryPage() {
   const [showEnrichModal, setShowEnrichModal] = useState(false)
   const [refetchKey, setRefetchKey] = useState(0)
 
-  // Real counts (not capped by the 5000-row retailers fetch)
+  // Real counts (not capped by the 5000-row retailers fetch).
+  // - activeCount  (main stat card): retailers with an order in the last 60 days
+  // - newCount     (main stat card): retailers with zero orders
+  // - pillActive   (pill filter): deriveStatus === "active" (1-9 orders, recent or no last order)
+  // - vipCount     (pill filter): deriveStatus === "vip" (>= 10 orders)
+  // - inactiveCount(pill filter): deriveStatus === "inactive" (1-9 orders, last order older than 60 days)
   const [activeCount, setActiveCount] = useState(0)
   const [newCount, setNewCount] = useState(0)
+  const [pillActiveCount, setPillActiveCount] = useState(0)
+  const [vipCount, setVipCount] = useState(0)
+  const [inactiveCount, setInactiveCount] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -449,26 +457,75 @@ export default function RetailersDirectoryPage() {
       sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
       const sixtyDaysAgoISO = sixtyDaysAgo.toISOString()
 
-      let activeQuery = supabase
-        .from("faire_retailers")
-        .select("*", { count: "exact", head: true })
-        .gte("last_order_at", sixtyDaysAgoISO)
-      if (activeFaireStoreId) {
-        activeQuery = activeQuery.contains("store_ids", [activeFaireStoreId])
-      }
+      const withStore = <T extends { contains: (col: string, val: string[]) => T }>(q: T): T =>
+        activeFaireStoreId ? q.contains("store_ids", [activeFaireStoreId]) : q
 
-      let newQuery = supabase
-        .from("faire_retailers")
-        .select("*", { count: "exact", head: true })
-        .eq("total_orders", 0)
-      if (activeFaireStoreId) {
-        newQuery = newQuery.contains("store_ids", [activeFaireStoreId])
-      }
+      const activeQuery = withStore(
+        supabase
+          .from("faire_retailers")
+          .select("*", { count: "exact", head: true })
+          .gte("last_order_at", sixtyDaysAgoISO)
+      )
 
-      const [activeRes, newRes] = await Promise.all([activeQuery, newQuery])
+      const newQuery = withStore(
+        supabase
+          .from("faire_retailers")
+          .select("*", { count: "exact", head: true })
+          .eq("total_orders", 0)
+      )
+
+      const vipQuery = withStore(
+        supabase
+          .from("faire_retailers")
+          .select("*", { count: "exact", head: true })
+          .gte("total_orders", 10)
+      )
+
+      // pill "inactive": 1-9 orders AND last_order_at < 60 days ago
+      const inactiveQuery = withStore(
+        supabase
+          .from("faire_retailers")
+          .select("*", { count: "exact", head: true })
+          .gte("total_orders", 1)
+          .lt("total_orders", 10)
+          .lt("last_order_at", sixtyDaysAgoISO)
+      )
+
+      // pill "active": 1-9 orders AND (last_order_at IS NULL OR last_order_at >= 60 days ago)
+      // Two queries (no OR support for IS NULL + gte easily) — sum them.
+      const pillActiveRecent = withStore(
+        supabase
+          .from("faire_retailers")
+          .select("*", { count: "exact", head: true })
+          .gte("total_orders", 1)
+          .lt("total_orders", 10)
+          .gte("last_order_at", sixtyDaysAgoISO)
+      )
+      const pillActiveNullDate = withStore(
+        supabase
+          .from("faire_retailers")
+          .select("*", { count: "exact", head: true })
+          .gte("total_orders", 1)
+          .lt("total_orders", 10)
+          .is("last_order_at", null)
+      )
+
+      const [activeRes, newRes, vipRes, inactiveRes, pillRecentRes, pillNullRes] =
+        await Promise.all([
+          activeQuery,
+          newQuery,
+          vipQuery,
+          inactiveQuery,
+          pillActiveRecent,
+          pillActiveNullDate,
+        ])
+
       if (cancelled) return
       setActiveCount(activeRes.count ?? 0)
       setNewCount(newRes.count ?? 0)
+      setVipCount(vipRes.count ?? 0)
+      setInactiveCount(inactiveRes.count ?? 0)
+      setPillActiveCount((pillRecentRes.count ?? 0) + (pillNullRes.count ?? 0))
     }
     loadCounts()
     return () => { cancelled = true }
@@ -558,14 +615,15 @@ export default function RetailersDirectoryPage() {
     }
   }, [retailersWithStatus, totalCount, activeCount, newCount])
 
-  // Status filter counts
+  // Status filter pill counts — sourced from real count queries above so they
+  // aren't capped by the in-memory retailers fetch.
   const statusCounts = useMemo(() => ({
-    all: retailersWithStatus.length,
-    active: retailersWithStatus.filter((r) => r.status === "active").length,
-    new: retailersWithStatus.filter((r) => r.status === "new").length,
-    vip: retailersWithStatus.filter((r) => r.status === "vip").length,
-    inactive: retailersWithStatus.filter((r) => r.status === "inactive").length,
-  }), [retailersWithStatus])
+    all: totalCount || retailersWithStatus.length,
+    active: pillActiveCount,
+    new: newCount,
+    vip: vipCount,
+    inactive: inactiveCount,
+  }), [totalCount, retailersWithStatus.length, pillActiveCount, newCount, vipCount, inactiveCount])
 
   // Has active filters?
   const hasActiveFilters = searchQuery || statusFilter !== "all" || countryFilter !== "all" || storeFilter !== "all"

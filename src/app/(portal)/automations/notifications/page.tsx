@@ -124,7 +124,15 @@ export default function NotificationsPage() {
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
 
-    const [automationsRes, scheduledRes, templatesRes, sentTodayRes] = await Promise.all([
+    const [
+      automationsRes,
+      scheduledRes,
+      templatesRes,
+      sentTodayRes,
+      activeAutomationsRes,
+      templatesCountRes,
+      scheduledCountRes,
+    ] = await Promise.all([
       supabase
         .from("automations")
         .select("*")
@@ -144,6 +152,20 @@ export default function NotificationsPage() {
         .from("email_logs")
         .select("*", { count: "exact", head: true })
         .gte("sent_at", todayStart.toISOString()),
+      // Count queries — not capped by the list fetches above
+      supabase
+        .from("automations")
+        .select("*", { count: "exact", head: true })
+        .in("type", ["email", "notification"])
+        .eq("is_active", true),
+      supabase
+        .from("email_templates")
+        .select("*", { count: "exact", head: true })
+        .eq("is_active", true),
+      supabase
+        .from("scheduled_emails")
+        .select("*", { count: "exact", head: true })
+        .eq("is_sent", false),
     ])
 
     const autos = (automationsRes.data ?? []) as Automation[]
@@ -154,9 +176,9 @@ export default function NotificationsPage() {
     setScheduled(sched)
     setTemplates(tpls)
     setStats({
-      active: autos.filter((a) => a.is_active).length,
-      templates: tpls.length,
-      scheduled: sched.length,
+      active: activeAutomationsRes.count ?? 0,
+      templates: templatesCountRes.count ?? 0,
+      scheduled: scheduledCountRes.count ?? 0,
       sentToday: sentTodayRes.count ?? 0,
     })
     setLoading(false)

@@ -96,12 +96,23 @@ export default function EmailDashboardPage() {
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
 
-    const [templatesRes, logsRes, scheduledRes, sentTodayRes, failedRes] = await Promise.all([
+    const [
+      templatesRes,
+      logsRes,
+      scheduledRes,
+      sentTodayRes,
+      failedRes,
+      templatesCountRes,
+      scheduledCountRes,
+    ] = await Promise.all([
       supabase.from("email_templates").select("*").eq("is_active", true).order("name"),
       supabase.from("email_logs").select("*, email_templates(name)").order("sent_at", { ascending: false }).limit(20),
       supabase.from("scheduled_emails").select("*, email_templates(name)").eq("is_sent", false).order("schedule_at"),
       supabase.from("email_logs").select("*", { count: "exact", head: true }).gte("sent_at", todayStart.toISOString()),
       supabase.from("email_logs").select("*", { count: "exact", head: true }).eq("status", "failed"),
+      // Count-only queries — not capped by the list fetches above
+      supabase.from("email_templates").select("*", { count: "exact", head: true }).eq("is_active", true),
+      supabase.from("scheduled_emails").select("*", { count: "exact", head: true }).eq("is_sent", false),
     ])
 
     const tpls = (templatesRes.data ?? []) as EmailTemplate[]
@@ -109,9 +120,9 @@ export default function EmailDashboardPage() {
     setRecentLogs((logsRes.data ?? []) as EmailLog[])
     setScheduled((scheduledRes.data ?? []) as ScheduledEmail[])
     setStats({
-      templates: tpls.length,
+      templates: templatesCountRes.count ?? 0,
       sentToday: sentTodayRes.count ?? 0,
-      scheduled: (scheduledRes.data ?? []).length,
+      scheduled: scheduledCountRes.count ?? 0,
       failed: failedRes.count ?? 0,
     })
     setLoading(false)

@@ -228,21 +228,30 @@ export default function PublishingQueuePage() {
 
   // ---- Live products from Supabase ----
   const [liveProducts, setLiveProducts] = useState<FaireProduct[]>([])
+  // Real live count — `liveProducts` is intentionally capped at 10 for display
+  // in the Kanban column, so we need a separate count query for the stat card.
+  const [liveTotalCount, setLiveTotalCount] = useState(0)
 
   useEffect(() => {
     async function fetchLive() {
-      let query = supabase
+      let listQuery = supabase
         .from("faire_products")
         .select("id, name, wholesale_price_cents, retail_price_cents, primary_image_url, category, store_id, total_inventory, faire_product_id")
         .order("faire_updated_at", { ascending: false })
         .limit(10)
 
+      let countQuery = supabase
+        .from("faire_products")
+        .select("*", { count: "exact", head: true })
+
       if (activeBrand !== "all") {
-        query = query.eq("store_id", activeBrand)
+        listQuery = listQuery.eq("store_id", activeBrand)
+        countQuery = countQuery.eq("store_id", activeBrand)
       }
 
-      const { data } = await query
+      const [{ data }, { count }] = await Promise.all([listQuery, countQuery])
       setLiveProducts((data ?? []) as FaireProduct[])
+      setLiveTotalCount(count ?? 0)
     }
     fetchLive()
   }, [activeBrand])
@@ -261,9 +270,10 @@ export default function PublishingQueuePage() {
       sourced: products.filter((p) => p.status === "sourced").length,
       pending: products.filter((p) => p.status === "pending").length,
       approved: products.filter((p) => p.status === "approved").length,
-      live: liveProducts.length,
+      // Use the server-side count; `liveProducts` is capped at 10.
+      live: liveTotalCount,
     }),
-    [products, liveProducts],
+    [products, liveTotalCount],
   )
 
   // ---- Avg margin per column ----
@@ -423,7 +433,7 @@ export default function PublishingQueuePage() {
         {COLUMNS.map((col) => {
           const isLiveCol = col.key === "live"
           const colProducts = isLiveCol ? [] : products.filter((p) => p.status === col.key)
-          const colCount = isLiveCol ? liveProducts.length : colProducts.length
+          const colCount = isLiveCol ? liveTotalCount : colProducts.length
           const empty = EMPTY_STATE[col.key]
 
           return (

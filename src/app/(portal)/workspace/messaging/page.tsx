@@ -35,13 +35,6 @@ interface SmsLog {
   sent_at: string
 }
 
-interface SmsTemplate {
-  id: string
-  name: string
-  channel: "sms" | "whatsapp"
-  is_active: boolean
-}
-
 /* ------------------------------------------------------------------ */
 /*  Styles                                                             */
 /* ------------------------------------------------------------------ */
@@ -64,8 +57,14 @@ const CHANNEL_STYLES: Record<string, string> = {
 
 export default function MessagingHubPage() {
   const [recentLogs, setRecentLogs] = useState<SmsLog[]>([])
-  const [templates, setTemplates] = useState<SmsTemplate[]>([])
-  const [stats, setStats] = useState({ smsSent: 0, whatsappSent: 0, templates: 0, failed: 0 })
+  const [stats, setStats] = useState({
+    smsSent: 0,
+    whatsappSent: 0,
+    templates: 0,
+    failed: 0,
+    smsTemplateCount: 0,
+    whatsappTemplateCount: 0,
+  })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -78,27 +77,36 @@ export default function MessagingHubPage() {
     todayStart.setHours(0, 0, 0, 0)
     const todayISO = todayStart.toISOString()
 
-    const [logsRes, templatesRes, smsTodayRes, whatsappTodayRes, failedRes] = await Promise.all([
+    const [
+      logsRes,
+      smsTodayRes,
+      whatsappTodayRes,
+      failedRes,
+      templatesCountRes,
+      smsTemplatesCountRes,
+      whatsappTemplatesCountRes,
+    ] = await Promise.all([
       supabase.from("sms_logs").select("*").order("sent_at", { ascending: false }).limit(10),
-      supabase.from("sms_templates").select("id, name, channel, is_active"),
       supabase.from("sms_logs").select("*", { count: "exact", head: true }).eq("channel", "sms").gte("sent_at", todayISO),
       supabase.from("sms_logs").select("*", { count: "exact", head: true }).eq("channel", "whatsapp").gte("sent_at", todayISO),
       supabase.from("sms_logs").select("*", { count: "exact", head: true }).eq("status", "failed"),
+      // Count-only queries — accurate counts independent of any list fetch
+      supabase.from("sms_templates").select("*", { count: "exact", head: true }),
+      supabase.from("sms_templates").select("*", { count: "exact", head: true }).eq("channel", "sms"),
+      supabase.from("sms_templates").select("*", { count: "exact", head: true }).eq("channel", "whatsapp"),
     ])
 
     setRecentLogs((logsRes.data ?? []) as SmsLog[])
-    setTemplates((templatesRes.data ?? []) as SmsTemplate[])
     setStats({
       smsSent: smsTodayRes.count ?? 0,
       whatsappSent: whatsappTodayRes.count ?? 0,
-      templates: (templatesRes.data ?? []).length,
+      templates: templatesCountRes.count ?? 0,
       failed: failedRes.count ?? 0,
+      smsTemplateCount: smsTemplatesCountRes.count ?? 0,
+      whatsappTemplateCount: whatsappTemplatesCountRes.count ?? 0,
     })
     setLoading(false)
   }
-
-  const smsTemplates = templates.filter((t) => t.channel === "sms")
-  const whatsappTemplates = templates.filter((t) => t.channel === "whatsapp")
 
   if (loading) {
     return (
@@ -150,7 +158,7 @@ export default function MessagingHubPage() {
               <div>
                 <h3 className="text-sm font-semibold">SMS</h3>
                 <p className="text-xs text-muted-foreground">
-                  {stats.smsSent} sent today &middot; {smsTemplates.length} templates
+                  {stats.smsSent} sent today &middot; {stats.smsTemplateCount} templates
                 </p>
               </div>
             </div>
@@ -184,7 +192,7 @@ export default function MessagingHubPage() {
               <div>
                 <h3 className="text-sm font-semibold">WhatsApp</h3>
                 <p className="text-xs text-muted-foreground">
-                  {stats.whatsappSent} sent today &middot; {whatsappTemplates.length} templates
+                  {stats.whatsappSent} sent today &middot; {stats.whatsappTemplateCount} templates
                 </p>
               </div>
             </div>
