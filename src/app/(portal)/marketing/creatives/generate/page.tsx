@@ -12,7 +12,7 @@ import {
   AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { generateText, isGeminiConfigured } from "@/lib/gemini"
 
 /* ------------------------------------------------------------------ */
@@ -95,7 +95,7 @@ Return ONLY a valid JSON array with 3 objects, no markdown fences, no explanatio
 
   async function handleSave(variant: GeneratedVariant, idx: number) {
     setSavingIdx(idx)
-    const { error: err } = await supabase.from("meta_ad_creatives").insert({
+    const { error: err } = await supabaseB2B.from("meta_ad_creatives").insert({
       name: variant.headline,
       type: "image",
       status: "draft",

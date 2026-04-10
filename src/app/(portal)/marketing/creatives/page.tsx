@@ -19,7 +19,7 @@ import {
   Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import {
   useCreatives,
   statusColor,
@@ -81,7 +81,7 @@ function CreateModal({
   async function handleSave() {
     if (!form.name.trim()) return
     setSaving(true)
-    const { error } = await supabase.from("meta_ad_creatives").insert({
+    const { error } = await supabaseB2B.from("meta_ad_creatives").insert({
       name: form.name.trim(),
       type: form.type,
       status: "draft",
@@ -308,7 +308,7 @@ export default function CreativeLibraryPage() {
   }, [creatives, typeFilter, statusFilter, search])
 
   async function handleDuplicate(c: MetaAdCreative) {
-    await supabase.from("meta_ad_creatives").insert({
+    await supabaseB2B.from("meta_ad_creatives").insert({
       name: `${c.name} (copy)`,
       type: c.type,
       status: "draft",
@@ -326,7 +326,7 @@ export default function CreativeLibraryPage() {
   }
 
   async function handleArchive(c: MetaAdCreative) {
-    await supabase.from("meta_ad_creatives").update({ status: "archived" }).eq("id", c.id)
+    await supabaseB2B.from("meta_ad_creatives").update({ status: "archived" }).eq("id", c.id)
     refetch()
   }
 

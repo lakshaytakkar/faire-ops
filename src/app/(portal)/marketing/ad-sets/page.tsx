@@ -21,7 +21,7 @@ import {
   X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import {
   useAdSets,
   useCampaigns,
@@ -145,7 +145,7 @@ function CreateAdSetModal({
         .filter(Boolean),
     }
 
-    await supabase.from("meta_ad_sets").insert({
+    await supabaseB2B.from("meta_ad_sets").insert({
       name: form.name,
       campaign_id: form.campaign_id,
       budget_type: form.budget_type,
@@ -422,7 +422,7 @@ export default function AdSetsPage() {
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this ad set?")) return
-    await supabase.from("meta_ad_sets").delete().eq("id", id)
+    await supabaseB2B.from("meta_ad_sets").delete().eq("id", id)
     setMenuId(null)
     refetch()
   }

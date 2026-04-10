@@ -31,7 +31,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet"
 import { useBrandFilter } from "@/lib/brand-filter-context"
-import { supabase, type FaireProduct } from "@/lib/supabase"
+import { supabaseB2B, type FaireProduct } from "@/lib/supabase"
 
 /* ------------------------------------------------------------------ */
 /*  Local pipeline types                                               */
@@ -234,13 +234,13 @@ export default function PublishingQueuePage() {
 
   useEffect(() => {
     async function fetchLive() {
-      let listQuery = supabase
+      let listQuery = supabaseB2B
         .from("faire_products")
         .select("id, name, wholesale_price_cents, retail_price_cents, primary_image_url, category, store_id, total_inventory, faire_product_id")
         .order("faire_updated_at", { ascending: false })
         .limit(10)
 
-      let countQuery = supabase
+      let countQuery = supabaseB2B
         .from("faire_products")
         .select("*", { count: "exact", head: true })
 

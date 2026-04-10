@@ -1,12 +1,5 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-  )
-}
+import { supabaseB2B } from "@/lib/supabase"
 
 // GET — fetch views for a date range
 export async function GET(request: Request) {
@@ -15,7 +8,7 @@ export async function GET(request: Request) {
   const to = url.searchParams.get("to")
   const storeId = url.searchParams.get("store_id")
 
-  let query = getSupabase()
+  let query = supabaseB2B
     .from("store_daily_views")
     .select("*, faire_stores!inner(name, color)")
     .order("view_date", { ascending: true })
@@ -38,7 +31,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "entries array required" }, { status: 400 })
   }
 
-  const { error } = await getSupabase()
+  const { error } = await supabaseB2B
     .from("store_daily_views")
     .upsert(
       entries.map(e => ({

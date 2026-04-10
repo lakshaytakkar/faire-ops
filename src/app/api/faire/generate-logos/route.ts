@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { supabaseB2B } from "@/lib/supabase"
 import { generateImage, generateLogoPrompt } from "@/lib/gemini"
 
 // We import from gemini.ts not faire-api — let me use direct imports
@@ -125,7 +126,7 @@ Requirements: Square format, clean background, scalable, professional wholesale 
 
 export async function POST() {
   try {
-    const { data: stores } = await getSupabase()
+    const { data: stores } = await supabaseB2B
       .from("faire_stores")
       .select("id, name, short, color, category")
       .eq("active", true)
@@ -148,13 +149,13 @@ export async function POST() {
       })
 
       if (logoUrl) {
-        await getSupabase()
+        await supabaseB2B
           .from("faire_stores")
           .update({ logo_url: logoUrl })
           .eq("id", store.id)
 
         // Also save as store asset
-        await getSupabase().from("store_assets").insert({
+        await supabaseB2B.from("store_assets").insert({
           store_id: store.id,
           asset_type: "logo",
           storage_path: logoUrl.split("/images/")[1] ?? "",

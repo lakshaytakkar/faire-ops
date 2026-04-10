@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PageResourcesButton } from "@/components/shared/page-resources"
@@ -143,7 +143,7 @@ function NewApplicationDialog({ open, onClose, onCreated }: { open: boolean; onC
   async function handleSubmit() {
     if (!form.brand_name.trim()) return
     setSaving(true)
-    const { error } = await supabase.from("faire_seller_applications").insert({
+    const { error } = await supabaseB2B.from("faire_seller_applications").insert({
       brand_name: form.brand_name.trim(),
       category: form.category.trim() || null,
       brand_story: form.brand_story.trim() || null,
@@ -366,7 +366,7 @@ export default function SellerApplicationsPage() {
 
   const fetchApplications = useCallback(() => {
     setLoading(true)
-    supabase
+    supabaseB2B
       .from("faire_seller_applications")
       .select("*")
       .order("created_at", { ascending: false })
@@ -421,7 +421,7 @@ export default function SellerApplicationsPage() {
 
   async function updateAppStatus(appId: string, newStatus: SellerApplication["status"]) {
     setUpdatingStatus(appId)
-    const { error } = await supabase
+    const { error } = await supabaseB2B
       .from("faire_seller_applications")
       .update({ status: newStatus, updated_at: new Date().toISOString() })
       .eq("id", appId)

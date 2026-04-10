@@ -1,13 +1,6 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
 import { shipOrder } from "@/lib/faire-api"
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-  )
-}
+import { supabaseB2B } from "@/lib/supabase"
 
 export async function POST(request: Request) {
   try {
@@ -21,7 +14,7 @@ export async function POST(request: Request) {
     }
 
     // Get the quote
-    const { data: quote, error: quoteError } = await getSupabase()
+    const { data: quote, error: quoteError } = await supabaseB2B
       .from("vendor_quotes")
       .select("id, order_id, vendor_id, total_cost_cents")
       .eq("id", quote_id)
@@ -32,7 +25,7 @@ export async function POST(request: Request) {
     }
 
     // Get the order
-    const { data: order, error: orderError } = await getSupabase()
+    const { data: order, error: orderError } = await supabaseB2B
       .from("faire_orders")
       .select("store_id, faire_order_id, display_id, total_cents")
       .eq("faire_order_id", quote.order_id)
@@ -43,7 +36,7 @@ export async function POST(request: Request) {
     }
 
     // Get store credentials
-    const { data: store, error: storeError } = await getSupabase()
+    const { data: store, error: storeError } = await supabaseB2B
       .from("faire_stores")
       .select("oauth_token, app_credentials")
       .eq("id", order.store_id)
@@ -65,7 +58,7 @@ export async function POST(request: Request) {
     const shipping12Percent = Math.round(order.total_cents * 0.12)
 
     // Update vendor_quotes
-    await getSupabase()
+    await supabaseB2B
       .from("vendor_quotes")
       .update({
         tracking_code,
@@ -77,7 +70,7 @@ export async function POST(request: Request) {
       .eq("id", quote_id)
 
     // Update faire_orders
-    await getSupabase()
+    await supabaseB2B
       .from("faire_orders")
       .update({ state: "IN_TRANSIT", quote_status: "shipped" })
       .eq("faire_order_id", quote.order_id)
@@ -87,7 +80,7 @@ export async function POST(request: Request) {
     const today = new Date().toISOString().split("T")[0]
 
     // Create ledger entry for vendor fulfillment cost
-    await getSupabase().from("faire_ledger_entries").insert({
+    await supabaseB2B.from("faire_ledger_entries").insert({
       entry_date: today,
       entry_type: "expense",
       description: `Vendor fulfillment — Order ${displayId}`,
@@ -99,7 +92,7 @@ export async function POST(request: Request) {
     })
 
     // Create ledger entry for shipping cost (12%)
-    await getSupabase().from("faire_ledger_entries").insert({
+    await supabaseB2B.from("faire_ledger_entries").insert({
       entry_date: today,
       entry_type: "expense",
       description: `Shipping cost (12%) — Order ${displayId}`,

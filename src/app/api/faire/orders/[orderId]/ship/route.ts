@@ -1,13 +1,6 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
 import { shipOrder } from "@/lib/faire-api"
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-  )
-}
+import { supabaseB2B } from "@/lib/supabase"
 
 export async function POST(request: Request, { params }: { params: Promise<{ orderId: string }> }) {
   try {
@@ -19,7 +12,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ ord
     }
 
     // Get order to find store
-    const { data: order } = await getSupabase()
+    const { data: order } = await supabaseB2B
       .from("faire_orders")
       .select("store_id, faire_order_id")
       .eq("faire_order_id", orderId)
@@ -28,7 +21,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ ord
     if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 })
 
     // Get store credentials
-    const { data: store } = await getSupabase()
+    const { data: store } = await supabaseB2B
       .from("faire_stores")
       .select("oauth_token, app_credentials")
       .eq("id", order.store_id)
@@ -45,7 +38,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ ord
     )
 
     // Update local DB
-    await getSupabase()
+    await supabaseB2B
       .from("faire_orders")
       .update({ state: "IN_TRANSIT" })
       .eq("faire_order_id", orderId)

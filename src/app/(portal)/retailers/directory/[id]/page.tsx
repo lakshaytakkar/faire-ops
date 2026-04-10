@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Mail, MessageCircle, Phone, MapPin, Store, ShoppingBag, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, X, Check, AlertCircle, Loader2 } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabase, supabaseB2B } from "@/lib/supabase"
 import type { FaireRetailer, FaireOrder } from "@/lib/supabase"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 import { Button } from "@/components/ui/button"
@@ -86,12 +86,12 @@ export default function RetailerDetailPage() {
 
     async function load() {
       const [retailerRes, ordersRes] = await Promise.all([
-        supabase
+        supabaseB2B
           .from("faire_retailers")
           .select("*")
           .eq("faire_retailer_id", params.id)
           .single(),
-        supabase
+        supabaseB2B
           .from("faire_orders")
           .select("*")
           .eq("retailer_id", params.id)
@@ -116,7 +116,7 @@ export default function RetailerDetailPage() {
 
   useEffect(() => {
     if (!retailer) return
-    supabase
+    supabaseB2B
       .from("faire_retailers")
       .select("faire_retailer_id")
       .order("total_orders", { ascending: false })

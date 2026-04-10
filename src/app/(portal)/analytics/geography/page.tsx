@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, Fragment } from "react"
 import { MapPin, Building2, Globe, Trophy, ArrowUpDown, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react"
 import { useBrandFilter } from "@/lib/brand-filter-context"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { ComposableMap, Geographies, Geography } from "react-simple-maps"
 
 /* ------------------------------------------------------------------ */
@@ -208,7 +208,7 @@ export default function GeographyAnalyticsPage() {
   useEffect(() => {
     async function fetchAll() {
       setLoading(true)
-      const { data } = await supabase
+      const { data } = await supabaseB2B
         .from("faire_orders")
         .select("shipping_address, total_cents, store_id")
         .order("faire_created_at", { ascending: false })

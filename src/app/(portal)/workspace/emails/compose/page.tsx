@@ -18,7 +18,7 @@ import {
   AlertTriangle,
   Info,
 } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabase, supabaseB2B } from "@/lib/supabase"
 import { generateText, isGeminiConfigured } from "@/lib/gemini"
 
 /* ------------------------------------------------------------------ */
@@ -221,10 +221,10 @@ export default function EmailComposePage() {
     const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString()
 
     const [allRes, activeRes, newRes, vipRes] = await Promise.all([
-      supabase.from("faire_retailers").select("*", { count: "exact", head: true }),
-      supabase.from("faire_retailers").select("*", { count: "exact", head: true }).gte("last_order_at", sixtyDaysAgo),
-      supabase.from("faire_retailers").select("*", { count: "exact", head: true }).eq("total_orders", 0),
-      supabase.from("faire_retailers").select("*", { count: "exact", head: true }).gte("total_orders", 10),
+      supabaseB2B.from("faire_retailers").select("*", { count: "exact", head: true }),
+      supabaseB2B.from("faire_retailers").select("*", { count: "exact", head: true }).gte("last_order_at", sixtyDaysAgo),
+      supabaseB2B.from("faire_retailers").select("*", { count: "exact", head: true }).eq("total_orders", 0),
+      supabaseB2B.from("faire_retailers").select("*", { count: "exact", head: true }).gte("total_orders", 10),
     ])
 
     setSegmentCounts({
@@ -261,7 +261,7 @@ export default function EmailComposePage() {
       const now = new Date()
       const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString()
 
-      let query = supabase.from("faire_retailers").select("name, company_name, phone")
+      let query = supabaseB2B.from("faire_retailers").select("name, company_name, phone")
 
       if (segment === "active") query = query.gte("last_order_at", sixtyDaysAgo)
       else if (segment === "new") query = query.eq("total_orders", 0)

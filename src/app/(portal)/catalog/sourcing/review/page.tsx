@@ -15,7 +15,7 @@ import {
   ArrowUp,
   ArrowDown,
 } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -106,26 +106,26 @@ export default function ScrapingReviewPage() {
       rejectedRes,
       queuedRes,
     ] = await Promise.all([
-      supabase
+      supabaseB2B
         .from("scraped_products")
         .select("*")
         .order("scraped_at", { ascending: false }),
-      supabase
+      supabaseB2B
         .from("scraped_products")
         .select("*", { count: "exact", head: true }),
-      supabase
+      supabaseB2B
         .from("scraped_products")
         .select("*", { count: "exact", head: true })
         .eq("status", "new"),
-      supabase
+      supabaseB2B
         .from("scraped_products")
         .select("*", { count: "exact", head: true })
         .eq("status", "reviewed"),
-      supabase
+      supabaseB2B
         .from("scraped_products")
         .select("*", { count: "exact", head: true })
         .eq("status", "rejected"),
-      supabase
+      supabaseB2B
         .from("scraped_products")
         .select("*", { count: "exact", head: true })
         .eq("queued_to_pipeline", true),
@@ -186,7 +186,7 @@ export default function ScrapingReviewPage() {
 
   /* ---- actions ---- */
   async function handleApprove(id: string) {
-    await supabase
+    await supabaseB2B
       .from("scraped_products")
       .update({ status: "reviewed", reviewed_by: "Lakshay", reviewed_at: new Date().toISOString() })
       .eq("id", id)
@@ -194,7 +194,7 @@ export default function ScrapingReviewPage() {
   }
 
   async function handleReject(id: string) {
-    await supabase
+    await supabaseB2B
       .from("scraped_products")
       .update({ status: "rejected", reviewed_by: "Lakshay", reviewed_at: new Date().toISOString() })
       .eq("id", id)
@@ -202,7 +202,7 @@ export default function ScrapingReviewPage() {
   }
 
   async function handleQueue(id: string) {
-    await supabase
+    await supabaseB2B
       .from("scraped_products")
       .update({ queued_to_pipeline: true })
       .eq("id", id)

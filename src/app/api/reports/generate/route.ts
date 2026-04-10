@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { supabase, supabaseB2B } from "@/lib/supabase"
 import { generateText } from "@/lib/gemini"
 
 export async function POST(req: NextRequest) {
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Query orders in period
-    let ordersQuery = supabase
+    let ordersQuery = supabaseB2B
       .from("faire_orders")
       .select("total_cents, state, store_id, source, faire_created_at")
       .gte("faire_created_at", periodStart)
@@ -51,12 +51,12 @@ export async function POST(req: NextRequest) {
     const orders = ordersData ?? []
 
     // Products count
-    let productsQuery = supabase.from("faire_products").select("*", { count: "exact", head: true })
+    let productsQuery = supabaseB2B.from("faire_products").select("*", { count: "exact", head: true })
     if (store_id) productsQuery = productsQuery.eq("store_id", store_id)
     const { count: productsCount } = await productsQuery
 
     // Published products
-    let publishedQuery = supabase
+    let publishedQuery = supabaseB2B
       .from("faire_products")
       .select("*", { count: "exact", head: true })
       .eq("sale_state", "FOR_SALE")
@@ -64,13 +64,13 @@ export async function POST(req: NextRequest) {
     const { count: publishedCount } = await publishedQuery
 
     // Active retailers
-    const { count: retailersCount } = await supabase
+    const { count: retailersCount } = await supabaseB2B
       .from("faire_retailers")
       .select("*", { count: "exact", head: true })
       .gt("total_orders", 0)
 
     // Fetch store names for grouping
-    const { data: storesData } = await supabase.from("faire_stores").select("id, name")
+    const { data: storesData } = await supabaseB2B.from("faire_stores").select("id, name")
     const storeMap: Record<string, string> = {}
     for (const s of storesData ?? []) {
       storeMap[s.id] = s.name
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
     ordersBySource.sort((a, b) => b.count - a.count)
 
     // Top retailers from faire_retailers
-    let retailersQuery = supabase
+    let retailersQuery = supabaseB2B
       .from("faire_retailers")
       .select("name, company_name, total_orders, total_spent_cents")
       .gt("total_orders", 0)

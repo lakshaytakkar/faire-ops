@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase"
+import { supabase, supabaseB2B } from "@/lib/supabase"
 
 /**
  * Contact auto-matching utility for calls.
@@ -54,11 +54,11 @@ export async function matchContactsByPhone(
   const likePatterns = normalized.map((p) => `%${p}%`)
 
   const [retailersRes, vendorsRes, phoneNumbersRes] = await Promise.all([
-    supabase
+    supabaseB2B
       .from("faire_retailers")
       .select("faire_retailer_id, name, company_name, phone")
       .or(likePatterns.map((p) => `phone.ilike.${p}`).join(",")),
-    supabase
+    supabaseB2B
       .from("faire_vendors")
       .select("id, name, contact_name, phone")
       .or(likePatterns.map((p) => `phone.ilike.${p}`).join(",")),

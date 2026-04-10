@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
@@ -117,7 +117,7 @@ export default function StoreDetailPage() {
   })
 
   function fetchStore() {
-    supabase
+    supabaseB2B
       .from("faire_stores")
       .select("*")
       .eq("id", storeId)
@@ -158,7 +158,7 @@ export default function StoreDetailPage() {
 
   useEffect(() => {
     if (!store) return
-    supabase
+    supabaseB2B
       .from("faire_stores")
       .select("id")
       .eq("active", true)
@@ -176,7 +176,7 @@ export default function StoreDetailPage() {
   async function handleSave() {
     if (!store) return
     setSaving(true)
-    await supabase.from("faire_stores").update(form).eq("id", store.id)
+    await supabaseB2B.from("faire_stores").update(form).eq("id", store.id)
     setSaving(false)
     setEditing(false)
     fetchStore()

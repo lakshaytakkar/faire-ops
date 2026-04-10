@@ -1,12 +1,5 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-  )
-}
+import { supabaseB2B } from "@/lib/supabase"
 
 export async function POST(request: Request) {
   try {
@@ -28,7 +21,7 @@ export async function POST(request: Request) {
     const total_cost_cents = itemTotal + shipping_cost_cents
 
     // Update the quote
-    const { data: quote, error: updateError } = await getSupabase()
+    const { data: quote, error: updateError } = await supabaseB2B
       .from("vendor_quotes")
       .update({
         items,
@@ -50,14 +43,14 @@ export async function POST(request: Request) {
     }
 
     // Check if all quotes for this order are now "quoted"
-    const { data: pendingQuotes } = await getSupabase()
+    const { data: pendingQuotes } = await supabaseB2B
       .from("vendor_quotes")
       .select("id")
       .eq("order_id", quote.order_id)
       .neq("status", "quoted")
 
     if (!pendingQuotes || pendingQuotes.length === 0) {
-      await getSupabase()
+      await supabaseB2B
         .from("faire_orders")
         .update({ quote_status: "quoted" })
         .eq("faire_order_id", quote.order_id)

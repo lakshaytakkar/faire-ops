@@ -6,7 +6,7 @@ import {
   Image as ImageIcon, Reply, Smile, Pencil, Trash2, Check, Plus,
   ChevronDown, MessageSquare, Search,
 } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabase, supabaseB2B } from "@/lib/supabase"
 import { RichTextEditor, RichTextRenderer, richTextToPlain } from "@/components/shared/rich-text-editor"
 
 /* ------------------------------------------------------------------ */
@@ -374,7 +374,7 @@ export default function ChatPage() {
       const [chRes, tmRes, vRes] = await Promise.all([
         supabase.from("chat_channels").select("*").order("created_at", { ascending: true }),
         supabase.from("team_members").select("id, name, role, status, avatar_url").order("name"),
-        supabase.from("faire_vendors").select("id, name, contact_name").order("name"),
+        supabaseB2B.from("faire_vendors").select("id, name, contact_name").order("name"),
       ])
       const chs = (chRes.data ?? []) as Channel[]
       setChannels(chs)

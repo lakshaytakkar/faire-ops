@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Store, ShoppingCart, Package, Trophy, ArrowUpDown, RefreshCw, CheckCircle, AlertTriangle, Clock } from "lucide-react"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 import { useOrderStats } from "@/lib/use-faire-data"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -90,7 +90,7 @@ export default function StoreComparisonPage() {
 
   /* Fetch sync logs */
   useEffect(() => {
-    supabase
+    supabaseB2B
       .from("sync_log")
       .select("*")
       .order("started_at", { ascending: false })

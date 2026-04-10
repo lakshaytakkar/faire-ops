@@ -25,7 +25,7 @@ import {
   LineChart,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import {
   useCampaign,
   useCampaigns,
@@ -237,7 +237,7 @@ function SettingsCard({
 
   async function handleSave() {
     setSaving(true)
-    await supabase
+    await supabaseB2B
       .from("meta_campaigns")
       .update({
         budget_cents: Math.round(parseFloat(form.budget_cents || "0") * 100),
@@ -457,7 +457,7 @@ export default function CampaignDetailPage() {
 
   /* Refetch campaign */
   const refetchCampaign = useCallback(async () => {
-    const { data } = await supabase
+    const { data } = await supabaseB2B
       .from("meta_campaigns")
       .select("*")
       .eq("id", id)
@@ -469,7 +469,7 @@ export default function CampaignDetailPage() {
   async function toggleStatus() {
     if (!localCampaign) return
     const newStatus = localCampaign.status === "ACTIVE" ? "PAUSED" : "ACTIVE"
-    await supabase
+    await supabaseB2B
       .from("meta_campaigns")
       .update({ status: newStatus })
       .eq("id", localCampaign.id)
@@ -480,7 +480,7 @@ export default function CampaignDetailPage() {
   async function handleDuplicate() {
     if (!localCampaign) return
     const { id: _id, created_at, updated_at, ...rest } = localCampaign
-    const { data } = await supabase
+    const { data } = await supabaseB2B
       .from("meta_campaigns")
       .insert({
         ...rest,
@@ -503,7 +503,7 @@ export default function CampaignDetailPage() {
   /* Archive */
   async function handleArchive() {
     if (!localCampaign) return
-    await supabase
+    await supabaseB2B
       .from("meta_campaigns")
       .update({ status: "ARCHIVED" })
       .eq("id", localCampaign.id)

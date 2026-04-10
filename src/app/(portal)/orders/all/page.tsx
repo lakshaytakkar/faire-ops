@@ -7,7 +7,7 @@ import { PageResourcesButton } from "@/components/shared/page-resources"
 import { Search, DollarSign, Clock, Truck, Package, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, SlidersHorizontal, X, List, LayoutGrid } from "lucide-react"
 import { useOrders, useOrderStats } from "@/lib/use-faire-data"
 import { useBrandFilter } from "@/lib/brand-filter-context"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import type { FaireOrder } from "@/lib/supabase"
 
 const STATE_BADGE: Record<string, { variant: string; label: string }> = {
@@ -96,7 +96,7 @@ export default function OrdersPage() {
       .filter((o) => ["IN_TRANSIT", "PRE_TRANSIT"].includes(o.state))
       .map((o) => o.faire_order_id)
     if (inTransitIds.length === 0) return
-    supabase
+    supabaseB2B
       .from("shipment_tracking")
       .select("order_id, status, transit_days, is_delayed, last_event")
       .in("order_id", inTransitIds)

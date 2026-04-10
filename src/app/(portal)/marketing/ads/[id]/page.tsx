@@ -17,7 +17,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import {
   useAd,
   useAdReports,
@@ -172,7 +172,7 @@ export default function AdDetailPage() {
   async function handleSave() {
     if (!ad) return
     setSaving(true)
-    await supabase
+    await supabaseB2B
       .from("meta_ads")
       .update({
         headline: form.headline || null,

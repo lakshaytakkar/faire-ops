@@ -8,7 +8,7 @@ import {
 } from "lucide-react"
 import { useRetailers } from "@/lib/use-faire-data"
 import { useBrandFilter } from "@/lib/brand-filter-context"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import type { FaireRetailer } from "@/lib/supabase"
 
 /* ------------------------------------------------------------------ */
@@ -97,7 +97,7 @@ function AddRetailerDialog({ open, onClose, onSuccess }: { open: boolean; onClos
     setSaving(true)
     setError(null)
     try {
-      const { error: dbError } = await supabase.from("faire_retailers").insert({
+      const { error: dbError } = await supabaseB2B.from("faire_retailers").insert({
         faire_retailer_id: `manual_${Date.now()}`,
         company_name: form.company_name.trim(),
         name: form.name.trim() || null,
@@ -239,7 +239,7 @@ function BulkEnrichModal({ open, onClose, retailers, onSaved }: {
     if (!r) return
     setSaving(true)
     try {
-      await supabase.from("faire_retailers").update({
+      await supabaseB2B.from("faire_retailers").update({
         phone: form.phone.trim() || null,
         city: form.city.trim() || null,
         state: form.state.trim() || null,
@@ -461,21 +461,21 @@ export default function RetailersDirectoryPage() {
         activeFaireStoreId ? q.contains("store_ids", [activeFaireStoreId]) : q
 
       const activeQuery = withStore(
-        supabase
+        supabaseB2B
           .from("faire_retailers")
           .select("*", { count: "exact", head: true })
           .gte("last_order_at", sixtyDaysAgoISO)
       )
 
       const newQuery = withStore(
-        supabase
+        supabaseB2B
           .from("faire_retailers")
           .select("*", { count: "exact", head: true })
           .eq("total_orders", 0)
       )
 
       const vipQuery = withStore(
-        supabase
+        supabaseB2B
           .from("faire_retailers")
           .select("*", { count: "exact", head: true })
           .gte("total_orders", 10)
@@ -483,7 +483,7 @@ export default function RetailersDirectoryPage() {
 
       // pill "inactive": 1-9 orders AND last_order_at < 60 days ago
       const inactiveQuery = withStore(
-        supabase
+        supabaseB2B
           .from("faire_retailers")
           .select("*", { count: "exact", head: true })
           .gte("total_orders", 1)
@@ -494,7 +494,7 @@ export default function RetailersDirectoryPage() {
       // pill "active": 1-9 orders AND (last_order_at IS NULL OR last_order_at >= 60 days ago)
       // Two queries (no OR support for IS NULL + gte easily) — sum them.
       const pillActiveRecent = withStore(
-        supabase
+        supabaseB2B
           .from("faire_retailers")
           .select("*", { count: "exact", head: true })
           .gte("total_orders", 1)
@@ -502,7 +502,7 @@ export default function RetailersDirectoryPage() {
           .gte("last_order_at", sixtyDaysAgoISO)
       )
       const pillActiveNullDate = withStore(
-        supabase
+        supabaseB2B
           .from("faire_retailers")
           .select("*", { count: "exact", head: true })
           .gte("total_orders", 1)

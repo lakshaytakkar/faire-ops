@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { FileText, Clock, CheckCircle, Package, ChevronLeft, ChevronRight, Send, Truck } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 
 /* ------------------------------------------------------------------ */
@@ -106,9 +106,9 @@ export default function QuotesPage() {
   /* ---- Fetch data ---- */
   const fetchData = useCallback(async () => {
     const [quotesRes, vendorsRes, ordersRes] = await Promise.all([
-      supabase.from("vendor_quotes").select("*").order("created_at", { ascending: false }),
-      supabase.from("faire_vendors").select("id, name"),
-      supabase.from("faire_orders").select("faire_order_id, display_id, total_cents, shipping_address, store_id, quote_status"),
+      supabaseB2B.from("vendor_quotes").select("*").order("created_at", { ascending: false }),
+      supabaseB2B.from("faire_vendors").select("id, name"),
+      supabaseB2B.from("faire_orders").select("faire_order_id, display_id, total_cents, shipping_address, store_id, quote_status"),
     ])
     setQuotes(quotesRes.data ?? [])
     setVendors(vendorsRes.data ?? [])
@@ -228,7 +228,7 @@ export default function QuotesPage() {
   async function handleRejectQuote(quoteId: string) {
     setRejectingQuoteIds((prev) => new Set(prev).add(quoteId))
     try {
-      await supabase.from("vendor_quotes").update({ status: "rejected" }).eq("id", quoteId)
+      await supabaseB2B.from("vendor_quotes").update({ status: "rejected" }).eq("id", quoteId)
       await fetchData()
     } finally {
       setRejectingQuoteIds((prev) => { const s = new Set(prev); s.delete(quoteId); return s })

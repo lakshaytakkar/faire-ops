@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { X, LifeBuoy, Tag, User, AlertTriangle, Search } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabase, supabaseB2B } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 
 // ---------------------------------------------------------------------------
@@ -125,7 +125,7 @@ export function NewTicketModal({
     if (!open || source !== "client") return
     let cancelled = false
     async function run() {
-      let query = supabase
+      let query = supabaseB2B
         .from("faire_retailers")
         .select("id, name, company_name")
         .order("last_order_at", { ascending: false })

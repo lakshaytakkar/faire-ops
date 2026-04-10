@@ -14,7 +14,7 @@ import {
 } from "lucide-react"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 import { useOrderStats } from "@/lib/use-faire-data"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { ComposableMap, Geographies, Geography } from "react-simple-maps"
 
 /* ------------------------------------------------------------------ */
@@ -252,13 +252,13 @@ export default function ConsolidatedAnalyticsPage() {
       setPeriodCountsLoading(true)
       const startIso = periodStartIso(period)
 
-      let countQ = supabase
+      let countQ = supabaseB2B
         .from("faire_orders")
         .select("*", { count: "exact", head: true })
       if (storeFilter) countQ = countQ.eq("store_id", storeFilter)
       if (startIso) countQ = countQ.gte("faire_created_at", startIso)
 
-      let revQ = supabase
+      let revQ = supabaseB2B
         .from("faire_orders")
         .select("total_cents")
         .range(0, 50000)
@@ -300,13 +300,13 @@ export default function ConsolidatedAnalyticsPage() {
 
       const rows = await Promise.all(
         scopedStores.map(async (store) => {
-          let cq = supabase
+          let cq = supabaseB2B
             .from("faire_orders")
             .select("*", { count: "exact", head: true })
             .eq("store_id", store.id)
           if (startIso) cq = cq.gte("faire_created_at", startIso)
 
-          let rq = supabase
+          let rq = supabaseB2B
             .from("faire_orders")
             .select("total_cents")
             .eq("store_id", store.id)
@@ -349,7 +349,7 @@ export default function ConsolidatedAnalyticsPage() {
       setRecentOrdersLoading(true)
       const startIso = periodStartIso(period)
 
-      let q = supabase
+      let q = supabaseB2B
         .from("faire_orders")
         .select("store_id, total_cents, faire_created_at, shipping_address, raw_data")
         .order("faire_created_at", { ascending: false })
@@ -379,7 +379,7 @@ export default function ConsolidatedAnalyticsPage() {
       const sixMonthsAgo = new Date()
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
 
-      let q = supabase
+      let q = supabaseB2B
         .from("faire_orders")
         .select("store_id, total_cents, faire_created_at, shipping_address, raw_data")
         .gte("faire_created_at", sixMonthsAgo.toISOString())
@@ -410,7 +410,7 @@ export default function ConsolidatedAnalyticsPage() {
       const since = new Date()
       since.setDate(since.getDate() - daysBack)
 
-      let query = supabase
+      let query = supabaseB2B
         .from("store_daily_views")
         .select("store_id, view_date, view_count")
         .gte("view_date", since.toISOString().slice(0, 10))
@@ -467,7 +467,7 @@ export default function ConsolidatedAnalyticsPage() {
     }
     let cancelled = false
     async function run() {
-      let q = supabase
+      let q = supabaseB2B
         .from("faire_products")
         .select("faire_product_id, name, wholesale_price_cents")
         .order("faire_updated_at", { ascending: false })
@@ -507,7 +507,7 @@ export default function ConsolidatedAnalyticsPage() {
     let cancelled = false
     async function run() {
       setTopCategoriesLoading(true)
-      let q = supabase
+      let q = supabaseB2B
         .from("faire_products")
         .select("faire_product_id, category")
         .range(0, 2000)

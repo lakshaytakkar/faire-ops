@@ -16,7 +16,7 @@ import {
   Pencil,
 } from "lucide-react"
 import { Dialog } from "@base-ui/react/dialog"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -204,7 +204,7 @@ export default function MarketingCalendarPage() {
   /* ---- Fetch ---- */
   const fetchEvents = useCallback(async () => {
     setLoading(true)
-    const { data, error } = await supabase
+    const { data, error } = await supabaseB2B
       .from("marketing_events")
       .select("*")
       .order("start_date", { ascending: true })
@@ -330,9 +330,9 @@ export default function MarketingCalendarPage() {
     }
 
     if (editingId) {
-      await supabase.from("marketing_events").update(payload).eq("id", editingId)
+      await supabaseB2B.from("marketing_events").update(payload).eq("id", editingId)
     } else {
-      await supabase.from("marketing_events").insert(payload)
+      await supabaseB2B.from("marketing_events").insert(payload)
     }
 
     setSaving(false)
@@ -343,7 +343,7 @@ export default function MarketingCalendarPage() {
 
   async function handleDelete() {
     if (!deleteId) return
-    await supabase.from("marketing_events").delete().eq("id", deleteId)
+    await supabaseB2B.from("marketing_events").delete().eq("id", deleteId)
     setDeleteId(null)
     fetchEvents()
   }

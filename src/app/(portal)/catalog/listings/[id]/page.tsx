@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Package, ExternalLink, Tag, ImageIcon, RefreshCw, Share2, ChevronLeft, ChevronRight, Sparkles, Wand2, Check, X, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import type { FaireProduct } from "@/lib/supabase"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 import { generateText, isGeminiConfigured } from "@/lib/gemini"
@@ -123,7 +123,7 @@ export default function ProductDetailPage() {
   const [descRewrite, setDescRewrite] = useState<{mode: "idle" | "suggest" | "loading" | "result", suggestions: string, result: string}>({mode: "idle", suggestions: "", result: ""})
 
   useEffect(() => {
-    supabase
+    supabaseB2B
       .from("faire_products")
       .select("*")
       .eq("faire_product_id", params.id)
@@ -140,7 +140,7 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (!product) return
-    supabase
+    supabaseB2B
       .from("faire_products")
       .select("faire_product_id")
       .order("faire_updated_at", { ascending: false })

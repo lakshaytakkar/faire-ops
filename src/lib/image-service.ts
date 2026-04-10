@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase"
+import { supabase, supabaseB2B } from "@/lib/supabase"
 
 const BUCKET = "images"
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""
@@ -56,7 +56,7 @@ export async function saveProductImage(args: {
   fileSizeBytes: number
   description?: string
 }) {
-  const { error } = await supabase.from("product_images").insert({
+  const { error } = await supabaseB2B.from("product_images").insert({
     faire_product_id: args.faireProductId,
     store_id: args.storeId,
     storage_path: args.storagePath,
@@ -82,7 +82,7 @@ export async function saveStoreAsset(args: {
   fileName: string
   description?: string
 }) {
-  const { error } = await supabase.from("store_assets").insert({
+  const { error } = await supabaseB2B.from("store_assets").insert({
     store_id: args.storeId,
     asset_type: args.assetType,
     storage_path: args.storagePath,
@@ -99,7 +99,7 @@ export async function saveStoreAsset(args: {
 /* ------------------------------------------------------------------ */
 
 export async function getProductImages(faireProductId: string) {
-  const { data } = await supabase
+  const { data } = await supabaseB2B
     .from("product_images")
     .select("*")
     .eq("faire_product_id", faireProductId)
@@ -108,7 +108,7 @@ export async function getProductImages(faireProductId: string) {
 }
 
 export async function getStoreAssets(storeId: string, assetType?: string) {
-  let query = supabase
+  let query = supabaseB2B
     .from("store_assets")
     .select("*")
     .eq("store_id", storeId)

@@ -16,7 +16,7 @@ import {
   ArrowDown,
 } from "lucide-react"
 import { Dialog } from "@base-ui/react/dialog"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -111,7 +111,7 @@ export default function VendorsPage() {
   /* ---- fetch ---- */
   const fetchVendors = useCallback(async () => {
     setLoading(true)
-    const { data, error } = await supabase
+    const { data, error } = await supabaseB2B
       .from("faire_vendors")
       .select("*")
       .order("name")
@@ -176,12 +176,12 @@ export default function VendorsPage() {
     }
 
     if (editingVendor) {
-      await supabase
+      await supabaseB2B
         .from("faire_vendors")
         .update(payload)
         .eq("id", editingVendor.id)
     } else {
-      await supabase.from("faire_vendors").insert(payload)
+      await supabaseB2B.from("faire_vendors").insert(payload)
     }
 
     setSaving(false)
@@ -191,7 +191,7 @@ export default function VendorsPage() {
 
   async function handleDelete() {
     if (!deleteId) return
-    await supabase.from("faire_vendors").delete().eq("id", deleteId)
+    await supabaseB2B.from("faire_vendors").delete().eq("id", deleteId)
     setDeleteId(null)
     fetchVendors()
   }

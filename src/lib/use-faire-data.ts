@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { supabase } from "@/lib/supabase"
+import { supabase, supabaseB2B } from "@/lib/supabase"
 import type { FaireStore, FaireOrder, FaireProduct, FaireRetailer } from "@/lib/supabase"
 
 /* ------------------------------------------------------------------ */
@@ -13,7 +13,7 @@ export function useStores() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase
+    supabaseB2B
       .from("faire_stores")
       .select("id, faire_store_id, name, color, short, category, total_orders, total_products, last_synced_at, active, logo_url")
       .eq("active", true)
@@ -40,7 +40,7 @@ export function useOrders(storeId?: string, state?: string, limit = 50) {
     setLoading(true)
     async function fetchAll() {
       // Fetch total count separately
-      let countQuery = supabase.from("faire_orders").select("*", { count: "exact", head: true })
+      let countQuery = supabaseB2B.from("faire_orders").select("*", { count: "exact", head: true })
       if (storeId) countQuery = countQuery.eq("store_id", storeId)
       if (state) countQuery = countQuery.eq("state", state)
       const { count } = await countQuery
@@ -53,7 +53,7 @@ export function useOrders(storeId?: string, state?: string, limit = 50) {
       let hasMore = true
       while (hasMore && from < limit) {
         const batchSize = Math.min(pageSize, limit - from)
-        let query = supabase
+        let query = supabaseB2B
           .from("faire_orders")
           .select("*")
           .order("faire_created_at", { ascending: false })
@@ -141,7 +141,7 @@ export function useOrderStats(storeId?: string, dateFilter: string = "All Time")
       const dateStart = getDateFilterStart(dateFilter)
 
       const countForState = (state: string) => {
-        let q = supabase
+        let q = supabaseB2B
           .from("faire_orders")
           .select("*", { count: "exact", head: true })
           .eq("state", state)
@@ -151,7 +151,7 @@ export function useOrderStats(storeId?: string, dateFilter: string = "All Time")
       }
 
       const totalCountPromise = (() => {
-        let q = supabase.from("faire_orders").select("*", { count: "exact", head: true })
+        let q = supabaseB2B.from("faire_orders").select("*", { count: "exact", head: true })
         if (storeId) q = q.eq("store_id", storeId)
         if (dateStart) q = q.gte("faire_created_at", dateStart)
         return q.then(({ count }) => count ?? 0)
@@ -221,7 +221,7 @@ export function useProducts(storeId?: string, limit = 50) {
     setLoading(true)
     async function fetchAll() {
       // Fetch total count separately
-      let countQuery = supabase.from("faire_products").select("*", { count: "exact", head: true })
+      let countQuery = supabaseB2B.from("faire_products").select("*", { count: "exact", head: true })
       if (storeId) countQuery = countQuery.eq("store_id", storeId)
       const { count } = await countQuery
       setTotalCount(count ?? 0)
@@ -233,7 +233,7 @@ export function useProducts(storeId?: string, limit = 50) {
       let hasMore = true
       while (hasMore && from < limit) {
         const batchSize = Math.min(pageSize, limit - from)
-        let query = supabase
+        let query = supabaseB2B
           .from("faire_products")
           .select("*")
           .order("faire_updated_at", { ascending: false })
@@ -270,7 +270,7 @@ export function useRetailers(limit = 5000, faireStoreId?: string) {
 
   useEffect(() => {
     // Fetch count separately (not affected by row limit)
-    let countQuery = supabase
+    let countQuery = supabaseB2B
       .from("faire_retailers")
       .select("*", { count: "exact", head: true })
     if (faireStoreId) countQuery = countQuery.contains("store_ids", [faireStoreId])
@@ -287,7 +287,7 @@ export function useRetailers(limit = 5000, faireStoreId?: string) {
 
       while (hasMore && from < limit) {
         const to = Math.min(from + pageSize - 1, limit - 1)
-        let query = supabase
+        let query = supabaseB2B
           .from("faire_retailers")
           .select("*")
           .order("total_orders", { ascending: false })
@@ -351,7 +351,7 @@ export function useSyncLogs(storeId?: string) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let query = supabase
+    let query = supabaseB2B
       .from("sync_log")
       .select("*")
       .order("started_at", { ascending: false })

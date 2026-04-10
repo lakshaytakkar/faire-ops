@@ -1,13 +1,6 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
 import { updateBrandProfile } from "@/lib/faire-api"
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-  )
-}
+import { supabaseB2B } from "@/lib/supabase"
 
 export async function POST(request: Request) {
   try {
@@ -18,7 +11,7 @@ export async function POST(request: Request) {
     }
 
     // Get store credentials
-    const { data: store } = await getSupabase()
+    const { data: store } = await supabaseB2B
       .from("faire_stores")
       .select("oauth_token, app_credentials")
       .eq("id", store_id)

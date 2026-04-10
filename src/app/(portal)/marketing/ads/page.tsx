@@ -20,7 +20,7 @@ import {
   ExternalLink,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import {
   useAds,
   useAdSets,
@@ -174,7 +174,7 @@ function CreateAdModal({
     if (!form.name || !form.ad_set_id) return
     setSaving(true)
 
-    await supabase.from("meta_ads").insert({
+    await supabaseB2B.from("meta_ads").insert({
       name: form.name,
       ad_set_id: form.ad_set_id,
       headline: form.headline || null,
@@ -401,7 +401,7 @@ export default function AdsPage() {
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this ad?")) return
-    await supabase.from("meta_ads").delete().eq("id", id)
+    await supabaseB2B.from("meta_ads").delete().eq("id", id)
     setMenuId(null)
     refetch()
   }

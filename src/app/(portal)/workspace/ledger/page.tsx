@@ -16,7 +16,7 @@ import {
   ArrowDown,
 } from "lucide-react"
 import { Dialog } from "@base-ui/react/dialog"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -160,12 +160,12 @@ export default function LedgerPage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     const [entriesRes, vendorsRes, storesRes] = await Promise.all([
-      supabase
+      supabaseB2B
         .from("faire_ledger_entries")
         .select("*")
         .order("entry_date", { ascending: false }),
-      supabase.from("faire_vendors").select("id, name").order("name"),
-      supabase.from("faire_stores").select("id, name").order("name"),
+      supabaseB2B.from("faire_vendors").select("id, name").order("name"),
+      supabaseB2B.from("faire_stores").select("id, name").order("name"),
     ])
 
     if (entriesRes.error) console.error("fetchEntries:", entriesRes.error)
@@ -268,12 +268,12 @@ export default function LedgerPage() {
     }
 
     if (editingEntry) {
-      await supabase
+      await supabaseB2B
         .from("faire_ledger_entries")
         .update(payload)
         .eq("id", editingEntry.id)
     } else {
-      await supabase.from("faire_ledger_entries").insert(payload)
+      await supabaseB2B.from("faire_ledger_entries").insert(payload)
     }
 
     setSaving(false)
@@ -283,7 +283,7 @@ export default function LedgerPage() {
 
   async function handleDelete() {
     if (!deleteId) return
-    await supabase.from("faire_ledger_entries").delete().eq("id", deleteId)
+    await supabaseB2B.from("faire_ledger_entries").delete().eq("id", deleteId)
     setDeleteId(null)
     fetchData()
   }

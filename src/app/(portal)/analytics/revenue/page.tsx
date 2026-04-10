@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { DollarSign, TrendingUp, ShoppingCart, Percent, ArrowUpDown, ArrowUp, ArrowDown, Plus, X, AlertCircle, Check } from "lucide-react"
 import { useBrandFilter } from "@/lib/brand-filter-context"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -76,7 +76,7 @@ export default function AnalyticsPage() {
       setOrdersLoading(true)
       const sixMonthsAgo = new Date()
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
-      let query = supabase
+      let query = supabaseB2B
         .from("faire_orders")
         .select("total_cents, store_id, state, faire_created_at")
         .gte("faire_created_at", sixMonthsAgo.toISOString())
@@ -98,7 +98,7 @@ export default function AnalyticsPage() {
       const daysBack = parseInt(period, 10)
       const since = new Date()
       since.setDate(since.getDate() - daysBack)
-      let query = supabase
+      let query = supabaseB2B
         .from("store_daily_views")
         .select("store_id, view_date, view_count")
         .gte("view_date", since.toISOString().slice(0, 10))
@@ -182,7 +182,7 @@ export default function AnalyticsPage() {
       const daysBack = parseInt(period, 10)
       const since = new Date()
       since.setDate(since.getDate() - daysBack)
-      const { data } = await supabase
+      const { data } = await supabaseB2B
         .from("store_daily_views")
         .select("store_id, view_date, view_count")
         .gte("view_date", since.toISOString().slice(0, 10))

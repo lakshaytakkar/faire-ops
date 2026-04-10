@@ -14,7 +14,7 @@ import {
   Package,
   ExternalLink,
 } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabase, supabaseB2B } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { SubNav } from "@/components/shared/sub-nav"
 import { NewTicketModal } from "@/components/shared/new-ticket-modal"
@@ -184,7 +184,7 @@ export default function ClientTicketsPage() {
         .limit(500),
       supabase.from("users").select("id, full_name, email, avatar_url").limit(500),
       supabase.from("ticket_categories").select("id, name, color"),
-      supabase
+      supabaseB2B
         .from("faire_retailers")
         .select("id, name, company_name")
         .order("last_order_at", { ascending: false })

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { sendEmail, isResendConfigured } from "@/lib/resend"
+import { supabaseB2B } from "@/lib/supabase"
 
 function getSupabase() {
   return createClient(
@@ -42,7 +43,7 @@ export async function GET(request: Request) {
 
   try {
     // Fetch today's orders
-    const { data: todayOrders } = await supabase
+    const { data: todayOrders } = await supabaseB2B
       .from("faire_orders")
       .select("id, display_id, store_id, state, total_cents, item_count, faire_created_at")
       .gte("faire_created_at", startOfDay)
@@ -50,7 +51,7 @@ export async function GET(request: Request) {
       .order("faire_created_at", { ascending: false })
 
     // Fetch all stores for name lookup
-    const { data: stores } = await supabase
+    const { data: stores } = await supabaseB2B
       .from("faire_stores")
       .select("id, name, short")
 
@@ -231,7 +232,7 @@ export async function GET(request: Request) {
     }
 
     // Log the automation run
-    await supabase.from("sync_log").insert({
+    await supabaseB2B.from("sync_log").insert({
       store_id: null,
       type: "daily_sales_report",
       status: "success",

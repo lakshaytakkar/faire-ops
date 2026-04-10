@@ -12,7 +12,7 @@ import {
   Filter,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import {
   useCampaigns,
   formatCents,
@@ -252,7 +252,7 @@ export default function ReportBuilderPage() {
 
   const fetchReports = useCallback(async () => {
     setLoading(true)
-    let query = supabase
+    let query = supabaseB2B
       .from("meta_ad_reports")
       .select("*")
       .gte("report_date", startDate)

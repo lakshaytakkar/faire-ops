@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import type { FaireStore } from "@/lib/supabase"
 
 interface BrandFilterContextValue {
@@ -38,7 +38,7 @@ export function BrandFilterProvider({ children }: { children: ReactNode }) {
 
     async function load() {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseB2B
           .from("faire_stores")
           .select("id, faire_store_id, name, color, short, category, total_orders, total_products, last_synced_at, active, logo_url")
           .order("name")

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { RotateCcw, AlertTriangle, XCircle, Search, ChevronDown, ChevronRight, PackageX, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 import type { FaireOrder } from "@/lib/supabase"
 
@@ -100,7 +100,7 @@ export default function RefundsPage() {
   /* Fetch all orders, filter client-side for issues */
   useEffect(() => {
     setLoading(true)
-    supabase
+    supabaseB2B
       .from("faire_orders")
       .select("*")
       .eq("state", "CANCELED")

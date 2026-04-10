@@ -1,17 +1,8 @@
 "use client"
 
 import { useEffect, useState, useCallback, useMemo } from "react"
-import { createClient } from "@supabase/supabase-js"
 import { Package } from "lucide-react"
-
-/* ------------------------------------------------------------------ */
-/*  Supabase client (browser-side)                                     */
-/* ------------------------------------------------------------------ */
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-)
+import { supabaseB2B } from "@/lib/supabase"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -903,7 +894,7 @@ export default function VendorPortalPage() {
   /* ---- Fetch vendors on mount ---- */
   useEffect(() => {
     async function load() {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseB2B
         .from("faire_vendors")
         .select("*")
         .order("name")
@@ -925,25 +916,25 @@ export default function VendorPortalPage() {
     setDataLoading(true)
 
     const [pendingRes, approvedRes, shippedRes, ledgerRes] = await Promise.all([
-      supabase
+      supabaseB2B
         .from("vendor_quotes")
         .select("*")
         .eq("vendor_id", vid)
         .eq("status", "requested")
         .order("created_at", { ascending: false }),
-      supabase
+      supabaseB2B
         .from("vendor_quotes")
         .select("*")
         .eq("vendor_id", vid)
         .eq("status", "approved")
         .order("created_at", { ascending: false }),
-      supabase
+      supabaseB2B
         .from("vendor_quotes")
         .select("*")
         .eq("vendor_id", vid)
         .in("status", ["shipped", "delivered"])
         .order("shipped_at", { ascending: false }),
-      supabase
+      supabaseB2B
         .from("faire_ledger_entries")
         .select("*")
         .eq("vendor_id", vid)
@@ -974,7 +965,7 @@ export default function VendorPortalPage() {
     ]
 
     if (allOrderIds.length > 0) {
-      const { data: ordersData, error: ordersErr } = await supabase
+      const { data: ordersData, error: ordersErr } = await supabaseB2B
         .from("faire_orders")
         .select(
           "faire_order_id, display_id, total_cents, shipping_address, item_count, store_id, state"
@@ -1013,7 +1004,7 @@ export default function VendorPortalPage() {
       }
     }
     if (allProductIds.size === 0) return
-    supabase
+    supabaseB2B
       .from("faire_products")
       .select("faire_product_id, primary_image_url")
       .in("faire_product_id", Array.from(allProductIds))

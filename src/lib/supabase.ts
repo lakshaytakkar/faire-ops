@@ -5,6 +5,15 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+// Dedicated client for the b2b schema (faire_*, meta_*, collections, vendor_quotes,
+// marketing_*, scraped_products, shipment_tracking, store_*, sync_log, etc.).
+// supabase-js binds a client to a single schema, so anything that lives in b2b
+// must use this client. Foundation/portal tables (users, tasks, chat, etc.)
+// continue to use the default `supabase` client which targets the public schema.
+export const supabaseB2B = createClient(supabaseUrl, supabaseAnonKey, {
+  db: { schema: "b2b" },
+})
+
 /* ------------------------------------------------------------------ */
 /*  Store types                                                        */
 /* ------------------------------------------------------------------ */
@@ -86,7 +95,7 @@ export interface FaireRetailer {
 /* ------------------------------------------------------------------ */
 
 export async function getStores(): Promise<FaireStore[]> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseB2B
     .from("faire_stores")
     .select("id, faire_store_id, name, color, short, category, total_orders, total_products, last_synced_at, active, logo_url")
     .eq("active", true)
@@ -96,7 +105,7 @@ export async function getStores(): Promise<FaireStore[]> {
 }
 
 export async function getOrders(storeId?: string, state?: string, limit = 100): Promise<FaireOrder[]> {
-  let query = supabase
+  let query = supabaseB2B
     .from("faire_orders")
     .select("*")
     .order("faire_created_at", { ascending: false })
@@ -109,7 +118,7 @@ export async function getOrders(storeId?: string, state?: string, limit = 100): 
 }
 
 export async function getProducts(storeId?: string, limit = 200): Promise<FaireProduct[]> {
-  let query = supabase
+  let query = supabaseB2B
     .from("faire_products")
     .select("*")
     .order("faire_updated_at", { ascending: false })
@@ -121,7 +130,7 @@ export async function getProducts(storeId?: string, limit = 200): Promise<FaireP
 }
 
 export async function getRetailers(limit = 200): Promise<FaireRetailer[]> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseB2B
     .from("faire_retailers")
     .select("*")
     .order("last_order_at", { ascending: false })
@@ -131,7 +140,7 @@ export async function getRetailers(limit = 200): Promise<FaireRetailer[]> {
 }
 
 export async function getSyncLogs(storeId?: string, limit = 20) {
-  let query = supabase
+  let query = supabaseB2B
     .from("sync_log")
     .select("*")
     .order("started_at", { ascending: false })

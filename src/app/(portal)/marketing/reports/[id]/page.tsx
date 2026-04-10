@@ -11,7 +11,7 @@ import {
   AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import {
   useCampaigns,
   formatCents,
@@ -192,7 +192,7 @@ export default function SavedReportPage() {
     if (!savedReport) return
     setLoading(true)
     const { config } = savedReport
-    let query = supabase
+    let query = supabaseB2B
       .from("meta_ad_reports")
       .select("*")
       .gte("report_date", config.startDate)

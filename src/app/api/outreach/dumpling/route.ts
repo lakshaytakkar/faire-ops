@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { supabaseB2B } from "@/lib/supabase"
 
 function getSupabase() {
   return createClient(
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
   const { mode = "preview", limit = 5, channel = "both" } = await request.json().catch(() => ({}))
 
   // Fetch active retailers with phones
-  const { data: retailers } = await supabase
+  const { data: retailers } = await supabaseB2B
     .from("faire_retailers")
     .select("id, name, company_name, phone, total_orders, store_ids")
     .gt("total_orders", 0)

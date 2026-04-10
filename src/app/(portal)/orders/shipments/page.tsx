@@ -18,7 +18,7 @@ import {
   Copy,
   Check,
 } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 
 /* ------------------------------------------------------------------ */
@@ -152,7 +152,7 @@ export default function ShipmentsPage() {
     setLoading(true)
 
     // 1. Get all orders that are shipped/in-transit/delivered
-    const { data: shippedOrders } = await supabase
+    const { data: shippedOrders } = await supabaseB2B
       .from("faire_orders")
       .select("faire_order_id, display_id, store_id, state, total_cents, item_count, shipping_address, faire_created_at, raw_data")
       .in("state", ["IN_TRANSIT", "PRE_TRANSIT", "DELIVERED"])
@@ -165,7 +165,7 @@ export default function ShipmentsPage() {
     setOrderMap(oMap)
 
     // 2. Get all tracking entries
-    const { data: trackingData } = await supabase
+    const { data: trackingData } = await supabaseB2B
       .from("shipment_tracking")
       .select("*")
       .order("created_at", { ascending: false })

@@ -18,7 +18,7 @@ import {
 } from "lucide-react"
 import { useProducts } from "@/lib/use-faire-data"
 import { useBrandFilter } from "@/lib/brand-filter-context"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -116,7 +116,7 @@ export default function ListingsPage() {
   useEffect(() => {
     let cancelled = false
     async function loadPublishedCount() {
-      let query = supabase
+      let query = supabaseB2B
         .from("faire_products")
         .select("*", { count: "exact", head: true })
         .eq("lifecycle_state", "PUBLISHED")

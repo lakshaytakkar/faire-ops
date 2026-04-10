@@ -24,7 +24,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -181,9 +181,9 @@ export default function ApplicationDetailPage() {
   const fetchAll = useCallback(async () => {
     setLoading(true)
     const [appRes, followupsRes, linksRes] = await Promise.all([
-      supabase.from("faire_seller_applications").select("*").eq("id", id).single(),
-      supabase.from("faire_application_followups").select("*").eq("application_id", id).order("followup_date", { ascending: false }),
-      supabase.from("faire_application_links").select("*").eq("application_id", id),
+      supabaseB2B.from("faire_seller_applications").select("*").eq("id", id).single(),
+      supabaseB2B.from("faire_application_followups").select("*").eq("application_id", id).order("followup_date", { ascending: false }),
+      supabaseB2B.from("faire_application_links").select("*").eq("application_id", id),
     ])
 
     if (appRes.error || !appRes.data) {
@@ -202,7 +202,7 @@ export default function ApplicationDetailPage() {
 
   useEffect(() => {
     if (!app) return
-    supabase
+    supabaseB2B
       .from("faire_seller_applications")
       .select("id")
       .order("created_at", { ascending: false })
@@ -220,7 +220,7 @@ export default function ApplicationDetailPage() {
 
   async function updateStatus(status: SellerApplication["status"]) {
     if (!app) return
-    const { error } = await supabase
+    const { error } = await supabaseB2B
       .from("faire_seller_applications")
       .update({ status, updated_at: new Date().toISOString() })
       .eq("id", id)
@@ -233,7 +233,7 @@ export default function ApplicationDetailPage() {
     if (!app) return
     setSaving(true)
     const payload = { ...editFields, updated_at: new Date().toISOString() }
-    const { error } = await supabase
+    const { error } = await supabaseB2B
       .from("faire_seller_applications")
       .update(payload)
       .eq("id", id)
@@ -269,20 +269,20 @@ export default function ApplicationDetailPage() {
 
   async function addFollowup() {
     if (!newFollowup.followup_date) return
-    const { error } = await supabase
+    const { error } = await supabaseB2B
       .from("faire_application_followups")
       .insert({ application_id: id, ...newFollowup })
     if (!error) {
       setShowFollowupForm(false)
       setNewFollowup({ followup_date: "", followup_type: "note", note: "" })
       // Re-fetch followups
-      const { data } = await supabase.from("faire_application_followups").select("*").eq("application_id", id).order("followup_date", { ascending: false })
+      const { data } = await supabaseB2B.from("faire_application_followups").select("*").eq("application_id", id).order("followup_date", { ascending: false })
       setFollowups((data ?? []) as Followup[])
     }
   }
 
   async function deleteFollowup(fid: string) {
-    const { error } = await supabase.from("faire_application_followups").delete().eq("id", fid)
+    const { error } = await supabaseB2B.from("faire_application_followups").delete().eq("id", fid)
     if (!error) setFollowups((prev) => prev.filter((f) => f.id !== fid))
   }
 
@@ -290,19 +290,19 @@ export default function ApplicationDetailPage() {
 
   async function addLink() {
     if (!newLink.label || !newLink.url) return
-    const { error } = await supabase
+    const { error } = await supabaseB2B
       .from("faire_application_links")
       .insert({ application_id: id, ...newLink })
     if (!error) {
       setShowLinkForm(false)
       setNewLink({ label: "", url: "", link_type: "other" })
-      const { data } = await supabase.from("faire_application_links").select("*").eq("application_id", id)
+      const { data } = await supabaseB2B.from("faire_application_links").select("*").eq("application_id", id)
       setLinks((data ?? []) as AppLink[])
     }
   }
 
   async function deleteLink(lid: string) {
-    const { error } = await supabase.from("faire_application_links").delete().eq("id", lid)
+    const { error } = await supabaseB2B.from("faire_application_links").delete().eq("id", lid)
     if (!error) setLinks((prev) => prev.filter((l) => l.id !== lid))
   }
 

@@ -1,12 +1,5 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-  )
-}
+import { supabaseB2B } from "@/lib/supabase"
 
 export async function POST(request: Request) {
   try {
@@ -17,7 +10,7 @@ export async function POST(request: Request) {
     }
 
     // Get all active vendors
-    const { data: vendors, error: vendorsError } = await getSupabase()
+    const { data: vendors, error: vendorsError } = await supabaseB2B
       .from("faire_vendors")
       .select("id, name")
 
@@ -30,7 +23,7 @@ export async function POST(request: Request) {
     }
 
     // Get order details
-    const { data: order, error: orderError } = await getSupabase()
+    const { data: order, error: orderError } = await supabaseB2B
       .from("faire_orders")
       .select("faire_order_id, raw_data")
       .eq("faire_order_id", order_id)
@@ -59,7 +52,7 @@ export async function POST(request: Request) {
       })),
     }))
 
-    const { error: insertError } = await getSupabase()
+    const { error: insertError } = await supabaseB2B
       .from("vendor_quotes")
       .insert(quoteRows)
 
@@ -68,7 +61,7 @@ export async function POST(request: Request) {
     }
 
     // Update order quote_status
-    await getSupabase()
+    await supabaseB2B
       .from("faire_orders")
       .update({ quote_status: "requested" })
       .eq("faire_order_id", order_id)

@@ -17,7 +17,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useBrandFilter } from "@/lib/brand-filter-context"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { useRef } from "react"
 import { getActiveSpaceSlug } from "@/components/layout/space-dock"
 
@@ -395,8 +395,8 @@ export function TopNavigation() {
     const timer = setTimeout(async () => {
       const filterByStore = activeBrand !== "all"
 
-      let pendingQuery = supabase.from("faire_orders").select("*", { count: "exact", head: true }).eq("state", "NEW")
-      let processingQuery = supabase.from("faire_orders").select("*", { count: "exact", head: true }).eq("state", "PROCESSING")
+      let pendingQuery = supabaseB2B.from("faire_orders").select("*", { count: "exact", head: true }).eq("state", "NEW")
+      let processingQuery = supabaseB2B.from("faire_orders").select("*", { count: "exact", head: true }).eq("state", "PROCESSING")
       if (filterByStore) {
         pendingQuery = pendingQuery.eq("store_id", activeBrand)
         processingQuery = processingQuery.eq("store_id", activeBrand)

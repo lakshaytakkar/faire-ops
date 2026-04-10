@@ -18,7 +18,7 @@ import {
   Loader2,
   ExternalLink,
 } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 import type { FaireProduct } from "@/lib/supabase"
 
@@ -124,7 +124,7 @@ function EditDialog({
       /* keep existing */
     }
 
-    await supabase
+    await supabaseB2B
       .from("collections")
       .update({
         name: name.trim(),
@@ -228,7 +228,7 @@ export default function CollectionDetailPage() {
 
   // Fetch collection
   const fetchCollection = async () => {
-    const { data } = await supabase
+    const { data } = await supabaseB2B
       .from("collections")
       .select("*")
       .eq("id", id)
@@ -241,7 +241,7 @@ export default function CollectionDetailPage() {
   // Fetch matching products based on filter_rules
   const fetchProducts = async (col: Collection) => {
     const rules = col.filter_rules
-    let query = supabase
+    let query = supabaseB2B
       .from("faire_products")
       .select("*")
       .eq("store_id", col.store_id)

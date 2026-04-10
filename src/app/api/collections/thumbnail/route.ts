@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { generateImage, generateCollectionThumbnailPrompt } from "@/lib/gemini"
+import { supabaseB2B } from "@/lib/supabase"
 
 const BUCKET = "collection-thumbnails"
 
@@ -92,7 +93,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseB2B
       .from("collections")
       .update({ thumbnail_url: publicUrl })
       .eq("id", collection_id)
@@ -120,7 +121,7 @@ export async function GET() {
     const supabase = getSupabase()
     await ensureBucket(supabase)
 
-    const { data: collections, error: fetchError } = await supabase
+    const { data: collections, error: fetchError } = await supabaseB2B
       .from("collections")
       .select("id, name, collection_type")
       .is("thumbnail_url", null)
@@ -155,7 +156,7 @@ export async function GET() {
         )
 
         if (publicUrl) {
-          const { error: updateError } = await supabase
+          const { error: updateError } = await supabaseB2B
             .from("collections")
             .update({ thumbnail_url: publicUrl })
             .eq("id", collection.id)

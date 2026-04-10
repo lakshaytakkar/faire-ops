@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import {
   Store,
@@ -69,7 +69,7 @@ export default function WorkspaceStoresPage() {
   const [syncingStore, setSyncingStore] = useState<string | null>(null)
 
   function fetchStores() {
-    supabase
+    supabaseB2B
       .from("faire_stores")
       .select("*")
       .eq("active", true)

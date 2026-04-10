@@ -18,7 +18,7 @@ import {
   X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import {
   useCampaigns,
   formatCents,
@@ -122,7 +122,7 @@ function CreateCampaignModal({
     setSaving(true)
     setError("")
 
-    const { error: dbErr } = await supabase.from("meta_campaigns").insert({
+    const { error: dbErr } = await supabaseB2B.from("meta_campaigns").insert({
       name: form.name.trim(),
       objective: form.objective,
       budget_type: form.budget_type,
@@ -453,20 +453,20 @@ export default function CampaignsPage() {
     async (action: string, campaign: MetaCampaign) => {
       if (action === "toggle") {
         const newStatus = campaign.status === "ACTIVE" ? "PAUSED" : "ACTIVE"
-        await supabase
+        await supabaseB2B
           .from("meta_campaigns")
           .update({ status: newStatus })
           .eq("id", campaign.id)
         refetch()
       } else if (action === "archive") {
-        await supabase
+        await supabaseB2B
           .from("meta_campaigns")
           .update({ status: "ARCHIVED" })
           .eq("id", campaign.id)
         refetch()
       } else if (action === "duplicate") {
         const { id, created_at, updated_at, ...rest } = campaign
-        await supabase.from("meta_campaigns").insert({
+        await supabaseB2B.from("meta_campaigns").insert({
           ...rest,
           name: `${campaign.name} (Copy)`,
           status: "PAUSED",

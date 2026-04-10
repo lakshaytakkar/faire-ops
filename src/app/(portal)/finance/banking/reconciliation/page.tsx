@@ -9,7 +9,7 @@ import {
   Loader2,
   Search,
 } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabase, supabaseB2B } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -83,7 +83,7 @@ export default function ReconciliationPage() {
         .eq("is_reconciled", false)
         .order("transaction_date", { ascending: false })
         .limit(200),
-      supabase
+      supabaseB2B
         .from("faire_orders")
         .select("id, display_id, faire_order_id, total_cents, state, faire_created_at")
         .eq("state", "DELIVERED")

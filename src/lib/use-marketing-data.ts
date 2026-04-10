@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -143,7 +143,7 @@ export function useCampaigns() {
 
   const fetch = useCallback(async () => {
     setLoading(true)
-    const { data } = await supabase
+    const { data } = await supabaseB2B
       .from("meta_campaigns")
       .select("*")
       .order("updated_at", { ascending: false })
@@ -160,7 +160,7 @@ export function useCampaign(id: string) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.from("meta_campaigns").select("*").eq("id", id).single()
+    supabaseB2B.from("meta_campaigns").select("*").eq("id", id).single()
       .then(({ data }) => { setCampaign(data as MetaCampaign | null); setLoading(false) })
   }, [id])
 
@@ -173,7 +173,7 @@ export function useAdSets(campaignId?: string) {
 
   const fetch = useCallback(async () => {
     setLoading(true)
-    let query = supabase.from("meta_ad_sets").select("*").order("updated_at", { ascending: false })
+    let query = supabaseB2B.from("meta_ad_sets").select("*").order("updated_at", { ascending: false })
     if (campaignId) query = query.eq("campaign_id", campaignId)
     const { data } = await query
     setAdSets((data ?? []) as MetaAdSet[])
@@ -189,7 +189,7 @@ export function useAdSet(id: string) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.from("meta_ad_sets").select("*").eq("id", id).single()
+    supabaseB2B.from("meta_ad_sets").select("*").eq("id", id).single()
       .then(({ data }) => { setAdSet(data as MetaAdSet | null); setLoading(false) })
   }, [id])
 
@@ -202,7 +202,7 @@ export function useAds(adSetId?: string) {
 
   const fetch = useCallback(async () => {
     setLoading(true)
-    let query = supabase.from("meta_ads").select("*").order("updated_at", { ascending: false })
+    let query = supabaseB2B.from("meta_ads").select("*").order("updated_at", { ascending: false })
     if (adSetId) query = query.eq("ad_set_id", adSetId)
     const { data } = await query
     setAds((data ?? []) as MetaAd[])
@@ -218,7 +218,7 @@ export function useAd(id: string) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.from("meta_ads").select("*").eq("id", id).single()
+    supabaseB2B.from("meta_ads").select("*").eq("id", id).single()
       .then(({ data }) => { setAd(data as MetaAd | null); setLoading(false) })
   }, [id])
 
@@ -231,7 +231,7 @@ export function useCreatives() {
 
   const fetch = useCallback(async () => {
     setLoading(true)
-    const { data } = await supabase
+    const { data } = await supabaseB2B
       .from("meta_ad_creatives")
       .select("*")
       .order("updated_at", { ascending: false })
@@ -251,7 +251,7 @@ export function useAdReports(entityType?: string, entityId?: string, days = 30) 
     const since = new Date()
     since.setDate(since.getDate() - days)
 
-    let query = supabase
+    let query = supabaseB2B
       .from("meta_ad_reports")
       .select("*")
       .gte("report_date", since.toISOString().split("T")[0])
@@ -274,7 +274,7 @@ export function useMarketingBudgets() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase
+    supabaseB2B
       .from("marketing_budgets")
       .select("*")
       .order("month", { ascending: false })

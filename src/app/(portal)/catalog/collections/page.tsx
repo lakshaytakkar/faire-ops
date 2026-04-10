@@ -15,7 +15,7 @@ import {
   X,
   Loader2,
 } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import type { FaireProduct } from "@/lib/supabase"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 
@@ -124,7 +124,7 @@ function NewCollectionDialog({
       /* use empty */
     }
 
-    const { error } = await supabase.from("collections").insert({
+    const { error } = await supabaseB2B.from("collections").insert({
       name: name.trim(),
       description: description.trim() || null,
       store_id: storeId,
@@ -357,7 +357,7 @@ export default function CollectionsPage() {
    */
   const buildCollectionQuery = useCallback(
     (col: Collection, fields: string, productLimit: number) => {
-      let query = supabase.from("faire_products").select(fields).eq("store_id", col.store_id)
+      let query = supabaseB2B.from("faire_products").select(fields).eq("store_id", col.store_id)
 
       switch (col.collection_type) {
         case "category": {
@@ -418,18 +418,18 @@ export default function CollectionsPage() {
 
     // List fetch — bumped to 2000 so the in-memory sums (product_count /
     // distinct store_ids) are accurate for practically all workspaces.
-    let listQuery = supabase
+    let listQuery = supabaseB2B
       .from("collections")
       .select("*")
       .order("sort_order", { ascending: true })
       .limit(2000)
 
     // Count queries — unaffected by the list limit
-    let totalQuery = supabase
+    let totalQuery = supabaseB2B
       .from("collections")
       .select("*", { count: "exact", head: true })
 
-    let activeQuery = supabase
+    let activeQuery = supabaseB2B
       .from("collections")
       .select("*", { count: "exact", head: true })
       .eq("is_active", true)

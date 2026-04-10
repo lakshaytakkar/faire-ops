@@ -19,7 +19,7 @@ import {
   ArrowDown,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 import {
   useAdSet,
   useAds,
@@ -109,7 +109,7 @@ export default function AdSetDetailPage() {
   async function handleSave() {
     if (!adSet) return
     setSaving(true)
-    await supabase
+    await supabaseB2B
       .from("meta_ad_sets")
       .update({
         budget_cents: budgetCents,

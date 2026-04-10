@@ -1,12 +1,5 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
-  )
-}
+import { supabaseB2B } from "@/lib/supabase"
 
 /**
  * OAuth callback handler for Faire
@@ -92,8 +85,7 @@ export async function GET(request: Request) {
     const color = colors[Math.floor(Math.random() * colors.length)]
 
     // Insert or update store in DB
-    const supabase = getSupabase()
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseB2B
       .from("faire_stores")
       .select("id")
       .eq("oauth_token", oauthToken)
@@ -101,7 +93,7 @@ export async function GET(request: Request) {
 
     if (existing) {
       // Update existing
-      await supabase.from("faire_stores").update({
+      await supabaseB2B.from("faire_stores").update({
         oauth_token: oauthToken,
         app_credentials: appCredentials,
         active: !storeDisabled,
@@ -109,7 +101,7 @@ export async function GET(request: Request) {
     } else {
       // Insert new store
       const short = storeName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2)
-      await supabase.from("faire_stores").insert({
+      await supabaseB2B.from("faire_stores").insert({
         name: storeName,
         faire_store_id: (brandData.id as string) ?? `store_${Date.now()}`,
         oauth_token: oauthToken,

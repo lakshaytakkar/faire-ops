@@ -7,6 +7,7 @@ import {
   extractProductFields,
   extractRetailerFromOrder,
 } from "@/lib/faire-api"
+import { supabaseB2B } from "@/lib/supabase"
 
 function getSupabase() {
   return createClient(
@@ -18,7 +19,7 @@ function getSupabase() {
 export async function POST() {
   try {
     // Get all active stores
-    const { data: stores, error: storesError } = await getSupabase()
+    const { data: stores, error: storesError } = await supabaseB2B
       .from("faire_stores")
       .select("id, faire_store_id, name, oauth_token, app_credentials")
       .eq("active", true)
@@ -33,7 +34,7 @@ export async function POST() {
       const creds = { oauth_token: store.oauth_token, app_credentials: store.app_credentials }
 
       // Log sync start
-      const { data: logEntry } = await getSupabase()
+      const { data: logEntry } = await supabaseB2B
         .from("sync_log")
         .insert({ store_id: store.id, sync_type: "full", status: "started" })
         .select("id")
@@ -61,7 +62,7 @@ export async function POST() {
             store_id: store.id,
           }))
 
-          const { error: orderErr } = await getSupabase()
+          const { error: orderErr } = await supabaseB2B
             .from("faire_orders")
             .upsert(orderRows, { onConflict: "faire_order_id" })
 
@@ -82,7 +83,7 @@ export async function POST() {
               store_ids: [store.faire_store_id],
             }))
 
-            const { error: retErr } = await getSupabase()
+            const { error: retErr } = await supabaseB2B
               .from("faire_retailers")
               .upsert(retailerRows, { onConflict: "faire_retailer_id" })
 
@@ -106,7 +107,7 @@ export async function POST() {
             store_id: store.id,
           }))
 
-          const { error: prodErr } = await getSupabase()
+          const { error: prodErr } = await supabaseB2B
             .from("faire_products")
             .upsert(productRows, { onConflict: "faire_product_id" })
 
@@ -115,7 +116,7 @@ export async function POST() {
         }
 
         // Update store counts and sync time
-        await getSupabase()
+        await supabaseB2B
           .from("faire_stores")
           .update({
             total_orders: ordersSynced,
@@ -131,7 +132,7 @@ export async function POST() {
 
       // Update sync log
       if (logEntry?.id) {
-        await getSupabase()
+        await supabaseB2B
           .from("sync_log")
           .update({
             status: syncError ? "failed" : "completed",
@@ -153,26 +154,26 @@ export async function POST() {
 
     // Auto-request quotes for all NEW orders that don't have quotes yet
     try {
-      const { data: newOrders } = await getSupabase()
+      const { data: newOrders } = await supabaseB2B
         .from("faire_orders")
         .select("faire_order_id")
         .eq("state", "NEW")
         .or("quote_status.is.null,quote_status.eq.none")
 
       if (newOrders && newOrders.length > 0) {
-        const { data: vendors } = await getSupabase().from("faire_vendors").select("id")
+        const { data: vendors } = await supabaseB2B.from("faire_vendors").select("id")
         if (vendors && vendors.length > 0) {
           let quotesCreated = 0
           for (const order of newOrders) {
             // Check if quotes already exist for this order
-            const { count } = await getSupabase()
+            const { count } = await supabaseB2B
               .from("vendor_quotes")
               .select("*", { count: "exact", head: true })
               .eq("order_id", order.faire_order_id)
             if ((count ?? 0) > 0) continue
 
             // Get order items
-            const { data: orderData } = await getSupabase()
+            const { data: orderData } = await supabaseB2B
               .from("faire_orders")
               .select("raw_data")
               .eq("faire_order_id", order.faire_order_id)
@@ -191,8 +192,8 @@ export async function POST() {
               items,
             }))
 
-            await getSupabase().from("vendor_quotes").insert(quoteRows)
-            await getSupabase().from("faire_orders").update({ quote_status: "requested" }).eq("faire_order_id", order.faire_order_id)
+            await supabaseB2B.from("vendor_quotes").insert(quoteRows)
+            await supabaseB2B.from("faire_orders").update({ quote_status: "requested" }).eq("faire_order_id", order.faire_order_id)
             quotesCreated += vendors.length
           }
           if (quotesCreated > 0) console.log(`Auto-requested ${quotesCreated} quotes for ${newOrders.length} new orders`)

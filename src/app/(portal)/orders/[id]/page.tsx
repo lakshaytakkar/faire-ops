@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Package, Copy, Mail, Printer, ExternalLink, Truck, ChevronLeft, ChevronRight, Send, FileText, CheckCircle, Clock } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabase, supabaseB2B } from "@/lib/supabase"
 import type { FaireOrder } from "@/lib/supabase"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 import { Button } from "@/components/ui/button"
@@ -184,7 +184,7 @@ export default function OrderDetailPage() {
   const [trackingData, setTrackingData] = useState<any>(null)
 
   useEffect(() => {
-    supabase
+    supabaseB2B
       .from("faire_orders")
       .select("*")
       .eq("faire_order_id", params.id)
@@ -201,7 +201,7 @@ export default function OrderDetailPage() {
 
   useEffect(() => {
     if (!order) return
-    supabase
+    supabaseB2B
       .from("faire_orders")
       .select("faire_order_id")
       .order("faire_created_at", { ascending: false })
@@ -221,7 +221,7 @@ export default function OrderDetailPage() {
     const items = (order.raw_data as any)?.items ?? []
     const productIds = items.map((i: any) => i.product_id).filter(Boolean)
     if (productIds.length === 0) return
-    supabase
+    supabaseB2B
       .from("faire_products")
       .select("faire_product_id, primary_image_url")
       .in("faire_product_id", productIds)
@@ -253,7 +253,7 @@ export default function OrderDetailPage() {
     if (!order) return
     const quoteStatus = (order as unknown as Record<string, unknown>).quote_status as string | undefined
     if (!quoteStatus || quoteStatus === "none") return
-    supabase
+    supabaseB2B
       .from("vendor_quotes")
       .select("*, faire_vendors(name)")
       .eq("order_id", order.faire_order_id)
@@ -265,7 +265,7 @@ export default function OrderDetailPage() {
   // Fetch 17Track shipment tracking data
   useEffect(() => {
     if (!order) return
-    supabase
+    supabaseB2B
       .from("shipment_tracking")
       .select("*")
       .eq("order_id", order.faire_order_id)
@@ -285,7 +285,7 @@ export default function OrderDetailPage() {
       })
       setQuotesRequested(true)
       // Refetch order to get updated quote_status
-      const { data } = await supabase
+      const { data } = await supabaseB2B
         .from("faire_orders")
         .select("*")
         .eq("faire_order_id", order.faire_order_id)

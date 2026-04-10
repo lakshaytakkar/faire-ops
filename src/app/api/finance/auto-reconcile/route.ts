@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { supabaseB2B } from "@/lib/supabase"
 
 function getSupabase() {
   return createClient(
@@ -35,7 +36,7 @@ export async function POST() {
     const matchedSet = new Set((alreadyMatched ?? []).map(r => r.matched_order_id))
 
     // Get delivered orders
-    const { data: orders } = await getSupabase()
+    const { data: orders } = await supabaseB2B
       .from("faire_orders")
       .select("faire_order_id, display_id, total_cents, faire_created_at")
       .eq("state", "DELIVERED")
