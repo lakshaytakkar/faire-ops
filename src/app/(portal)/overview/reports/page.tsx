@@ -6,17 +6,10 @@ import { useRouter } from "next/navigation"
 import { FileText, Plus, X, Sparkles } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useBrandFilter } from "@/lib/brand-filter-context"
-import { SubNav } from "@/components/shared/sub-nav"
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
-
-const SUB_NAV_ITEMS = [
-  { title: "Dashboard", href: "/overview" },
-  { title: "Analytics", href: "/overview/analytics" },
-  { title: "Reports", href: "/overview/reports" },
-]
 
 type FilterKey = "all" | "daily" | "weekly" | "monthly" | "marketing" | "research" | "custom"
 
@@ -177,8 +170,6 @@ export default function DashboardReportsPage() {
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
-      <SubNav items={SUB_NAV_ITEMS} />
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

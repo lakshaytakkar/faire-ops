@@ -9,7 +9,6 @@ import {
   TrendingUp,
   ArrowRight,
 } from "lucide-react"
-import { SubNav } from "@/components/shared/sub-nav"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 import { useOrderStats } from "@/lib/use-faire-data"
 import { supabase } from "@/lib/supabase"
@@ -585,18 +584,10 @@ export default function ConsolidatedAnalyticsPage() {
     dailyRevenueLoading ||
     topCategoriesLoading
 
-  /* -------------- Sub-nav items -------------- */
-  const subNavItems = [
-    { title: "Dashboard", href: "/overview" },
-    { title: "Analytics", href: "/overview/analytics" },
-    { title: "Reports", href: "/overview/reports" },
-  ]
-
   /* -------------- Skeleton loading -------------- */
   if (loading) {
     return (
       <div className="max-w-[1440px] mx-auto w-full space-y-5">
-        <SubNav items={subNavItems} />
         <div className="flex items-start justify-between">
           <div>
             <Skeleton className="h-7 w-48" />
@@ -625,8 +616,6 @@ export default function ConsolidatedAnalyticsPage() {
   /* -------------- Render -------------- */
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
-      <SubNav items={subNavItems} />
-
       {/* ---- Header ---- */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
         <div>

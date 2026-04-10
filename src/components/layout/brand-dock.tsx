@@ -37,7 +37,7 @@ export function BrandDock() {
         )}
         title="All Stores"
       >
-        <Layers className="size-[18px] text-white" strokeWidth={2} />
+        <Layers className="size-4 text-white" strokeWidth={2} />
         {activeBrand === "all" && (
           <span className="absolute right-0 top-0 bottom-0 w-[2px] bg-white" />
         )}
