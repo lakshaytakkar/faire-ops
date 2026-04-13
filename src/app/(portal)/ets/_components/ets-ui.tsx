@@ -394,7 +394,7 @@ export function EtsTH({
   children,
   className,
 }: {
-  children: ReactNode
+  children?: ReactNode
   className?: string
 }) {
   return (
