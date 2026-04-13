@@ -56,6 +56,7 @@ interface StoreRevenueRow {
   id: string
   name: string
   color: string
+  logoUrl: string | null
   revenueCents: number
   orderCount: number
 }
@@ -65,6 +66,7 @@ interface BestsellerRow {
   name: string
   orders: number
   revenueCents: number
+  imageUrl?: string | null
 }
 
 interface CategoryRow {
@@ -322,6 +324,7 @@ export default function ConsolidatedAnalyticsPage() {
             id: store.id,
             name: store.name,
             color: store.color,
+            logoUrl: (store as { logo_url?: string | null }).logo_url ?? null,
             revenueCents,
             orderCount: count ?? 0,
           }
@@ -469,7 +472,7 @@ export default function ConsolidatedAnalyticsPage() {
     async function run() {
       let q = supabaseB2B
         .from("faire_products")
-        .select("faire_product_id, name, wholesale_price_cents")
+        .select("faire_product_id, name, wholesale_price_cents, primary_image_url")
         .order("faire_updated_at", { ascending: false })
         .limit(5)
       if (storeFilter) q = q.eq("store_id", storeFilter)
@@ -481,11 +484,13 @@ export default function ConsolidatedAnalyticsPage() {
             faire_product_id: string
             name: string
             wholesale_price_cents: number | null
+            primary_image_url: string | null
           }) => ({
             productId: p.faire_product_id,
             name: p.name,
             orders: 0,
             revenueCents: p.wholesale_price_cents ?? 0,
+            imageUrl: p.primary_image_url,
           }),
         ),
       )
@@ -495,6 +500,42 @@ export default function ConsolidatedAnalyticsPage() {
       cancelled = true
     }
   }, [bestsellers.length, recentOrdersLoading, storeFilter])
+
+  /* -------------- Bestseller product images (for order-derived rows) -------------- */
+  // The order-path bestsellers are computed from order items and don't carry
+  // a primary_image_url — fetch them in one batched IN() query keyed by the
+  // product ids that showed up in the top 5.
+  const [bestsellerImages, setBestsellerImages] = useState<Map<string, string | null>>(
+    new Map(),
+  )
+
+  useEffect(() => {
+    const ids = bestsellers.map((b) => b.productId).filter(Boolean)
+    if (ids.length === 0) {
+      setBestsellerImages(new Map())
+      return
+    }
+    let cancelled = false
+    async function run() {
+      const { data } = await supabaseB2B
+        .from("faire_products")
+        .select("faire_product_id, primary_image_url")
+        .in("faire_product_id", ids)
+      if (cancelled) return
+      const next = new Map<string, string | null>()
+      for (const row of (data ?? []) as Array<{
+        faire_product_id: string
+        primary_image_url: string | null
+      }>) {
+        next.set(row.faire_product_id, row.primary_image_url)
+      }
+      setBestsellerImages(next)
+    }
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [bestsellers])
 
   const displayBestsellers =
     bestsellers.length > 0 ? bestsellers : fallbackProducts
@@ -734,6 +775,7 @@ export default function ConsolidatedAnalyticsPage() {
         name: store.name,
         short: store.short,
         color: store.color,
+        logoUrl: (store as { logo_url?: string | null }).logo_url ?? null,
         category: store.category,
         orders: store.total_orders,
         products: store.total_products,
@@ -1094,12 +1136,23 @@ export default function ConsolidatedAnalyticsPage() {
               topStores.map((store) => (
                 <div
                   key={store.id}
-                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted/20 transition-colors"
+                  className="flex items-center gap-3 px-5 py-3.5 hover:bg-muted/20 transition-colors"
                 >
-                  <span
-                    className="h-2.5 w-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: store.color }}
-                  />
+                  {store.logoUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={store.logoUrl}
+                      alt=""
+                      className="h-8 w-8 rounded-md object-cover shrink-0 ring-1 ring-border/60"
+                    />
+                  ) : (
+                    <span
+                      className="h-8 w-8 rounded-md shrink-0 flex items-center justify-center text-[10px] font-bold text-white"
+                      style={{ backgroundColor: store.color }}
+                    >
+                      {store.name.slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{store.name}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
@@ -1129,27 +1182,44 @@ export default function ConsolidatedAnalyticsPage() {
                 No product sales data yet.
               </div>
             ) : (
-              displayBestsellers.map((prod, i) => (
-                <div
-                  key={prod.productId}
-                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted/20 transition-colors"
-                >
-                  <span className="h-6 w-6 rounded-md bg-muted/60 flex items-center justify-center text-xs font-semibold shrink-0 tabular-nums">
-                    {i + 1}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{prod.name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {prod.orders > 0
-                        ? `${prod.orders} orders`
-                        : "Recently updated"}
-                    </p>
+              displayBestsellers.map((prod, i) => {
+                const img = prod.imageUrl ?? bestsellerImages.get(prod.productId) ?? null
+                return (
+                  <div
+                    key={prod.productId}
+                    className="flex items-center gap-3 px-5 py-3.5 hover:bg-muted/20 transition-colors"
+                  >
+                    <div className="relative shrink-0">
+                      {img ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={img}
+                          alt=""
+                          className="h-10 w-10 rounded-md object-cover ring-1 ring-border/60 bg-muted/40"
+                        />
+                      ) : (
+                        <span className="h-10 w-10 rounded-md bg-muted/60 flex items-center justify-center text-[10px] font-semibold text-muted-foreground">
+                          {prod.name.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                      <span className="absolute -top-1 -left-1 h-4 w-4 rounded-full bg-foreground text-background flex items-center justify-center text-[9px] font-bold tabular-nums ring-2 ring-card">
+                        {i + 1}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{prod.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {prod.orders > 0
+                          ? `${prod.orders} orders`
+                          : "Recently updated"}
+                      </p>
+                    </div>
+                    <span className="text-sm font-medium tabular-nums shrink-0">
+                      {formatCurrency(prod.revenueCents)}
+                    </span>
                   </div>
-                  <span className="text-sm font-medium tabular-nums shrink-0">
-                    {formatCurrency(prod.revenueCents)}
-                  </span>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
         </div>
@@ -1198,13 +1268,22 @@ export default function ConsolidatedAnalyticsPage() {
                   >
                     <td className="px-4 py-3.5 text-sm">
                       <div className="flex items-center gap-2.5">
-                        <span
-                          className="h-7 w-7 rounded-full shrink-0 flex items-center justify-center text-[10px] font-bold text-white"
-                          style={{ backgroundColor: store.color }}
-                        >
-                          {store.short?.slice(0, 2).toUpperCase() ??
-                            store.name.slice(0, 2).toUpperCase()}
-                        </span>
+                        {store.logoUrl ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={store.logoUrl}
+                            alt=""
+                            className="h-7 w-7 rounded-md object-cover shrink-0 ring-1 ring-border/60"
+                          />
+                        ) : (
+                          <span
+                            className="h-7 w-7 rounded-md shrink-0 flex items-center justify-center text-[10px] font-bold text-white"
+                            style={{ backgroundColor: store.color }}
+                          >
+                            {store.short?.slice(0, 2).toUpperCase() ??
+                              store.name.slice(0, 2).toUpperCase()}
+                          </span>
+                        )}
                         <div className="min-w-0">
                           <span className="font-medium block truncate">
                             {store.name}
