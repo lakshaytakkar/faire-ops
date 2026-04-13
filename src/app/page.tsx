@@ -27,8 +27,13 @@ export default async function HomePage() {
   ])
   const activeApps = spaces.filter((s) => s.is_active)
 
-  const { checklistByProject, pagesByProject, pluginsByProject } =
-    await listAllProjectChildren(projects.map((p) => p.id))
+  const {
+    checklistByProject,
+    pagesByProject,
+    pluginsByProject,
+    credentialsByProject,
+    brandKitByProject,
+  } = await listAllProjectChildren(projects.map((p) => p.id))
 
   const summaryEntries: Array<[string, ChecklistSummary]> = projects.map(
     (p) => [p.id, summarizeChecklist(checklistByProject.get(p.id) ?? [])]
@@ -42,6 +47,8 @@ export default async function HomePage() {
         checklist: checklistByProject.get(p.id) ?? [],
         pages: pagesByProject.get(p.id) ?? [],
         plugins: pluginsByProject.get(p.id) ?? [],
+        credentials: credentialsByProject.get(p.id) ?? null,
+        brand_kit: brandKitByProject.get(p.id) ?? null,
       },
     ]
   )

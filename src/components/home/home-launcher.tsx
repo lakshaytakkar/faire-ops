@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import {
   ShoppingBag,
@@ -35,6 +35,8 @@ import { WallpaperSwitcher } from "@/components/home/wallpaper-switcher"
 import { InstallButton } from "@/components/home/install-button"
 import { PluginsCatalogue } from "@/components/home/plugins-catalogue"
 import { ProjectsGrid } from "@/components/home/projects-grid"
+import { ProjectsMatrix } from "@/components/home/projects-matrix"
+import { BrandKitGallery } from "@/components/home/brand-kit-gallery"
 import { ProjectDetailInline } from "@/components/home/project-detail-inline"
 import {
   PLUGIN_CATEGORIES,
@@ -311,31 +313,93 @@ function PluginsView() {
 /*  Projects view — compact list, click a row to open inline detail    */
 /* ------------------------------------------------------------------ */
 
+type ProjectsViewMode = "matrix" | "grid" | "kits"
+
 function ProjectsView({
   projects,
   summaries,
+  detailMap,
   selectedDetail,
-  onSelectSlug,
+  selectedDimension,
+  mode,
+  onModeChange,
+  onSelectCell,
   onBack,
 }: {
   projects: Project[]
   summaries: Map<string, ChecklistSummary>
+  detailMap: Map<string, ProjectWithChildren>
   selectedDetail: ProjectWithChildren | null
-  onSelectSlug: (slug: string) => void
+  selectedDimension: string | null
+  mode: ProjectsViewMode
+  onModeChange: (m: ProjectsViewMode) => void
+  onSelectCell: (slug: string, dimension?: string) => void
   onBack: () => void
 }) {
   return (
     <div className="relative min-h-screen flex flex-col items-center px-5 py-16">
-      <div className="w-full max-w-5xl rounded-2xl border border-white/10 bg-black/50 backdrop-blur-xl shadow-2xl p-5 md:p-8">
+      <div className="w-full max-w-7xl rounded-2xl border border-white/10 bg-black/50 backdrop-blur-xl shadow-2xl p-5 md:p-8">
         {selectedDetail ? (
-          <ProjectDetailInline project={selectedDetail} onBack={onBack} />
-        ) : (
-          <ProjectsGrid
-            projects={projects}
-            summaries={summaries}
-            tone="glass"
-            onSelectSlug={onSelectSlug}
+          <ProjectDetailInline
+            project={selectedDetail}
+            onBack={onBack}
+            initialExpandedDimension={selectedDimension}
           />
+        ) : (
+          <>
+            {/* Tri-toggle */}
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-xl font-bold font-heading text-white">
+                  Projects
+                </h2>
+                <p className="text-sm text-white/60 mt-0.5">
+                  Production readiness across every brand and surface.
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-0.5 h-8 p-0.5 rounded-md border border-white/15 bg-black/40">
+                {(["matrix", "grid", "kits"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => onModeChange(m)}
+                    className={cn(
+                      "inline-flex items-center h-7 px-3 rounded text-xs font-medium transition-colors",
+                      mode === m
+                        ? "bg-white text-black"
+                        : "text-white/60 hover:text-white hover:bg-white/10"
+                    )}
+                  >
+                    {m === "matrix" ? "Matrix" : m === "grid" ? "Grid" : "Brand kits"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {mode === "matrix" && (
+              <ProjectsMatrix
+                projects={projects}
+                detailMap={detailMap}
+                tone="glass"
+                onSelectSlug={onSelectCell}
+              />
+            )}
+            {mode === "grid" && (
+              <ProjectsGrid
+                projects={projects}
+                summaries={summaries}
+                tone="glass"
+                onSelectSlug={(slug) => onSelectCell(slug)}
+              />
+            )}
+            {mode === "kits" && (
+              <BrandKitGallery
+                projects={projects}
+                detailMap={detailMap}
+                onSelectSlug={(slug) => onSelectCell(slug, "brand-kit")}
+              />
+            )}
+          </>
         )}
       </div>
     </div>
@@ -367,6 +431,33 @@ export function HomeLauncher({
 }: HomeLauncherProps) {
   const [view, setView] = useState<View>("home")
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null)
+  const [selectedDimension, setSelectedDimension] = useState<string | null>(null)
+  const [projectsMode, setProjectsMode] = useState<ProjectsViewMode>("matrix")
+  const [projectsModeHydrated, setProjectsModeHydrated] = useState(false)
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("teamops:plugins-view-mode")
+      if (stored === "grid" || stored === "kits" || stored === "matrix") {
+        setProjectsMode(stored)
+      }
+    } catch {
+      /* ignore */
+    }
+    setProjectsModeHydrated(true)
+  }, [])
+
+  const setProjectsModeAndPersist = (m: ProjectsViewMode) => {
+    setProjectsMode(m)
+    if (projectsModeHydrated) {
+      try {
+        localStorage.setItem("teamops:plugins-view-mode", m)
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
   const summaryMap = useMemo(
     () => new Map(projectSummaries),
     [projectSummaries]
@@ -376,6 +467,16 @@ export function HomeLauncher({
     [projectDetails]
   )
   const selectedDetail = selectedSlug ? detailMap.get(selectedSlug) ?? null : null
+
+  const handleSelectCell = (slug: string, dimension?: string) => {
+    setSelectedSlug(slug)
+    setSelectedDimension(dimension ?? null)
+  }
+
+  const handleBack = () => {
+    setSelectedSlug(null)
+    setSelectedDimension(null)
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden">
@@ -456,9 +557,13 @@ export function HomeLauncher({
         <ProjectsView
           projects={projects}
           summaries={summaryMap}
+          detailMap={detailMap}
           selectedDetail={selectedDetail}
-          onSelectSlug={setSelectedSlug}
-          onBack={() => setSelectedSlug(null)}
+          selectedDimension={selectedDimension}
+          mode={projectsMode}
+          onModeChange={setProjectsModeAndPersist}
+          onSelectCell={handleSelectCell}
+          onBack={handleBack}
         />
       )}
 

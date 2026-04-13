@@ -34,7 +34,22 @@ export interface ChecklistItem {
   status: ChecklistStatus
   notes: string | null
   sort_order: number
+  parent_key: string | null
+  dimension: string | null
+  applicable: boolean
+  release_phase: "v1" | "v2"
 }
+
+export const DIMENSIONS: Array<{ key: string; label: string; sort_order: number }> = [
+  { key: "landing-page", label: "Landing Page", sort_order: 10 },
+  { key: "copywriting", label: "Copywriting", sort_order: 20 },
+  { key: "images", label: "Images", sort_order: 30 },
+  { key: "client-portal", label: "Client Portal", sort_order: 40 },
+  { key: "admin-portal", label: "Admin Portal", sort_order: 50 },
+  { key: "testing", label: "Testing", sort_order: 60 },
+  { key: "data-seeding", label: "Data Seeding", sort_order: 70 },
+  { key: "email-automation", label: "Email Automation", sort_order: 80 },
+]
 
 export interface ProjectPage {
   id: string
@@ -67,14 +82,105 @@ export interface Project {
   sort_order: number
 }
 
+export interface ProjectCredentials {
+  project_id: string
+  github_url: string | null
+  github_repo_slug: string | null
+  supabase_project_id: string | null
+  supabase_project_url: string | null
+  supabase_anon_key: string | null
+  supabase_dashboard_url: string | null
+  vercel_project_slug: string | null
+  vercel_dashboard_url: string | null
+  production_url: string | null
+  staging_url: string | null
+  dev_url: string | null
+  figma_url: string | null
+  notes: string | null
+}
+
+export interface ProjectBrandKit {
+  project_id: string
+  primary_color: string | null
+  accent_color: string | null
+  bg_color: string | null
+  text_color: string | null
+  font_heading: string | null
+  font_body: string | null
+  tagline: string | null
+  voice_guidelines: string | null
+  logo_full_url: string | null
+  logo_icon_url: string | null
+  logo_mono_url: string | null
+  logo_dark_url: string | null
+  image_style_notes: string | null
+}
+
 export interface ProjectWithChildren extends Project {
   checklist: ChecklistItem[]
   pages: ProjectPage[]
   plugins: ProjectPluginRow[]
+  credentials: ProjectCredentials | null
+  brand_kit: ProjectBrandKit | null
 }
 
 const PROJECT_COLUMNS =
   "id, slug, brand, brand_label, kind, name, description, version, url, color, sort_order"
+
+function normalizeChecklistItem(row: Record<string, unknown>): ChecklistItem {
+  return {
+    id: String(row.id ?? ""),
+    item_key: String(row.item_key ?? ""),
+    item_label: String(row.item_label ?? ""),
+    status: String(row.status ?? "pending") as ChecklistStatus,
+    notes: (row.notes as string | null) ?? null,
+    sort_order: Number(row.sort_order ?? 0),
+    parent_key: (row.parent_key as string | null) ?? null,
+    dimension: (row.dimension as string | null) ?? null,
+    applicable: row.applicable === undefined ? true : Boolean(row.applicable),
+    release_phase: (String(row.release_phase ?? "v1") as "v1" | "v2"),
+  }
+}
+
+function normalizeCredentials(row: Record<string, unknown>): ProjectCredentials {
+  const s = (k: string): string | null => (row[k] as string | null) ?? null
+  return {
+    project_id: String(row.project_id ?? ""),
+    github_url: s("github_url"),
+    github_repo_slug: s("github_repo_slug"),
+    supabase_project_id: s("supabase_project_id"),
+    supabase_project_url: s("supabase_project_url"),
+    supabase_anon_key: s("supabase_anon_key"),
+    supabase_dashboard_url: s("supabase_dashboard_url"),
+    vercel_project_slug: s("vercel_project_slug"),
+    vercel_dashboard_url: s("vercel_dashboard_url"),
+    production_url: s("production_url"),
+    staging_url: s("staging_url"),
+    dev_url: s("dev_url"),
+    figma_url: s("figma_url"),
+    notes: s("notes"),
+  }
+}
+
+function normalizeBrandKit(row: Record<string, unknown>): ProjectBrandKit {
+  const s = (k: string): string | null => (row[k] as string | null) ?? null
+  return {
+    project_id: String(row.project_id ?? ""),
+    primary_color: s("primary_color"),
+    accent_color: s("accent_color"),
+    bg_color: s("bg_color"),
+    text_color: s("text_color"),
+    font_heading: s("font_heading"),
+    font_body: s("font_body"),
+    tagline: s("tagline"),
+    voice_guidelines: s("voice_guidelines"),
+    logo_full_url: s("logo_full_url"),
+    logo_icon_url: s("logo_icon_url"),
+    logo_mono_url: s("logo_mono_url"),
+    logo_dark_url: s("logo_dark_url"),
+    image_style_notes: s("image_style_notes"),
+  }
+}
 
 function normalizeProject(row: Record<string, unknown>): Project {
   return {
@@ -123,7 +229,7 @@ export async function listChecklistFor(
   try {
     const { data, error } = await supabase
       .from("project_checklist")
-      .select("id, project_id, item_key, item_label, status, notes, sort_order")
+      .select("id, project_id, item_key, item_label, status, notes, sort_order, parent_key, dimension, applicable, release_phase")
       .in("project_id", projectIds)
       .order("sort_order", { ascending: true })
     if (error) {
@@ -132,14 +238,7 @@ export async function listChecklistFor(
     }
     for (const row of (data ?? []) as Array<Record<string, unknown>>) {
       const projectId = String(row.project_id ?? "")
-      const item: ChecklistItem = {
-        id: String(row.id ?? ""),
-        item_key: String(row.item_key ?? ""),
-        item_label: String(row.item_label ?? ""),
-        status: String(row.status ?? "pending") as ChecklistStatus,
-        notes: (row.notes as string | null) ?? null,
-        sort_order: Number(row.sort_order ?? 0),
-      }
+      const item = normalizeChecklistItem(row)
       const arr = out.get(projectId) ?? []
       arr.push(item)
       out.set(projectId, arr)
@@ -161,20 +260,24 @@ export async function listAllProjectChildren(
   checklistByProject: Map<string, ChecklistItem[]>
   pagesByProject: Map<string, ProjectPage[]>
   pluginsByProject: Map<string, ProjectPluginRow[]>
+  credentialsByProject: Map<string, ProjectCredentials>
+  brandKitByProject: Map<string, ProjectBrandKit>
 }> {
   const out = {
     checklistByProject: new Map<string, ChecklistItem[]>(),
     pagesByProject: new Map<string, ProjectPage[]>(),
     pluginsByProject: new Map<string, ProjectPluginRow[]>(),
+    credentialsByProject: new Map<string, ProjectCredentials>(),
+    brandKitByProject: new Map<string, ProjectBrandKit>(),
   }
   if (projectIds.length === 0) return out
 
   try {
-    const [checklistRes, pagesRes, pluginsRes] = await Promise.all([
+    const [checklistRes, pagesRes, pluginsRes, credsRes, brandRes] = await Promise.all([
       supabase
         .from("project_checklist")
         .select(
-          "id, project_id, item_key, item_label, status, notes, sort_order"
+          "id, project_id, item_key, item_label, status, notes, sort_order, parent_key, dimension, applicable, release_phase"
         )
         .in("project_id", projectIds)
         .order("sort_order", { ascending: true }),
@@ -188,20 +291,21 @@ export async function listAllProjectChildren(
         .select("id, project_id, plugin_slug, plugin_label, status")
         .in("project_id", projectIds)
         .order("plugin_label", { ascending: true }),
+      supabase
+        .from("project_credentials")
+        .select("*")
+        .in("project_id", projectIds),
+      supabase
+        .from("project_brand_kit")
+        .select("*")
+        .in("project_id", projectIds),
     ])
 
     for (const row of (checklistRes.data ?? []) as Array<
       Record<string, unknown>
     >) {
       const projectId = String(row.project_id ?? "")
-      const item: ChecklistItem = {
-        id: String(row.id ?? ""),
-        item_key: String(row.item_key ?? ""),
-        item_label: String(row.item_label ?? ""),
-        status: String(row.status ?? "pending") as ChecklistStatus,
-        notes: (row.notes as string | null) ?? null,
-        sort_order: Number(row.sort_order ?? 0),
-      }
+      const item = normalizeChecklistItem(row)
       const arr = out.checklistByProject.get(projectId) ?? []
       arr.push(item)
       out.checklistByProject.set(projectId, arr)
@@ -253,6 +357,16 @@ export async function listAllProjectChildren(
       arr.push(plugin)
       out.pluginsByProject.set(projectId, arr)
     }
+
+    for (const row of (credsRes.data ?? []) as Array<Record<string, unknown>>) {
+      const projectId = String(row.project_id ?? "")
+      out.credentialsByProject.set(projectId, normalizeCredentials(row))
+    }
+
+    for (const row of (brandRes.data ?? []) as Array<Record<string, unknown>>) {
+      const projectId = String(row.project_id ?? "")
+      out.brandKitByProject.set(projectId, normalizeBrandKit(row))
+    }
   } catch (err) {
     console.error("listAllProjectChildren exception:", err)
   }
@@ -275,10 +389,10 @@ export async function getProjectBySlug(
     }
     const project = normalizeProject(projectRow as Record<string, unknown>)
 
-    const [checklistRes, pagesRes, pluginsRes] = await Promise.all([
+    const [checklistRes, pagesRes, pluginsRes, credsRes, brandRes] = await Promise.all([
       supabase
         .from("project_checklist")
-        .select("id, item_key, item_label, status, notes, sort_order")
+        .select("id, item_key, item_label, status, notes, sort_order, parent_key, dimension, applicable, release_phase")
         .eq("project_id", project.id)
         .order("sort_order", { ascending: true }),
       supabase
@@ -291,18 +405,21 @@ export async function getProjectBySlug(
         .select("id, plugin_slug, plugin_label, status")
         .eq("project_id", project.id)
         .order("plugin_label", { ascending: true }),
+      supabase
+        .from("project_credentials")
+        .select("*")
+        .eq("project_id", project.id)
+        .maybeSingle(),
+      supabase
+        .from("project_brand_kit")
+        .select("*")
+        .eq("project_id", project.id)
+        .maybeSingle(),
     ])
 
     const checklist: ChecklistItem[] = (
       (checklistRes.data ?? []) as Array<Record<string, unknown>>
-    ).map((row) => ({
-      id: String(row.id ?? ""),
-      item_key: String(row.item_key ?? ""),
-      item_label: String(row.item_label ?? ""),
-      status: String(row.status ?? "pending") as ChecklistStatus,
-      notes: (row.notes as string | null) ?? null,
-      sort_order: Number(row.sort_order ?? 0),
-    }))
+    ).map((row) => normalizeChecklistItem(row))
 
     // Build the flat page list, then nest subpages under parents.
     const flatPages: ProjectPage[] = (
@@ -335,11 +452,20 @@ export async function getProjectBySlug(
       status: String(row.status ?? "installed") as PluginInstallStatus,
     }))
 
+    const credentials = credsRes.data
+      ? normalizeCredentials(credsRes.data as Record<string, unknown>)
+      : null
+    const brand_kit = brandRes.data
+      ? normalizeBrandKit(brandRes.data as Record<string, unknown>)
+      : null
+
     return {
       ...project,
       checklist,
       pages: rootPages,
       plugins,
+      credentials,
+      brand_kit,
     }
   } catch (err) {
     console.error("getProjectBySlug exception:", err)
@@ -387,6 +513,65 @@ export function summarizeChecklist(
 /* ------------------------------------------------------------------ */
 /*  Display helpers                                                    */
 /* ------------------------------------------------------------------ */
+
+/**
+ * Per-dimension completion rollup. For each of the 8 canonical dimensions
+ * returns the % complete among applicable children, `null` if no applicable
+ * children (= N/A cell in the matrix).
+ */
+export type DimensionSummary = {
+  key: string
+  label: string
+  percent: number | null  // null = N/A
+  done: number
+  total: number
+}
+
+export function summarizeByDimension(items: ChecklistItem[]): DimensionSummary[] {
+  return DIMENSIONS.map((d) => {
+    const children = items.filter((i) => i.dimension === d.key && i.parent_key !== null)
+    const applicable = children.filter((c) => c.applicable)
+    if (applicable.length === 0) {
+      return { key: d.key, label: d.label, percent: null, done: 0, total: 0 }
+    }
+    const done = applicable.filter((c) => c.status === "done").length
+    return {
+      key: d.key,
+      label: d.label,
+      percent: Math.round((done / applicable.length) * 100),
+      done,
+      total: applicable.length,
+    }
+  })
+}
+
+/** Cycle a checklist item's status: pending → in-progress → done → pending */
+export function cycleChecklistStatus(current: ChecklistStatus): ChecklistStatus {
+  if (current === "not-applicable") return current
+  if (current === "pending") return "in-progress"
+  if (current === "in-progress") return "done"
+  return "pending"
+}
+
+export async function updateChecklistItemStatus(
+  id: string,
+  status: ChecklistStatus
+): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from("project_checklist")
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq("id", id)
+    if (error) {
+      console.error("updateChecklistItemStatus error:", error)
+      return false
+    }
+    return true
+  } catch (err) {
+    console.error("updateChecklistItemStatus exception:", err)
+    return false
+  }
+}
 
 export function kindLabel(kind: ProjectKind): string {
   switch (kind) {

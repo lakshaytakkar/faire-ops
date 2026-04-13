@@ -11,6 +11,7 @@ import {
 import { toast } from "sonner"
 import { supabase, supabaseB2B } from "@/lib/supabase"
 import { RichTextEditor, RichTextRenderer, richTextToPlain } from "@/components/shared/rich-text-editor"
+import { CreateChannelModal, type CreateChannelPayload } from "@/components/chat/create-channel-modal"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -379,9 +380,7 @@ export default function ChatPage() {
   const [hoveredMsgId, setHoveredMsgId] = useState<string | null>(null)
 
   // ---- channel creation ----
-  const [showNewChannel, setShowNewChannel] = useState(false)
-  const [newChannelName, setNewChannelName] = useState("")
-  const [newChannelDesc, setNewChannelDesc] = useState("")
+  const [showCreateChannel, setShowCreateChannel] = useState(false)
 
   // ---- search ----
   const [searchQuery, setSearchQuery] = useState("")
@@ -949,30 +948,81 @@ export default function ChatPage() {
     }
   }
 
-  // ---- create channel ----
-  async function createChannel() {
-    const name = newChannelName.trim().toLowerCase().replace(/\s+/g, "-")
-    if (!name) return
-    const { data, error } = await supabase
+  // ---- create channel (wired to the multi-step modal) ----
+  // Slack-style create-channel flow: channel insert + membership rows for
+  // current user (admin) + every selected team member (member). If the
+  // member inserts fail we delete the just-inserted channel so the DB
+  // doesn't end up with an orphan.
+  async function handleCreateChannel(
+    payload: CreateChannelPayload,
+  ): Promise<{ ok: boolean; errorMessage?: string }> {
+    const { data: channelRow, error: channelErr } = await supabase
       .from("chat_channels")
-      .insert({ name, description: newChannelDesc.trim() || null })
+      .insert({
+        name: payload.name,
+        description: payload.description || null,
+        is_private: payload.isPrivate,
+      })
       .select()
       .single()
-    if (error) {
-      toast.error("Couldn't create channel", { description: error.message })
-      return
+
+    if (channelErr || !channelRow) {
+      const msg = channelErr?.message ?? "Channel insert failed"
+      toast.error("Couldn't create channel", { description: msg })
+      return { ok: false, errorMessage: msg }
     }
-    if (data) {
-      setChannels((prev) => [...prev, data as Channel])
-      setSelectedChannelId(data.id)
-      setSelectedMember(null)
-      setSelectedVendor(null)
-      setDmChannelId(null)
-      toast.success(`Created #${data.name}`)
+
+    // Build membership rows. Current user is always admin; selected team
+    // members (by id) are members. Denormalize name for fast list renders.
+    const memberRows: Array<{
+      channel_id: string
+      user_id: string
+      member_name: string
+      role: "admin" | "member"
+      added_by: string
+    }> = [
+      {
+        channel_id: channelRow.id,
+        user_id: CURRENT_USER_ID,
+        member_name: CURRENT_USER,
+        role: "admin",
+        added_by: CURRENT_USER_ID,
+      },
+    ]
+    for (const memberId of payload.memberIds) {
+      const tm = teamMembers.find((m) => m.id === memberId)
+      if (!tm || tm.name === CURRENT_USER) continue
+      memberRows.push({
+        channel_id: channelRow.id,
+        user_id: tm.id,
+        member_name: tm.name,
+        role: "member",
+        added_by: CURRENT_USER_ID,
+      })
     }
-    setShowNewChannel(false)
-    setNewChannelName("")
-    setNewChannelDesc("")
+
+    const { error: memberErr } = await supabase
+      .from("chat_channel_members")
+      .insert(memberRows)
+
+    if (memberErr) {
+      // Rollback the channel insert so we don't leave an orphan row.
+      await supabase.from("chat_channels").delete().eq("id", channelRow.id)
+      toast.error("Couldn't add members", { description: memberErr.message })
+      return { ok: false, errorMessage: memberErr.message }
+    }
+
+    // Success path — update local state so the new channel is selected.
+    setChannels((prev) => [...prev, channelRow as Channel])
+    setSelectedChannelId(channelRow.id)
+    setSelectedMember(null)
+    setSelectedVendor(null)
+    setDmChannelId(null)
+    toast.success(
+      `Created #${channelRow.name}`,
+      { description: `${memberRows.length} member${memberRows.length === 1 ? "" : "s"} added` },
+    )
+    return { ok: true }
   }
 
   function findReplySource(replyToId: string | null | undefined): ChatMessage | undefined {
