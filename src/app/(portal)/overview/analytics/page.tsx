@@ -283,7 +283,13 @@ export default function ConsolidatedAnalyticsPage() {
     }
   }, [period, storeFilter])
 
-  /* -------------- Top stores by revenue (period-scoped) -------------- */
+  /* -------------- Top stores by revenue (period-scoped) --------------
+   * Uses the b2b.faire_store_revenue(p_start) RPC to aggregate revenue and
+   * order count per store server-side in one query. The old path ran an N+1
+   * Promise.all (two queries per store) and was capped by PostgREST's
+   * default max-rows on the .range(0, 20000) call, silently under-reporting
+   * revenue for high-volume stores.
+   */
   const [topStores, setTopStores] = useState<StoreRevenueRow[]>([])
   const [topStoresLoading, setTopStoresLoading] = useState(true)
 
@@ -297,41 +303,50 @@ export default function ConsolidatedAnalyticsPage() {
         return
       }
       const startIso = periodStartIso(period)
+
+      const { data, error } = await supabaseB2B.rpc("faire_store_revenue", {
+        p_start: startIso,
+      })
+
+      if (cancelled) return
+
+      if (error) {
+        console.error("faire_store_revenue RPC error:", error)
+        setTopStores([])
+        setTopStoresLoading(false)
+        return
+      }
+
+      const byStoreId = new Map<
+        string,
+        { orderCount: number; revenueCents: number }
+      >()
+      for (const row of (data ?? []) as Array<{
+        store_id: string
+        order_count: number
+        revenue_cents: number | string
+      }>) {
+        byStoreId.set(row.store_id, {
+          orderCount: row.order_count ?? 0,
+          revenueCents: Number(row.revenue_cents ?? 0),
+        })
+      }
+
       const scopedStores =
         activeBrand === "all" ? stores : stores.filter((s) => s.id === activeBrand)
 
-      const rows = await Promise.all(
-        scopedStores.map(async (store) => {
-          let cq = supabaseB2B
-            .from("faire_orders")
-            .select("*", { count: "exact", head: true })
-            .eq("store_id", store.id)
-          if (startIso) cq = cq.gte("faire_created_at", startIso)
+      const rows: StoreRevenueRow[] = scopedStores.map((store) => {
+        const agg = byStoreId.get(store.id) ?? { orderCount: 0, revenueCents: 0 }
+        return {
+          id: store.id,
+          name: store.name,
+          color: store.color,
+          logoUrl: (store as { logo_url?: string | null }).logo_url ?? null,
+          revenueCents: agg.revenueCents,
+          orderCount: agg.orderCount,
+        }
+      })
 
-          let rq = supabaseB2B
-            .from("faire_orders")
-            .select("total_cents")
-            .eq("store_id", store.id)
-            .range(0, 20000)
-          if (startIso) rq = rq.gte("faire_created_at", startIso)
-
-          const [{ count }, { data }] = await Promise.all([cq, rq])
-          const revenueCents = (data ?? []).reduce(
-            (s: number, r: { total_cents: number | null }) => s + (r.total_cents ?? 0),
-            0,
-          )
-          return {
-            id: store.id,
-            name: store.name,
-            color: store.color,
-            logoUrl: (store as { logo_url?: string | null }).logo_url ?? null,
-            revenueCents,
-            orderCount: count ?? 0,
-          }
-        }),
-      )
-
-      if (cancelled) return
       rows.sort((a, b) => b.revenueCents - a.revenueCents)
       setTopStores(rows.slice(0, 5))
       setTopStoresLoading(false)
@@ -352,11 +367,17 @@ export default function ConsolidatedAnalyticsPage() {
       setRecentOrdersLoading(true)
       const startIso = periodStartIso(period)
 
+      // The categories and states widgets derive from this pool; the old 500
+      // cap silently excluded every low-volume store's history when the user
+      // hadn't filtered to a specific brand. Bumping to 10 000 via .range()
+      // bypasses PostgREST's default 1 000 max-rows. Current order table is
+      // ~1.8k rows so there's plenty of headroom; if it grows past 10k we
+      // should move these two widgets to their own SQL RPCs like bestsellers.
       let q = supabaseB2B
         .from("faire_orders")
         .select("store_id, total_cents, faire_created_at, shipping_address, raw_data")
         .order("faire_created_at", { ascending: false })
-        .limit(500)
+        .range(0, 9999)
       if (storeFilter) q = q.eq("store_id", storeFilter)
       if (startIso) q = q.gte("faire_created_at", startIso)
 
@@ -431,39 +452,67 @@ export default function ConsolidatedAnalyticsPage() {
     }
   }, [period, storeFilter])
 
-  /* -------------- Bestsellers (from recentOrders.raw_data.items) -------------- */
-  const bestsellers: BestsellerRow[] = useMemo(() => {
-    const map = new Map<string, BestsellerRow>()
-    for (const order of recentOrders) {
-      const raw = order.raw_data as Record<string, unknown> | null
-      const items = (raw?.items as OrderItem[] | undefined) ?? []
-      for (const item of items) {
-        const pid = item.product_id
-        if (!pid) continue
-        const existing = map.get(pid) ?? {
-          productId: pid,
-          name: item.product_name ?? "Unknown product",
-          orders: 0,
-          revenueCents: 0,
-        }
-        existing.orders += 1
-        existing.revenueCents += (item.price_cents ?? 0) * (item.quantity ?? 1)
-        if (!existing.name || existing.name === "Unknown product") {
-          existing.name = item.product_name ?? existing.name
-        }
-        map.set(pid, existing)
-      }
-    }
-    return Array.from(map.values())
-      .sort((a, b) => b.orders - a.orders)
-      .slice(0, 5)
-  }, [recentOrders])
+  /* -------------- Bestsellers (server-aggregated) --------------
+   * Uses the b2b.faire_bestsellers(p_store_id, p_start, p_limit) RPC which
+   * unnests raw_data.items server-side, groups by product_id, orders by
+   * count desc, and joins faire_products.primary_image_url — all in one
+   * round-trip. The old path "fetch 500 orders then reduce client-side"
+   * silently dropped any product whose orders fell outside the 500 most
+   * recent globally (visible as the BuddhaAyurveda "Birds Branch Desk
+   * Ornament" bug — filtered=visible, unfiltered=missing).
+   */
+  const [bestsellers, setBestsellers] = useState<BestsellerRow[]>([])
+  const [bestsellersLoading, setBestsellersLoading] = useState(true)
 
-  /* -------------- Bestsellers fallback -------------- */
+  useEffect(() => {
+    let cancelled = false
+    async function run() {
+      setBestsellersLoading(true)
+      const startIso = periodStartIso(period)
+      const { data, error } = await supabaseB2B.rpc("faire_bestsellers", {
+        p_store_id: storeFilter ?? null,
+        p_start: startIso,
+        p_limit: 5,
+      })
+      if (cancelled) return
+      if (error) {
+        console.error("faire_bestsellers RPC error:", error)
+        setBestsellers([])
+        setBestsellersLoading(false)
+        return
+      }
+      setBestsellers(
+        ((data ?? []) as Array<{
+          product_id: string
+          product_name: string | null
+          order_count: number
+          revenue_cents: number | string
+          primary_image_url: string | null
+        }>).map((r) => ({
+          productId: r.product_id,
+          name: r.product_name ?? "Unknown product",
+          orders: r.order_count ?? 0,
+          revenueCents: Number(r.revenue_cents ?? 0),
+          imageUrl: r.primary_image_url,
+        })),
+      )
+      setBestsellersLoading(false)
+    }
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [period, storeFilter])
+
+  /* -------------- Bestsellers fallback (no orders at all) --------------
+   * The RPC returns empty only when no orders match the current filters
+   * (new stores, very-recent periods). Fall back to the most-recently-
+   * updated products so the card never shows an empty state.
+   */
   const [fallbackProducts, setFallbackProducts] = useState<BestsellerRow[]>([])
 
   useEffect(() => {
-    if (recentOrdersLoading) return
+    if (bestsellersLoading) return
     if (bestsellers.length > 0) {
       setFallbackProducts([])
       return
@@ -499,43 +548,7 @@ export default function ConsolidatedAnalyticsPage() {
     return () => {
       cancelled = true
     }
-  }, [bestsellers.length, recentOrdersLoading, storeFilter])
-
-  /* -------------- Bestseller product images (for order-derived rows) -------------- */
-  // The order-path bestsellers are computed from order items and don't carry
-  // a primary_image_url — fetch them in one batched IN() query keyed by the
-  // product ids that showed up in the top 5.
-  const [bestsellerImages, setBestsellerImages] = useState<Map<string, string | null>>(
-    new Map(),
-  )
-
-  useEffect(() => {
-    const ids = bestsellers.map((b) => b.productId).filter(Boolean)
-    if (ids.length === 0) {
-      setBestsellerImages(new Map())
-      return
-    }
-    let cancelled = false
-    async function run() {
-      const { data } = await supabaseB2B
-        .from("faire_products")
-        .select("faire_product_id, primary_image_url")
-        .in("faire_product_id", ids)
-      if (cancelled) return
-      const next = new Map<string, string | null>()
-      for (const row of (data ?? []) as Array<{
-        faire_product_id: string
-        primary_image_url: string | null
-      }>) {
-        next.set(row.faire_product_id, row.primary_image_url)
-      }
-      setBestsellerImages(next)
-    }
-    run()
-    return () => {
-      cancelled = true
-    }
-  }, [bestsellers])
+  }, [bestsellers.length, bestsellersLoading, storeFilter])
 
   const displayBestsellers =
     bestsellers.length > 0 ? bestsellers : fallbackProducts
@@ -1183,7 +1196,7 @@ export default function ConsolidatedAnalyticsPage() {
               </div>
             ) : (
               displayBestsellers.map((prod, i) => {
-                const img = prod.imageUrl ?? bestsellerImages.get(prod.productId) ?? null
+                const img = prod.imageUrl ?? null
                 return (
                   <div
                     key={prod.productId}
