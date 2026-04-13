@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { Mail, Phone, Users, UserPlus, MessageCircle, Calendar, Award, Briefcase, ChevronDown, ChevronUp, CheckSquare, Clock, Wifi, FileText } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import { useActiveSpace } from "@/lib/use-active-space"
 import EmployeeCVModal from "@/components/shared/employee-cv-modal"
 
 interface TeamMember {
@@ -68,8 +69,17 @@ const REMOTE_ACCENT_COLORS = ["#6366f1", "#ec4899", "#14b8a6", "#f97316", "#8b5c
 type Tab = "in-house" | "remote"
 
 export default function TeamPage() {
+  return (
+    <Suspense fallback={<div className="max-w-[1440px] mx-auto w-full space-y-5"><div className="h-8 w-32 rounded bg-muted animate-pulse" /></div>}>
+      <TeamPageInner />
+    </Suspense>
+  )
+}
+
+function TeamPageInner() {
   interface MemberTask { id: string; title: string; status: string; priority: string; due_date: string; tags?: string[] }
 
+  const activeSpace = useActiveSpace().slug
   const [activeTab, setActiveTab] = useState<Tab>("in-house")
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [aiEmployees, setAiEmployees] = useState<AIEmployee[]>([])
@@ -81,11 +91,12 @@ export default function TeamPage() {
   const [cvMemberId, setCvMemberId] = useState<string | null>(null)
   const [cvMemberName, setCvMemberName] = useState("")
 
-  /* Fetch in-house team on mount */
+  /* Fetch in-house team on mount, scoped to active space */
   useEffect(() => {
+    setLoading(true)
     Promise.all([
-      supabase.from("team_members").select("*").order("name"),
-      supabase.from("tasks").select("id, title, status, priority, due_date, assignee, tags").order("due_date"),
+      supabase.from("team_members").select("*").eq("space_slug", activeSpace).order("name"),
+      supabase.from("tasks").select("id, title, status, priority, due_date, assignee, tags").eq("space_slug", activeSpace).order("due_date"),
     ]).then(([teamRes, taskRes]) => {
       if (teamRes.data) setTeamMembers(teamRes.data as TeamMember[])
       if (taskRes.data) {
@@ -99,7 +110,7 @@ export default function TeamPage() {
       }
       setLoading(false)
     })
-  }, [])
+  }, [activeSpace])
 
   /* Fetch remote team when tab switches */
   useEffect(() => {
