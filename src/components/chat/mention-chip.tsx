@@ -98,7 +98,7 @@ function OrderChip({ id, label }: { id: string; label?: string }) {
 
   return (
     <Link
-      href={`/orders/${order.id}`}
+      href={`/orders/${order.faire_order_id}`}
       className="inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 text-xs font-medium bg-primary/10 text-primary ring-1 ring-inset ring-primary/20 hover:bg-primary/15 hover:underline transition-colors align-baseline"
       title={`Open order ${displayId}`}
     >

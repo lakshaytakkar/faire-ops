@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
+import { ProfitabilityCard } from "@/components/orders/profitability-card"
 import Link from "next/link"
 import { ArrowLeft, Package, Copy, Mail, Printer, ExternalLink, Truck, ChevronLeft, ChevronRight, Send, FileText, CheckCircle, Clock } from "lucide-react"
 import { supabase, supabaseB2B } from "@/lib/supabase"
@@ -677,6 +678,17 @@ export default function OrderDetailPage() {
               </div>
             )
           })()}
+
+          {/* Profitability signal — locked until vendor submits a quote */}
+          <ProfitabilityCard
+            totalCents={order.total_cents ?? 0}
+            payoutCosts={order.payout_costs as Record<string, unknown> | null}
+            quotes={vendorQuotes.map((q) => ({
+              status: q.status,
+              total_cost_cents: q.total_cost_cents,
+              shipping_cost_cents: q.shipping_cost_cents,
+            }))}
+          />
 
           {/* Vendor Quotes */}
           {(() => {
