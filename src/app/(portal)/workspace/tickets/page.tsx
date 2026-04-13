@@ -1,8 +1,17 @@
 "use client"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
-export default function TicketsRedirect() {
-  const router = useRouter()
-  useEffect(() => { router.replace("/workspace/tickets/dashboard") }, [router])
+
+import { Suspense } from "react"
+import { useParamsPreservingRedirect } from "@/lib/use-params-preserving-redirect"
+
+function TicketsRedirectInner() {
+  useParamsPreservingRedirect("/workspace/tickets/dashboard")
   return null
+}
+
+export default function TicketsRedirect() {
+  return (
+    <Suspense fallback={null}>
+      <TicketsRedirectInner />
+    </Suspense>
+  )
 }

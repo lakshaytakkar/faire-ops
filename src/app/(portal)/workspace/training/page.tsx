@@ -1,12 +1,17 @@
 "use client"
 
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { Suspense } from "react"
+import { useParamsPreservingRedirect } from "@/lib/use-params-preserving-redirect"
+
+function TrainingRedirectInner() {
+  useParamsPreservingRedirect("/workspace/training/videos")
+  return null
+}
 
 export default function TrainingRedirect() {
-  const router = useRouter()
-  useEffect(() => {
-    router.replace("/workspace/training/videos")
-  }, [router])
-  return null
+  return (
+    <Suspense fallback={null}>
+      <TrainingRedirectInner />
+    </Suspense>
+  )
 }

@@ -1,10 +1,17 @@
 "use client"
 
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { Suspense } from "react"
+import { useParamsPreservingRedirect } from "@/lib/use-params-preserving-redirect"
+
+function KnowledgeRedirectInner() {
+  useParamsPreservingRedirect("/workspace/knowledge/articles")
+  return null
+}
 
 export default function KnowledgeRedirect() {
-  const router = useRouter()
-  useEffect(() => { router.replace("/workspace/knowledge/articles") }, [router])
-  return null
+  return (
+    <Suspense fallback={null}>
+      <KnowledgeRedirectInner />
+    </Suspense>
+  )
 }

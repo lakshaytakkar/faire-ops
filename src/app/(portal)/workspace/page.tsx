@@ -1,10 +1,17 @@
 "use client"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense } from "react"
+import { useParamsPreservingRedirect } from "@/lib/use-params-preserving-redirect"
 
-export default function RedirectPage() {
-  const router = useRouter()
-  useEffect(() => { router.replace("/workspace/team") }, [router])
+function WorkspaceRedirectInner() {
+  useParamsPreservingRedirect("/workspace/team")
   return null
+}
+
+export default function WorkspaceRedirect() {
+  return (
+    <Suspense fallback={null}>
+      <WorkspaceRedirectInner />
+    </Suspense>
+  )
 }

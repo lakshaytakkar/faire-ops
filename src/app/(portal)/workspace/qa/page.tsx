@@ -1,8 +1,17 @@
 "use client"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
-export default function QARedirect() {
-  const router = useRouter()
-  useEffect(() => { router.replace("/workspace/qa/dashboard") }, [router])
+
+import { Suspense } from "react"
+import { useParamsPreservingRedirect } from "@/lib/use-params-preserving-redirect"
+
+function QaRedirectInner() {
+  useParamsPreservingRedirect("/workspace/qa/dashboard")
   return null
+}
+
+export default function QaRedirect() {
+  return (
+    <Suspense fallback={null}>
+      <QaRedirectInner />
+    </Suspense>
+  )
 }

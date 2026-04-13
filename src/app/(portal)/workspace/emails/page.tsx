@@ -1,10 +1,17 @@
 "use client"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense } from "react"
+import { useParamsPreservingRedirect } from "@/lib/use-params-preserving-redirect"
 
-export default function RedirectPage() {
-  const router = useRouter()
-  useEffect(() => { router.replace("/workspace/emails/dashboard") }, [router])
+function EmailsRedirectInner() {
+  useParamsPreservingRedirect("/workspace/emails/dashboard")
   return null
+}
+
+export default function EmailsRedirect() {
+  return (
+    <Suspense fallback={null}>
+      <EmailsRedirectInner />
+    </Suspense>
+  )
 }

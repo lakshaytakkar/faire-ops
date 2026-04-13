@@ -1,8 +1,17 @@
 "use client"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
-export default function ResearchRedirect() {
-  const router = useRouter()
-  useEffect(() => { router.replace("/workspace/research/dashboard") }, [router])
+
+import { Suspense } from "react"
+import { useParamsPreservingRedirect } from "@/lib/use-params-preserving-redirect"
+
+function ResearchRedirectInner() {
+  useParamsPreservingRedirect("/workspace/research/dashboard")
   return null
+}
+
+export default function ResearchRedirect() {
+  return (
+    <Suspense fallback={null}>
+      <ResearchRedirectInner />
+    </Suspense>
+  )
 }

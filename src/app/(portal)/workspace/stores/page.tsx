@@ -1,10 +1,17 @@
 "use client"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense } from "react"
+import { useParamsPreservingRedirect } from "@/lib/use-params-preserving-redirect"
 
-export default function RedirectPage() {
-  const router = useRouter()
-  useEffect(() => { router.replace("/workspace/stores/all") }, [router])
+function StoresRedirectInner() {
+  useParamsPreservingRedirect("/workspace/stores/all")
   return null
+}
+
+export default function StoresRedirect() {
+  return (
+    <Suspense fallback={null}>
+      <StoresRedirectInner />
+    </Suspense>
+  )
 }

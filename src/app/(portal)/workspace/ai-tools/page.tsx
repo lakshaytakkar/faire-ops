@@ -1,10 +1,17 @@
 "use client"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense } from "react"
+import { useParamsPreservingRedirect } from "@/lib/use-params-preserving-redirect"
 
-export default function RedirectPage() {
-  const router = useRouter()
-  useEffect(() => { router.replace("/workspace/ai-tools/all") }, [router])
+function AiToolsRedirectInner() {
+  useParamsPreservingRedirect("/workspace/ai-tools/all")
   return null
+}
+
+export default function AiToolsRedirect() {
+  return (
+    <Suspense fallback={null}>
+      <AiToolsRedirectInner />
+    </Suspense>
+  )
 }
