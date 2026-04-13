@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useParams } from "next/navigation"
-import { Map, FileUp, Trash2, ExternalLink, Send } from "lucide-react"
+import { Map, FileUp, Trash2, ExternalLink } from "lucide-react"
 import { supabaseEts } from "@/lib/supabase"
 import { EtsEmptyState, formatDate } from "@/app/(portal)/ets/_components/ets-ui"
+import { ChannelEmbed } from "@/components/chat/channel-embed"
 
 interface ProjectFile {
   id: string
@@ -13,15 +14,6 @@ interface ProjectFile {
   mime_type: string | null
   version: number
   uploaded_at: string
-}
-
-interface ChatMessage {
-  id: string
-  thread: string
-  author_side: "admin" | "client"
-  author_name: string | null
-  body: string | null
-  created_at: string
 }
 
 const LAYOUT_SLOTS = [
@@ -40,28 +32,17 @@ export default function ProjectLayoutGuidePage() {
   const params = useParams<{ id: string }>()
   const clientId = params?.id as string
   const [files, setFiles] = useState<ProjectFile[]>([])
-  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(true)
-  const [draft, setDraft] = useState("")
 
   const load = useCallback(async () => {
     setLoading(true)
-    const [{ data: f }, { data: m }] = await Promise.all([
-      supabaseEts
-        .from("project_files")
-        .select("id, filename, storage_path, mime_type, version, uploaded_at")
-        .eq("client_id", clientId)
-        .eq("category", "layout")
-        .order("uploaded_at", { ascending: false }),
-      supabaseEts
-        .from("project_chat_messages")
-        .select("id, thread, author_side, author_name, body, created_at")
-        .eq("client_id", clientId)
-        .eq("thread", "layout-guide")
-        .order("created_at", { ascending: true }),
-    ])
+    const { data: f } = await supabaseEts
+      .from("project_files")
+      .select("id, filename, storage_path, mime_type, version, uploaded_at")
+      .eq("client_id", clientId)
+      .eq("category", "layout")
+      .order("uploaded_at", { ascending: false })
     setFiles((f ?? []) as ProjectFile[])
-    setMessages((m ?? []) as ChatMessage[])
     setLoading(false)
   }, [clientId])
 
@@ -92,24 +73,6 @@ export default function ProjectLayoutGuidePage() {
     if (!confirm("Remove this asset?")) return
     setFiles((fs) => fs.filter((f) => f.id !== id))
     await supabaseEts.from("project_files").delete().eq("id", id)
-  }
-
-  async function sendMessage() {
-    const body = draft.trim()
-    if (!body) return
-    setDraft("")
-    const { data } = await supabaseEts
-      .from("project_chat_messages")
-      .insert({
-        client_id: clientId,
-        thread: "layout-guide",
-        author_side: "admin",
-        author_name: "Designer",
-        body,
-      })
-      .select("id, thread, author_side, author_name, body, created_at")
-      .single()
-    if (data) setMessages((ms) => [...ms, data as ChatMessage])
   }
 
   if (loading) return <div className="h-64 rounded-lg bg-muted animate-pulse" />
@@ -182,39 +145,14 @@ export default function ProjectLayoutGuidePage() {
         </div>
       </div>
 
-      <div className="rounded-lg border bg-card shadow-sm flex flex-col h-[600px]">
-        <div className="px-4 py-3 border-b">
-          <h2 className="text-sm font-semibold">Chat — Layout</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Discuss layout changes with the client.</p>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {messages.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-8">No messages yet.</p>
-          ) : (
-            messages.map((m) => (
-              <div key={m.id} className={`flex ${m.author_side === "admin" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${m.author_side === "admin" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
-                  {m.author_name && <div className="text-xs font-semibold mb-0.5 opacity-70">{m.author_name}</div>}
-                  <div>{m.body}</div>
-                  <div className="text-xs opacity-60 mt-1">{formatDate(m.created_at)}</div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-        <div className="border-t p-3 flex items-center gap-2">
-          <input
-            type="text"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
-            placeholder="Type a message…"
-            className="flex-1 h-9 rounded-md border bg-background px-3 text-sm"
-          />
-          <button onClick={sendMessage} disabled={!draft.trim()} className="inline-flex items-center gap-1 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60">
-            <Send className="size-3.5" />
-          </button>
-        </div>
+      <div style={{ height: "600px" }}>
+        <ChannelEmbed
+          projectId={clientId}
+          channelKind="project-layout"
+          height="100%"
+          showHeader
+          emptyHint="No messages yet — discuss layout changes with the client."
+        />
       </div>
     </div>
   )
