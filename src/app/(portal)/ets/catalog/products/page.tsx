@@ -2,8 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Search, Package, ArrowRight, Plus, Trash2 } from "lucide-react"
+import { Search, Package, Plus, Trash2 } from "lucide-react"
 import { supabaseEts } from "@/lib/supabase"
+import {
+  EtsListShell,
+  EtsTable,
+  EtsTHead,
+  EtsTH,
+  EtsTR,
+  EtsTD,
+  EtsStatusBadge,
+  EtsEmptyState,
+  EtsEditDrawer,
+  formatCurrency,
+} from "@/app/(portal)/ets/_components/ets-ui"
 
 interface ProductRow {
   id: string
@@ -39,7 +51,6 @@ export default function EtsProductsPage() {
   const [creating, setCreating] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
 
-  // Load distinct category values for the filter (from products.category)
   useEffect(() => {
     let cancelled = false
     async function loadCats() {
@@ -75,11 +86,11 @@ export default function EtsProductsPage() {
         .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1)
       if (search.trim()) {
         const term = `%${search.trim()}%`
-        q = q.or(`name_en.ilike.${term},name_cn.ilike.${term},product_code.ilike.${term},barcode.ilike.${term}`)
+        q = q.or(
+          `name_en.ilike.${term},name_cn.ilike.${term},product_code.ilike.${term},barcode.ilike.${term}`,
+        )
       }
-      if (category !== "all") {
-        q = q.eq("category", category)
-      }
+      if (category !== "all") q = q.eq("category", category)
       const { data, count } = await q
       if (cancelled) return
       setRows((data ?? []) as ProductRow[])
@@ -92,7 +103,10 @@ export default function EtsProductsPage() {
     }
   }, [page, search, category, reloadKey])
 
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PAGE_SIZE)), [total])
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(total / PAGE_SIZE)),
+    [total],
+  )
 
   async function handleDelete(p: ProductRow, e: React.MouseEvent) {
     e.stopPropagation()
@@ -106,175 +120,151 @@ export default function EtsProductsPage() {
   }
 
   return (
-    <div className="max-w-[1440px] mx-auto w-full space-y-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Products</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {loading ? "Loading…" : `${total.toLocaleString()} products`}
-          </p>
-        </div>
+    <EtsListShell
+      title="Products"
+      subtitle={loading ? "Loading…" : `${total.toLocaleString()} products`}
+      action={
         <button
           onClick={() => setCreating(true)}
           className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
         >
-          <Plus className="size-4" /> New Product
+          <Plus className="size-4" /> New product
         </button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search name, code, barcode…"
-            value={search}
+      }
+      filters={
+        <div className="flex gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search name, SKU, barcode…"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setPage(0)
+              }}
+              className="w-full h-10 pl-10 pr-3 rounded-md border bg-card text-sm"
+            />
+          </div>
+          <select
+            value={category}
             onChange={(e) => {
-              setSearch(e.target.value)
+              setCategory(e.target.value)
               setPage(0)
             }}
-            className="w-full h-10 pl-10 pr-3 rounded-md border border-border bg-card text-sm"
-          />
+            className="h-10 px-3 rounded-md border bg-card text-sm"
+          >
+            <option value="all">All categories</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
         </div>
-        <select
-          value={category}
-          onChange={(e) => {
-            setCategory(e.target.value)
-            setPage(0)
-          }}
-          className="h-10 px-3 rounded-md border border-border bg-card text-sm"
-        >
-          <option value="all">All categories</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Table */}
-      <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/30">
-                <Th>Image</Th>
-                <Th>Name</Th>
-                <Th>Code</Th>
-                <Th>Category</Th>
-                <Th className="text-right">Partner ₹</Th>
-                <Th className="text-right">MRP ₹</Th>
-                <Th className="text-right">Stock</Th>
-                <Th>Status</Th>
-                <Th />
-                <Th />
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                Array.from({ length: 8 }).map((_, i) => (
-                  <tr key={i} className="border-b border-border">
-                    {Array.from({ length: 10 }).map((_, j) => (
+      }
+    >
+      {!loading && rows.length === 0 ? (
+        <EtsEmptyState
+          icon={Package}
+          title="No products match"
+          description="Adjust the search or filter to see products."
+        />
+      ) : (
+        <EtsTable>
+          <EtsTHead>
+            <EtsTH>Product</EtsTH>
+            <EtsTH>SKU</EtsTH>
+            <EtsTH>Category</EtsTH>
+            <EtsTH className="text-right">Partner</EtsTH>
+            <EtsTH className="text-right">MRP</EtsTH>
+            <EtsTH className="text-right">Stock</EtsTH>
+            <EtsTH>Status</EtsTH>
+            <EtsTH />
+          </EtsTHead>
+          <tbody>
+            {loading
+              ? Array.from({ length: 8 }).map((_, i) => (
+                  <tr key={i} className="border-b">
+                    {Array.from({ length: 8 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full animate-pulse rounded bg-muted" />
                       </td>
                     ))}
                   </tr>
                 ))
-              ) : rows.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center text-muted-foreground">
-                    No products match.
-                  </td>
-                </tr>
-              ) : (
-                rows.map((p) => (
-                  <tr
-                    key={p.id}
-                    onClick={() => setEditing(p)}
-                    className="border-b border-border last:border-0 hover:bg-muted/40 cursor-pointer"
-                  >
-                    <td className="px-4 py-2">
-                      {p.image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={p.image_url}
-                          alt=""
-                          className="size-10 rounded object-cover bg-muted"
-                        />
-                      ) : (
-                        <div className="size-10 rounded bg-muted flex items-center justify-center">
-                          <Package className="size-4 text-muted-foreground" />
+              : rows.map((p) => (
+                  <EtsTR key={p.id} onClick={() => setEditing(p)}>
+                    <EtsTD>
+                      <div className="flex items-center gap-3">
+                        {p.image_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={p.image_url}
+                            alt=""
+                            className="size-10 rounded object-cover bg-muted shrink-0"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="size-10 rounded bg-muted flex items-center justify-center shrink-0">
+                            <Package className="size-4 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <Link
+                            href={`/ets/products/${p.product_code ?? p.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-sm font-medium leading-tight hover:text-primary line-clamp-2"
+                          >
+                            {p.name_en || p.name_cn || "Untitled"}
+                          </Link>
+                          {p.material && (
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              {p.material}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-2">
-                      <div className="font-medium text-sm leading-tight">
-                        {p.name_en || p.name_cn || "—"}
                       </div>
-                      {p.name_cn && p.name_en && p.name_cn !== p.name_en && (
-                        <div className="text-xs text-muted-foreground leading-tight mt-0.5">
-                          {p.name_cn}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-2 font-mono text-xs">{p.product_code ?? "—"}</td>
-                    <td className="px-4 py-2 text-xs">{p.category ?? "—"}</td>
-                    <td className="px-4 py-2 text-right font-mono text-sm">
-                      {p.partner_price ? `₹${p.partner_price.toFixed(0)}` : "—"}
-                    </td>
-                    <td className="px-4 py-2 text-right font-mono text-sm">
-                      {p.suggested_mrp ? `₹${p.suggested_mrp.toFixed(0)}` : "—"}
-                    </td>
-                    <td className="px-4 py-2 text-right font-mono text-sm">
+                    </EtsTD>
+                    <EtsTD className="text-sm text-muted-foreground">
+                      {p.product_code ?? "—"}
+                    </EtsTD>
+                    <EtsTD className="text-sm">{p.category ?? "—"}</EtsTD>
+                    <EtsTD className="text-right text-sm">
+                      {formatCurrency(p.partner_price)}
+                    </EtsTD>
+                    <EtsTD className="text-right text-sm text-muted-foreground">
+                      {formatCurrency(p.suggested_mrp)}
+                    </EtsTD>
+                    <EtsTD className="text-right text-sm">
                       {p.stock_quantity ?? 0}
-                    </td>
-                    <td className="px-4 py-2">
-                      <div className="flex flex-col gap-0.5">
+                    </EtsTD>
+                    <EtsTD>
+                      <div className="flex flex-col gap-1">
                         {p.is_published && (
-                          <span className="inline-flex items-center text-xs font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 w-fit">
-                            Published
-                          </span>
+                          <EtsStatusBadge value="Published" />
                         )}
-                        {!p.is_active && (
-                          <span className="inline-flex items-center text-xs font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 w-fit">
-                            Inactive
-                          </span>
-                        )}
+                        {!p.is_active && <EtsStatusBadge value="Inactive" />}
                       </div>
-                    </td>
-                    <td className="px-4 py-2">
-                      <Link
-                        href={`/ets/products/${p.id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                      >
-                        View <ArrowRight className="size-3" />
-                      </Link>
-                    </td>
-                    <td className="px-4 py-2 text-right">
+                    </EtsTD>
+                    <EtsTD className="text-right">
                       <button
                         onClick={(e) => handleDelete(p, e)}
-                        className="p-1.5 rounded hover:bg-rose-50 text-rose-600"
+                        className="size-7 rounded hover:bg-muted text-muted-foreground inline-flex items-center justify-center"
                         aria-label="Delete"
                       >
                         <Trash2 className="size-3.5" />
                       </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                    </EtsTD>
+                  </EtsTR>
+                ))}
+          </tbody>
+        </EtsTable>
+      )}
 
-      {/* Pagination */}
       {!loading && totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <div className="text-xs text-muted-foreground">
+          <div className="text-sm text-muted-foreground">
             Page {page + 1} of {totalPages} — showing{" "}
             {page * PAGE_SIZE + 1}–{Math.min(total, (page + 1) * PAGE_SIZE)} of{" "}
             {total.toLocaleString()}
@@ -284,7 +274,7 @@ export default function EtsProductsPage() {
               type="button"
               disabled={page === 0}
               onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className="h-8 px-3 rounded-md border border-border bg-card text-sm disabled:opacity-50"
+              className="h-8 px-3 rounded-md border bg-card text-sm hover:bg-muted/40 disabled:opacity-50"
             >
               Previous
             </button>
@@ -292,7 +282,7 @@ export default function EtsProductsPage() {
               type="button"
               disabled={page + 1 >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="h-8 px-3 rounded-md border border-border bg-card text-sm disabled:opacity-50"
+              className="h-8 px-3 rounded-md border bg-card text-sm hover:bg-muted/40 disabled:opacity-50"
             >
               Next
             </button>
@@ -314,21 +304,9 @@ export default function EtsProductsPage() {
           setReloadKey((k) => k + 1)
         }}
       />
-    </div>
+    </EtsListShell>
   )
 }
-
-function Th({ children, className }: { children?: React.ReactNode; className?: string }) {
-  return (
-    <th
-      className={`px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide ${className ?? ""}`}
-    >
-      {children}
-    </th>
-  )
-}
-
-import { EtsEditDrawer } from "@/app/(portal)/ets/_components/ets-ui"
 
 function ProductDrawer({
   open,
@@ -421,7 +399,7 @@ function ProductDrawer({
         <>
           <button
             onClick={onClose}
-            className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/40"
+            className="h-9 px-3 rounded-md border bg-card text-sm font-medium hover:bg-muted/40"
           >
             Cancel
           </button>
@@ -437,34 +415,34 @@ function ProductDrawer({
     >
       <div className="space-y-4">
         <Field label="Name (CN)" required>
-          <input value={name} onChange={(e) => setName(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
+          <input value={name} onChange={(e) => setName(e.target.value)} className="w-full h-9 rounded-md border bg-background px-3 text-sm" />
         </Field>
         <Field label="Name (EN)">
-          <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
+          <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} className="w-full h-9 rounded-md border bg-background px-3 text-sm" />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Category">
-            <input value={category} onChange={(e) => setCategory(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
+            <input value={category} onChange={(e) => setCategory(e.target.value)} className="w-full h-9 rounded-md border bg-background px-3 text-sm" />
           </Field>
           <Field label="Unit price">
-            <input type="number" step="0.01" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
+            <input type="number" step="0.01" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className="w-full h-9 rounded-md border bg-background px-3 text-sm" />
           </Field>
         </div>
         <Field label="Barcode">
-          <input value={barcode} onChange={(e) => setBarcode(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
+          <input value={barcode} onChange={(e) => setBarcode(e.target.value)} className="w-full h-9 rounded-md border bg-background px-3 text-sm" />
         </Field>
         <Field label="Image URL">
-          <input value={image} onChange={(e) => setImage(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
+          <input value={image} onChange={(e) => setImage(e.target.value)} className="w-full h-9 rounded-md border bg-background px-3 text-sm" />
         </Field>
         <Field label="Material">
-          <input value={material} onChange={(e) => setMaterial(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
+          <input value={material} onChange={(e) => setMaterial(e.target.value)} className="w-full h-9 rounded-md border bg-background px-3 text-sm" />
         </Field>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
           Active
         </label>
         {err && (
-          <div className="rounded-md bg-rose-50 text-rose-700 px-3 py-2 text-xs">{err}</div>
+          <div className="rounded-md bg-rose-50 text-rose-700 px-3 py-2 text-sm">{err}</div>
         )}
       </div>
     </EtsEditDrawer>
@@ -474,7 +452,7 @@ function ProductDrawer({
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-muted-foreground mb-1">
+      <label className="block text-sm font-medium text-muted-foreground mb-1">
         {label}
         {required && <span className="text-rose-600 ml-0.5">*</span>}
       </label>

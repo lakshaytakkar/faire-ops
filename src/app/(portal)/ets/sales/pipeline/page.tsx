@@ -173,7 +173,7 @@ export default function EtsPipelinePage() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 items-start">
+        <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1">
           {STAGES.map((s) => {
             const list = grouped.get(s.id) ?? []
             const isDragOver = dragOverCol === s.id
@@ -183,7 +183,7 @@ export default function EtsPipelinePage() {
                 onDragOver={(e) => onDragOverCol(e, s.id)}
                 onDragLeave={onDragLeaveCol}
                 onDrop={(e) => onDrop(e, s.id)}
-                className={`rounded-lg border bg-card shadow-sm overflow-hidden transition-all ${
+                className={`w-72 shrink-0 rounded-lg border bg-card shadow-sm overflow-hidden transition-all ${
                   isDragOver ? "ring-2 ring-primary/40 bg-primary/5" : ""
                 }`}
               >
@@ -207,7 +207,7 @@ export default function EtsPipelinePage() {
                   </span>
                 </div>
                 <div
-                  className={`p-2 space-y-2 min-h-[260px] transition-colors ${isDragOver ? "bg-primary/5" : ""}`}
+                  className={`p-2 space-y-2 min-h-[400px] max-h-[calc(100vh-280px)] overflow-y-auto transition-colors ${isDragOver ? "bg-primary/5" : ""}`}
                 >
                   {list.map((c) => {
                     const isDragging = dragging === c.id
@@ -251,7 +251,7 @@ export default function EtsPipelinePage() {
                             c.package_tier) && (
                             <div className="flex items-center justify-between gap-1.5 flex-wrap">
                               {c.total_paid != null && (
-                                <span className="text-xs font-mono font-semibold text-emerald-700">
+                                <span className="text-sm font-semibold text-emerald-700">
                                   {formatCurrency(c.total_paid)}
                                 </span>
                               )}
@@ -260,7 +260,6 @@ export default function EtsPipelinePage() {
                                   value={
                                     c.selected_package ?? c.package_tier ?? null
                                   }
-                                  size="xs"
                                 />
                               )}
                             </div>
