@@ -15,6 +15,7 @@ import {
   Layers,
   Check,
   Truck,
+  FolderKanban,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useBrandFilter } from "@/lib/brand-filter-context"
@@ -87,6 +88,15 @@ const PLACEHOLDER_ETS: NavItem[] = [
     icon: LayoutDashboard,
   },
   {
+    title: "Projects",
+    url: "/ets/projects",
+    icon: FolderKanban,
+    subItems: [
+      { title: "All projects", url: "/ets/projects" },
+      { title: "Clients", url: "/ets/sales/clients" },
+    ],
+  },
+  {
     title: "Sales",
     url: "/ets/sales/pipeline",
     icon: Target,
@@ -143,10 +153,7 @@ const PLACEHOLDER_ETS: NavItem[] = [
     icon: Users,
     subItems: [
       { title: "All vendors", url: "/ets/vendors" },
-      { title: "Orders", url: "/ets/vendors/orders" },
       { title: "Payouts", url: "/ets/vendors/payouts" },
-      { title: "Vendor products", url: "/ets/vendors/products" },
-      { title: "KYC", url: "/ets/vendors/kyc" },
     ],
   },
   {
@@ -157,7 +164,6 @@ const PLACEHOLDER_ETS: NavItem[] = [
       { title: "Payments", url: "/ets/finance/payments" },
       { title: "Invoices", url: "/ets/finance/invoices" },
       { title: "Analytics", url: "/ets/finance/analytics" },
-      { title: "POS Audit", url: "/ets/finance/pos-audit" },
     ],
   },
 ]
