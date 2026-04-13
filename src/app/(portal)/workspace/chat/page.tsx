@@ -100,6 +100,8 @@ const CURRENT_USER = "Lakshay"
 // auth-context.tsx. Needed to key server-side chat read state per user.
 const CURRENT_USER_ID = "5962af62-87a0-41e6-83c3-317f3501c590"
 
+// Presence colors are semantic: green=online, amber=away, neutral=offline.
+// Universal chat convention (Slack/Teams/Discord), so not tokenized.
 const STATUS_DOT: Record<string, string> = {
   online: "bg-emerald-500",
   away: "bg-amber-500",
@@ -232,7 +234,7 @@ function AttachmentPreview({ att, onRemove }: { att: PendingAttachment; onRemove
         <div className="w-4 h-4 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin shrink-0" aria-label="Uploading" />
       )}
       {att.uploaded && (
-        <Check className="w-4 h-4 text-emerald-500 shrink-0" aria-label="Uploaded" />
+        <Check className="w-4 h-4 text-success shrink-0" aria-label="Uploaded" />
       )}
       <button
         onClick={onRemove}
@@ -281,7 +283,7 @@ function MessageAttachments({ attachments }: { attachments: Attachment[] }) {
               rel="noopener noreferrer"
               className="flex items-center gap-3 px-3 py-2 rounded-lg border bg-muted/50 hover:bg-muted transition-colors max-w-sm"
             >
-              <FileText className="w-5 h-5 text-blue-500 shrink-0" aria-hidden="true" />
+              <FileText className="w-5 h-5 text-primary shrink-0" aria-hidden="true" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium truncate">{f.name}</p>
                 <p className="text-xs text-muted-foreground">{formatFileSize(f.size)}</p>
@@ -1353,7 +1355,7 @@ export default function ChatPage() {
       {/* Offline banner */}
       {!online && (
         <div
-          className="mb-2 flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800"
+          className="mb-2 flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs font-medium text-warning"
           role="status"
           aria-live="polite"
         >
@@ -1367,7 +1369,7 @@ export default function ChatPage() {
         <div className="w-72 border-r flex flex-col bg-card">
           {/* Channels Header */}
           <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+            <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <Hash className="w-3.5 h-3.5" aria-hidden="true" />
               Channels
             </h3>
@@ -1383,6 +1385,17 @@ export default function ChatPage() {
 
           {/* Channel List */}
           <div className="px-2 space-y-0.5">
+            {channels.length === 0 && teamMembers.length === 0 && (
+              /* Sidebar skeleton — renders while initial fetch is in flight */
+              <div className="space-y-1 py-1" aria-hidden="true">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="flex items-center gap-2 px-3 py-2 animate-pulse">
+                    <div className="w-3 h-3 rounded bg-muted" />
+                    <div className="h-3 flex-1 rounded bg-muted/80" />
+                  </div>
+                ))}
+              </div>
+            )}
             {channels.map((ch) => {
               const isActive = selectedChannelId === ch.id && !selectedMember && !selectedVendor
               const hasUnread = unreadChannels.has(ch.id) && !isActive
@@ -1410,7 +1423,7 @@ export default function ChatPage() {
 
           {/* Team */}
           <div className="px-4 pt-5 pb-2">
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+            <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5" aria-hidden="true" />
               Team
             </h3>
@@ -1451,7 +1464,7 @@ export default function ChatPage() {
 
           {/* Vendors */}
           <div className="px-4 pt-3 pb-2">
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+            <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <Building2 className="w-3.5 h-3.5" aria-hidden="true" />
               Vendors
             </h3>
@@ -1472,7 +1485,7 @@ export default function ChatPage() {
                   }`}
                 >
                   <div className="shrink-0">
-                    <div className="w-7 h-7 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-[10px] font-bold text-orange-600 dark:text-orange-400">
+                    <div className="w-7 h-7 rounded-full bg-warning/15 flex items-center justify-center text-[10px] font-bold text-warning">
                       {getInitials(vendor.name)}
                     </div>
                   </div>
@@ -1538,7 +1551,7 @@ export default function ChatPage() {
                 placeholder="Search messages..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-8 rounded border px-3 text-sm bg-transparent focus:outline-none focus:ring-1 focus:ring-ring"
+                className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 autoFocus
                 aria-label="Search messages"
               />
@@ -1598,18 +1611,18 @@ export default function ChatPage() {
 
                     {showUnreadDivider && (
                       <div className="flex items-center gap-3 py-2" role="separator" aria-label="New messages">
-                        <div className="flex-1 h-px bg-red-500/40" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-red-500">
+                        <div className="flex-1 h-px bg-destructive/40" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-destructive">
                           New
                         </span>
-                        <div className="flex-1 h-px bg-red-500/40" />
+                        <div className="flex-1 h-px bg-destructive/40" />
                       </div>
                     )}
 
                     <div
                       className={`relative group flex gap-3 items-start rounded-md transition-colors animate-[messageIn_160ms_ease-out] ${
                         grouped ? "py-0.5 pl-11" : "py-2"
-                      } ${isHovered ? "bg-muted/40" : "hover:bg-muted/30"} ${isPending ? "opacity-60" : ""} ${isFailed ? "bg-red-50/40" : ""}`}
+                      } ${isHovered ? "bg-muted/40" : "hover:bg-muted/30"} ${isPending ? "opacity-60" : ""} ${isFailed ? "bg-destructive/5" : ""}`}
                       onMouseEnter={() => setHoveredMsgId(msg.id)}
                       onMouseLeave={() => { setHoveredMsgId(null); if (emojiPickerMsgId === msg.id) setEmojiPickerMsgId(null) }}
                     >
@@ -1677,13 +1690,13 @@ export default function ChatPage() {
                             />
                             <button
                               onClick={() => saveEdit(msg.id)}
-                              className="h-8 px-3 rounded bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 cursor-pointer active:scale-95"
+                              className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 cursor-pointer active:scale-95"
                             >
                               Save
                             </button>
                             <button
                               onClick={() => setEditingId(null)}
-                              className="h-8 px-3 rounded border text-xs font-medium hover:bg-muted cursor-pointer active:scale-95"
+                              className="h-9 px-3 rounded-md border border-border/80 bg-background text-sm font-medium hover:bg-muted/40 cursor-pointer active:scale-95"
                             >
                               Cancel
                             </button>
@@ -1710,12 +1723,12 @@ export default function ChatPage() {
 
                         {/* Failed state — inline retry */}
                         {isFailed && (
-                          <div className="mt-1 flex items-center gap-2 text-[11px] text-red-600">
+                          <div className="mt-1 flex items-center gap-2 text-xs text-destructive">
                             <AlertTriangle className="w-3 h-3" aria-hidden="true" />
                             <span>Failed to send.</span>
                             <button
                               onClick={() => retryMessage(msg.id)}
-                              className="inline-flex items-center gap-0.5 font-medium underline hover:no-underline cursor-pointer"
+                              className="inline-flex items-center gap-0.5 font-medium underline hover:no-underline cursor-pointer active:scale-95"
                             >
                               <RotateCcw className="w-3 h-3" aria-hidden="true" />
                               Retry
@@ -1729,7 +1742,7 @@ export default function ChatPage() {
                           <button
                             onClick={() => setReplyTo(msg)}
                             aria-label="Reply to message"
-                            className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95"
+                            className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95"
                             title="Reply"
                           >
                             <Reply className="w-3.5 h-3.5" />
@@ -1738,7 +1751,7 @@ export default function ChatPage() {
                             onClick={() => setEmojiPickerMsgId(emojiPickerMsgId === msg.id ? null : msg.id)}
                             aria-label="Add reaction"
                             aria-expanded={emojiPickerMsgId === msg.id}
-                            className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95"
+                            className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95"
                             title="React"
                           >
                             <Smile className="w-3.5 h-3.5" />
@@ -1746,7 +1759,7 @@ export default function ChatPage() {
                           <button
                             onClick={() => copyMessageText(msg)}
                             aria-label="Copy message text"
-                            className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95"
+                            className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95"
                             title="Copy"
                           >
                             <Copy className="w-3.5 h-3.5" />
@@ -1756,7 +1769,7 @@ export default function ChatPage() {
                               <button
                                 onClick={() => { setEditingId(msg.id); setEditValue(msg.body) }}
                                 aria-label="Edit message"
-                                className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95"
+                                className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95"
                                 title="Edit"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
@@ -1764,7 +1777,7 @@ export default function ChatPage() {
                               <button
                                 onClick={() => deleteMessage(msg.id)}
                                 aria-label="Delete message"
-                                className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer active:scale-95"
+                                className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer active:scale-95"
                                 title="Delete"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -1779,7 +1792,7 @@ export default function ChatPage() {
                                   key={e.label}
                                   onClick={() => toggleReaction(msg.id, e.emoji)}
                                   aria-label={`React with ${e.label}`}
-                                  className="w-8 h-8 rounded hover:bg-muted flex items-center justify-center text-base transition-colors cursor-pointer active:scale-95"
+                                  className="w-8 h-8 rounded-md hover:bg-muted flex items-center justify-center text-base transition-colors cursor-pointer active:scale-95"
                                   title={e.label}
                                 >
                                   {e.emoji}
@@ -1876,7 +1889,7 @@ export default function ChatPage() {
               onClick={() => fileInputRef.current?.click()}
               disabled={!activeChatId}
               aria-label="Attach file"
-              className="w-10 h-10 rounded-lg border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer shrink-0 active:scale-95"
+              className="w-9 h-9 rounded-md border border-border/80 bg-background flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer shrink-0 active:scale-95"
               title="Attach file"
             >
               <Paperclip className="w-4 h-4" />
@@ -1907,7 +1920,7 @@ export default function ChatPage() {
                 sending
               }
               aria-label={sending ? "Sending" : pendingFiles.some((p) => p.uploading) ? "Uploading attachments" : "Send message"}
-              className="inline-flex items-center justify-center gap-2 h-10 px-4 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:pointer-events-none cursor-pointer shrink-0 active:scale-95"
+              className="inline-flex items-center justify-center gap-2 h-9 px-4 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:pointer-events-none cursor-pointer shrink-0 active:scale-95"
             >
               {sending ? (
                 <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" aria-hidden="true" />

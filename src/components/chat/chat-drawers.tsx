@@ -47,6 +47,10 @@ import {
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
+// Presence dot colors are intentionally semantic — green = online,
+// amber = away, neutral = offline. Universal convention across chat
+// apps (Slack/Teams/Discord all use the same palette), so these are
+// kept as hardcoded Tailwind hues rather than design tokens.
 const STATUS_DOT: Record<string, string> = {
   online: "bg-emerald-500",
   away: "bg-amber-500",
@@ -301,7 +305,7 @@ export function ChannelDrawer({
               type="button"
               onClick={() => setEditing(true)}
               aria-label="Edit channel"
-              className="inline-flex items-center gap-1 rounded-md border border-border/80 bg-background px-2 h-7 text-xs font-medium text-foreground hover:bg-muted/40 transition-colors active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border/80 bg-background px-3 h-9 text-xs font-medium text-foreground hover:bg-muted/40 transition-colors active:scale-95"
             >
               <Pencil className="h-3 w-3" />
               Edit
@@ -435,7 +439,7 @@ export function ChannelDrawer({
               type="button"
               onClick={onRequestAddMembers}
               aria-label="Add people to channel"
-              className="inline-flex items-center gap-1 rounded-md border border-border/80 bg-background px-2 h-7 text-xs font-medium text-foreground hover:bg-muted/40 transition-colors active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border/80 bg-background px-3 h-9 text-xs font-medium text-foreground hover:bg-muted/40 transition-colors active:scale-95"
             >
               <UserPlus className="h-3 w-3" />
               Add
@@ -631,7 +635,7 @@ export function ProfileDrawer({
               <div
                 className={`w-16 h-16 rounded-full flex items-center justify-center text-base font-bold ${
                   subject.kind === "vendor"
-                    ? "bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400"
+                    ? "bg-warning/15 text-warning"
                     : "bg-muted text-muted-foreground"
                 }`}
               >

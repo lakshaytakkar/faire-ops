@@ -249,7 +249,7 @@ export function CreateChannelModal({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors active:scale-95"
+            className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors active:scale-95"
           >
             <X className="h-4 w-4" />
           </button>
@@ -284,7 +284,7 @@ export function CreateChannelModal({
                       setNameEdited(true)
                     }}
                     placeholder="launch-plans"
-                    className="w-full h-10 rounded-md border border-border/80 bg-background pl-7 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full h-9 rounded-md border border-border/80 bg-background pl-7 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     maxLength={60}
                     aria-describedby="cc-name-hint"
                   />
@@ -408,7 +408,7 @@ export function CreateChannelModal({
                     <button
                       type="button"
                       onClick={() => toggleMember(m.id)}
-                      className="ml-0.5 w-4 h-4 rounded-full flex items-center justify-center hover:bg-destructive/20 hover:text-destructive transition-colors"
+                      className="ml-0.5 w-4 h-4 rounded-full flex items-center justify-center hover:bg-destructive/20 hover:text-destructive transition-colors active:scale-95"
                       aria-label={`Remove ${m.name}`}
                     >
                       <X className="w-2.5 h-2.5" />
