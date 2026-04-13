@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { UserDockMenu } from "@/components/layout/user-dock-menu"
-import { getActiveSpaceSlug } from "@/components/layout/space-dock"
+import { useActiveSpace } from "@/lib/use-active-space"
 import {
   Calendar,
   ClipboardList,
@@ -62,10 +62,13 @@ const WORKSPACE_ITEMS = [
 type WorkspaceItem = (typeof WORKSPACE_ITEMS)[number]
 
 function resolveHref(item: WorkspaceItem, activeSlug: string): string {
-  // B2B owns the root routes today — keep legacy paths unchanged.
+  // Every universal module lives at its canonical route. Non-B2B spaces
+  // carry their identity forward via a ?space= param so the shared page
+  // knows which venture it's rendering for. Zero per-venture stubs needed.
   if (activeSlug === "b2b-ecommerce") return item.legacyHref
-  // Every other space gets /<slug>/<module>.
-  return `/${activeSlug}/${item.module}`
+  const base = item.legacyHref
+  const sep = base.includes("?") ? "&" : "?"
+  return `${base}${sep}space=${activeSlug}`
 }
 
 const STORAGE_KEY = "teamops:right-dock-collapsed"
@@ -86,7 +89,7 @@ const STORAGE_KEY = "teamops:right-dock-collapsed"
  */
 export function WorkspaceDock() {
   const pathname = usePathname()
-  const activeSlug = getActiveSpaceSlug(pathname)
+  const { slug: activeSlug } = useActiveSpace()
   const [collapsed, setCollapsed] = useState(false)
   const [hydrated, setHydrated] = useState(false)
 

@@ -18,7 +18,7 @@
 import { useState, useEffect, useRef } from "react"
 import { usePathname } from "next/navigation"
 import { useBrandFilter } from "@/lib/brand-filter-context"
-import { getActiveSpaceSlug } from "@/components/layout/space-dock"
+import { useActiveSpace } from "@/lib/use-active-space"
 import { ChevronDown, Layers, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -42,7 +42,7 @@ export function BrandFilterPill() {
   }, [open])
 
   // Only render inside the B2B space
-  const activeSlug = getActiveSpaceSlug(pathname)
+  const activeSlug = useActiveSpace().slug
   if (activeSlug !== "b2b-ecommerce") return null
 
   // Hide on the homepage and the spaces directory (already there)

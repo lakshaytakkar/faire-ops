@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 import { supabaseB2B } from "@/lib/supabase"
 import { useRef } from "react"
-import { getActiveSpaceSlug } from "@/components/layout/space-dock"
+import { useActiveSpace } from "@/lib/use-active-space"
 
 interface SubItem {
   title: string
@@ -505,7 +505,7 @@ export function TopNavigation() {
   // Pick the nav set based on which Space the user is currently in.
   // The b2b-ecommerce space gets the full Faire portal nav; other spaces
   // get their lightweight placeholder nav until they're built.
-  const activeSpaceSlug = getActiveSpaceSlug(pathname)
+  const activeSpaceSlug = useActiveSpace().slug
   const spaceNavItems: NavItem[] = (() => {
     switch (activeSpaceSlug) {
       case "hq":     return PLACEHOLDER_HQ

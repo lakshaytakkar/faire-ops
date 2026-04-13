@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { TopNavigation } from "@/components/layout/top-navigation"
 import { SpaceDock } from "@/components/layout/space-dock"
 import { WorkspaceDock } from "@/components/layout/workspace-dock"
@@ -14,16 +15,24 @@ export default function PortalLayout({
     <AuthProvider>
       <BrandFilterProvider>
         <div className="flex h-screen w-full">
-          {/* Left dock — space switcher */}
-          <SpaceDock />
+          {/* Left dock — space switcher. Wrapped in Suspense because
+              useActiveSpace() reads useSearchParams which requires a
+              boundary during static prerender. */}
+          <Suspense fallback={<div className="w-12 bg-black shrink-0" />}>
+            <SpaceDock />
+          </Suspense>
           <div className="flex flex-1 flex-col overflow-hidden">
-            <TopNavigation />
+            <Suspense fallback={<div className="h-12 bg-black shrink-0" />}>
+              <TopNavigation />
+            </Suspense>
             <main className="flex-1 overflow-auto px-4 py-5 md:px-6 lg:px-8">
               {children}
             </main>
           </div>
           {/* Right dock — workspace tools + user menu at top */}
-          <WorkspaceDock />
+          <Suspense fallback={<div className="w-12 bg-black shrink-0" />}>
+            <WorkspaceDock />
+          </Suspense>
         </div>
         <Toaster
           position="bottom-right"
