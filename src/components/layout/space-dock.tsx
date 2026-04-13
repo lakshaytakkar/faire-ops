@@ -12,10 +12,13 @@
  *   - Collapse toggle locked at the BOTTOM; preference persisted to
  *     localStorage under `teamops:left-dock-collapsed`.
  *
- * Each cell represents an internal Space (B2B Ecommerce, Suprans HQ,
- * LegalNations, GoyoTours, USDrop AI). Active space = `bg-primary` plus a
- * 2px colored indicator using the space's brand color on the INNER (right)
- * edge. Coming-soon spaces are dimmed and not clickable.
+ * Each cell represents a Space row from the public.spaces table. Ordering
+ * is sort_order asc (company tier pinned to the top via sort_order=10,
+ * ventures below starting at 20). Active space gets `bg-primary` + a 2px
+ * colored indicator on the inner (right) edge using the space's brand
+ * color. Inactive (`is_active=false`) spaces are dimmed and not clickable
+ * ("coming soon"). Spaces whose entry_url starts with http render a tiny
+ * external-link badge to distinguish them from internal routes.
  */
 
 import { useState, useEffect } from "react"
@@ -23,99 +26,99 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
+import { listSpaces, type Space } from "@/lib/spaces"
 import {
   ShoppingBag,
   Building2,
   Scale,
   Plane,
   Package,
+  Zap,
+  Inbox,
   Home,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
+  Box,
   type LucideIcon,
 } from "lucide-react"
 
-interface SpaceItem {
-  slug: string
-  name: string
-  shortName: string
-  icon: LucideIcon
-  color: string
-  entryUrl: string
-  isActive: boolean
-  pathPrefixes: string[]
+/* ------------------------------------------------------------------ */
+/*  Icon + path-prefix mapping                                         */
+/* ------------------------------------------------------------------ */
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  ShoppingBag,
+  Building2,
+  Scale,
+  Plane,
+  Package,
+  Zap,
+  Inbox,
 }
 
-const SPACES: SpaceItem[] = [
-  {
-    slug: "b2b-ecommerce",
-    name: "B2B Ecommerce",
-    shortName: "B2B",
-    icon: ShoppingBag,
-    color: "#3b82f6",
-    entryUrl: "/dashboard",
-    isActive: true,
-    pathPrefixes: [
-      "/dashboard",
-      "/overview",
-      "/orders",
-      "/catalog",
-      "/retailers",
-      "/analytics",
-      "/marketing",
-      "/finance",
-      "/reports",
-      "/automations",
-      "/operations",
-      "/workspace",
-    ],
-  },
-  {
-    slug: "hq",
-    name: "Suprans HQ",
-    shortName: "HQ",
-    icon: Building2,
-    color: "#8b5cf6",
-    entryUrl: "/hq/overview",
-    isActive: false,
-    pathPrefixes: ["/hq"],
-  },
-  {
-    slug: "legal",
-    name: "LegalNations",
-    shortName: "Legal",
-    icon: Scale,
-    color: "#10b981",
-    entryUrl: "/legal/clients",
-    isActive: false,
-    pathPrefixes: ["/legal"],
-  },
-  {
-    slug: "goyo",
-    name: "GoyoTours",
-    shortName: "Goyo",
-    icon: Plane,
-    color: "#f59e0b",
-    entryUrl: "/goyo/bookings",
-    isActive: false,
-    pathPrefixes: ["/goyo"],
-  },
-  {
-    slug: "usdrop",
-    name: "USDrop AI",
-    shortName: "USDrop",
-    icon: Package,
-    color: "#ec4899",
-    entryUrl: "/usdrop/orders",
-    isActive: false,
-    pathPrefixes: ["/usdrop"],
-  },
+/**
+ * Fallback icon for spaces whose `icon` string doesn't match a known
+ * lucide export. Keeps the dock visually stable when the DB adds a new
+ * space the frontend hasn't mapped yet.
+ */
+const FALLBACK_ICON: LucideIcon = Box
+
+function iconFor(spaceIconName: string | null): LucideIcon {
+  if (!spaceIconName) return FALLBACK_ICON
+  return ICON_MAP[spaceIconName] ?? FALLBACK_ICON
+}
+
+/**
+ * Path prefixes that identify which space the user is currently inside.
+ *
+ * The b2b-ecommerce space is special: its admin routes (/overview,
+ * /orders, /catalog, /retailers, /analytics, /marketing, /finance,
+ * /reports, /automations, /operations) live at the root today rather
+ * than under /b2b/*. They'll migrate later — until then this explicit
+ * list keeps active-state detection correct. Other spaces match a
+ * single `/<slug>` prefix.
+ */
+const B2B_PREFIXES = [
+  "/dashboard",
+  "/overview",
+  "/orders",
+  "/catalog",
+  "/retailers",
+  "/analytics",
+  "/marketing",
+  "/finance",
+  "/reports",
+  "/automations",
+  "/operations",
+  "/workspace",
 ]
 
+const PATH_PREFIXES_BY_SLUG: Record<string, string[]> = {
+  "b2b-ecommerce": B2B_PREFIXES,
+  "hq": ["/hq"],
+  "legal": ["/legal", "/legalnations"],
+  "goyo": ["/goyo"],
+  "usdrop": ["/usdrop"],
+  "eazysell": ["/eazysell"],
+  "toysinbulk": ["/toysinbulk"],
+  "suprans-app": ["/suprans-app"],
+}
+
+function prefixesFor(slug: string): string[] {
+  return PATH_PREFIXES_BY_SLUG[slug] ?? [`/${slug}`]
+}
+
+/**
+ * Determine which space the current pathname belongs to. Falls back to
+ * b2b-ecommerce (today's default landing for internal users).
+ *
+ * Exported for use by top-navigation and brand-filter-pill.
+ */
 export function getActiveSpaceSlug(pathname: string): string {
-  for (const s of SPACES) {
-    if (s.pathPrefixes.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
-      return s.slug
+  for (const [slug, prefixes] of Object.entries(PATH_PREFIXES_BY_SLUG)) {
+    if (prefixes.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+      return slug
     }
   }
   return "b2b-ecommerce"
@@ -123,11 +126,16 @@ export function getActiveSpaceSlug(pathname: string): string {
 
 const STORAGE_KEY = "teamops:left-dock-collapsed"
 
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
+
 export function SpaceDock() {
   const pathname = usePathname()
   const activeSlug = getActiveSpaceSlug(pathname)
-  const { hasSpaceAccess, isSuperadmin, loading, user } = useAuth()
+  const { hasSpaceAccess, isSuperadmin, loading: authLoading, user } = useAuth()
 
+  const [spaces, setSpaces] = useState<Space[]>([])
   const [collapsed, setCollapsed] = useState(false)
   const [hydrated, setHydrated] = useState(false)
 
@@ -139,6 +147,17 @@ export function SpaceDock() {
       /* ignore */
     }
     setHydrated(true)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    listSpaces().then((rows) => {
+      if (cancelled) return
+      setSpaces(rows)
+    })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   function toggle() {
@@ -155,8 +174,8 @@ export function SpaceDock() {
 
   const isCollapsed = hydrated ? collapsed : false
 
-  const visibleSpaces = SPACES.filter((s) => {
-    if (loading || isSuperadmin || !user) return true
+  const visibleSpaces = spaces.filter((s) => {
+    if (authLoading || isSuperadmin || !user) return true
     return hasSpaceAccess(s.slug)
   })
 
@@ -191,13 +210,17 @@ export function SpaceDock() {
       <nav className="flex-1 flex flex-col overflow-y-auto">
         {visibleSpaces.map((space) => {
           const isActive = activeSlug === space.slug
-          const Icon = space.icon
+          const Icon = iconFor(space.icon)
+          const isExternal = space.entry_url.startsWith("http")
 
           const inner = (
             <>
               <Icon className="size-4 shrink-0" />
               {!isCollapsed && (
-                <span className="truncate leading-none">{space.name}</span>
+                <span className="truncate leading-none flex-1">{space.name}</span>
+              )}
+              {!isCollapsed && isExternal && (
+                <ExternalLink className="size-3 shrink-0 opacity-60" />
               )}
               {isActive && (
                 <span
@@ -208,17 +231,22 @@ export function SpaceDock() {
               {isCollapsed && (
                 <span className="absolute left-full ml-2 px-2 py-1 rounded-md bg-foreground text-background text-[10px] font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 shadow-lg">
                   {space.name}
-                  {!space.isActive && " — coming soon"}
+                  {!space.is_active && " — coming soon"}
+                  {isExternal && " ↗"}
                 </span>
               )}
             </>
           )
 
-          if (space.isActive) {
+          if (space.is_active) {
+            const linkProps = isExternal
+              ? { target: "_blank" as const, rel: "noopener noreferrer" }
+              : {}
             return (
               <Link
                 key={space.slug}
-                href={space.entryUrl}
+                href={space.entry_url}
+                {...linkProps}
                 className={cn(
                   "relative flex items-center h-12 text-sm font-medium transition-colors group shrink-0",
                   isCollapsed ? "justify-center" : "gap-2 px-3",

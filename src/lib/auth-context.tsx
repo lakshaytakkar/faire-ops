@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * Auth + RBAC context for the Team Portal HQ.
+ * Auth + RBAC context for TeamSync AI (Suprans HQ + venture spaces).
  *
  * This is the React layer of Guide 05 Phase A.
  *

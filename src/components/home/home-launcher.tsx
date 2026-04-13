@@ -228,73 +228,6 @@ function ExternalAppCard({ app }: { app: ExternalApp }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Brand logo grid                                                    */
-/* ------------------------------------------------------------------ */
-
-interface BrandLogo {
-  slug: string
-  name: string
-  url?: string
-}
-
-const BRAND_LOGOS: BrandLogo[] = [
-  { slug: "teamsync-ai", name: "TeamSync AI", url: "/overview" },
-  { slug: "legalnations", name: "Legal Nations", url: "https://www.legalnations.com" },
-  { slug: "suprans", name: "Suprans", url: "https://suprans.in" },
-  { slug: "goyotours", name: "GoyoTours" },
-  { slug: "usdrop-ai", name: "USDrop AI" },
-  { slug: "eazysell", name: "EazySell" },
-  { slug: "toysinbulk", name: "ToysInBulk" },
-]
-
-function BrandLogoGrid() {
-  return (
-    <div className="mt-6 w-full">
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-3">
-        Brands & Ventures
-      </p>
-      <div className="grid grid-cols-3 gap-5">
-        {BRAND_LOGOS.map((brand) => {
-          const inner = (
-            <div className="flex items-center justify-center h-28 group">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`/logos/${brand.slug}.png`}
-                alt={brand.name}
-                className="h-full w-full object-contain group-hover:scale-105 transition-transform"
-              />
-            </div>
-          )
-          if (brand.url) {
-            const isExternal = /^https?:\/\//i.test(brand.url)
-            return isExternal ? (
-              <a
-                key={brand.slug}
-                href={brand.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={brand.name}
-              >
-                {inner}
-              </a>
-            ) : (
-              <Link key={brand.slug} href={brand.url} title={brand.name}>
-                {inner}
-              </Link>
-            )
-          }
-          return (
-            <div key={brand.slug} title={`${brand.name} (coming soon)`} className="opacity-70">
-              {inner}
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-/* ------------------------------------------------------------------ */
 /*  Empty state                                                        */
 /* ------------------------------------------------------------------ */
 
@@ -323,10 +256,10 @@ function HomeHero({ activeApps }: { activeApps: Space[] }) {
     <div className="relative min-h-screen flex flex-col items-center justify-center px-5 py-20">
       <div className="w-full max-w-md flex flex-col items-center">
         <h1 className="text-4xl md:text-5xl font-bold font-heading tracking-tight text-center text-white">
-          TeamSync<span className="text-primary"> AI</span>
+          Suprans<span className="text-primary"> HQ</span>
         </h1>
         <p className="mt-1.5 text-sm text-white/90 text-center">
-          Every operation, one place.
+          TeamSync AI — every operation, one place.
         </p>
 
         <div className="mt-6 w-full flex flex-col gap-2">
@@ -342,11 +275,9 @@ function HomeHero({ activeApps }: { activeApps: Space[] }) {
           )}
         </div>
 
-        <BrandLogoGrid />
-
         <div className="mt-6 w-full flex flex-col gap-2">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-1">
-            External apps
+            Public sites
           </p>
           {EXTERNAL_APPS.map((app) => (
             <ExternalAppCard key={app.domain} app={app} />
