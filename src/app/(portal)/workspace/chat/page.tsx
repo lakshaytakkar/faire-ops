@@ -1078,7 +1078,7 @@ export default function ChatPage() {
               Channels
             </h3>
             <button
-              onClick={() => setShowNewChannel(true)}
+              onClick={() => setShowCreateChannel(true)}
               className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95"
               aria-label="Create channel"
               title="Create channel"
@@ -1086,44 +1086,6 @@ export default function ChatPage() {
               <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
-
-          {showNewChannel && (
-            <div className="px-3 pb-2 space-y-1.5">
-              <input
-                type="text"
-                placeholder="channel-name"
-                value={newChannelName}
-                onChange={(e) => setNewChannelName(e.target.value)}
-                className="w-full h-8 rounded border px-2 text-xs bg-transparent focus:outline-none focus:ring-1 focus:ring-ring"
-                autoFocus
-                aria-label="New channel name"
-                onKeyDown={(e) => { if (e.key === "Enter") createChannel(); if (e.key === "Escape") setShowNewChannel(false) }}
-              />
-              <input
-                type="text"
-                placeholder="Description (optional)"
-                value={newChannelDesc}
-                onChange={(e) => setNewChannelDesc(e.target.value)}
-                className="w-full h-8 rounded border px-2 text-xs bg-transparent focus:outline-none focus:ring-1 focus:ring-ring"
-                aria-label="New channel description"
-                onKeyDown={(e) => { if (e.key === "Enter") createChannel(); if (e.key === "Escape") setShowNewChannel(false) }}
-              />
-              <div className="flex gap-1.5">
-                <button
-                  onClick={createChannel}
-                  className="flex-1 h-7 rounded bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors cursor-pointer active:scale-95"
-                >
-                  Create
-                </button>
-                <button
-                  onClick={() => { setShowNewChannel(false); setNewChannelName(""); setNewChannelDesc("") }}
-                  className="flex-1 h-7 rounded border text-xs font-medium hover:bg-muted transition-colors cursor-pointer active:scale-95"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Channel List */}
           <div className="px-2 space-y-0.5">
@@ -1706,6 +1668,21 @@ export default function ChatPage() {
         </div>,
         document.body,
       )}
+
+      {/* Create-channel multi-step modal */}
+      <CreateChannelModal
+        open={showCreateChannel}
+        onClose={() => setShowCreateChannel(false)}
+        onCreate={handleCreateChannel}
+        teamMembers={teamMembers.map((m) => ({
+          id: m.id,
+          name: m.name,
+          role: m.role,
+          avatar_url: m.avatar_url,
+        }))}
+        currentUserName={CURRENT_USER}
+        currentUserAvatar={avatarMap[CURRENT_USER]}
+      />
     </div>
   )
 }
