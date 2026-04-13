@@ -98,8 +98,15 @@ export default function ProductAnalyticsPage() {
   const router = useRouter()
   const { activeBrand, stores, storesLoading } = useBrandFilter()
   const storeFilter = activeBrand === "all" ? undefined : activeBrand
-  const { products, loading: productsLoading } = useProducts(storeFilter, 200)
-  const { orders, loading: ordersLoading } = useOrders(storeFilter, undefined, 200)
+  // Capped at 200 historically — that meant bestsellers, category stats and
+  // per-store bestsellers were all computed over the 200 newest orders / 200
+  // products only. Any product whose orders were outside that window was
+  // silently excluded from the rankings. Bumped to a wider window that
+  // comfortably covers current data volume (~1.8k orders, products grow
+  // slower). TODO: move these aggregations to b2b.faire_bestsellers RPC
+  // (already exists) when we next touch this page.
+  const { products, loading: productsLoading } = useProducts(storeFilter, 5000)
+  const { orders, loading: ordersLoading } = useOrders(storeFilter, undefined, 10000)
 
   const [sortMode, setSortMode] = useState<SortMode>("orders")
   const [zeroOrdersOpen, setZeroOrdersOpen] = useState(false)

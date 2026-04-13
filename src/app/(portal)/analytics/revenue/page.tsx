@@ -70,7 +70,15 @@ export default function AnalyticsPage() {
   const [orders, setOrders] = useState<OrderRow[]>([])
   const [ordersLoading, setOrdersLoading] = useState(true)
 
-  /* Fetch orders — limited to last 6 months for analytics */
+  /* Fetch orders — last 6 months for analytics.
+   * The .limit(500) cap caused a silent-truncation bug: monthly / daily /
+   * store revenue totals labelled "Total Revenue" and "All stores" were
+   * computed over the 500 newest orders only. When a low-volume store's
+   * orders were older than the global top 500, they vanished from the
+   * aggregate. Bumped to .range(0, 9999) (bypasses PostgREST's 1k
+   * default max-rows) — safe at current order volume (~1.8k).
+   * TODO: migrate to a b2b.faire_monthly_revenue RPC if orders grow
+   * past ~10k / 6mo window. */
   useEffect(() => {
     async function fetchRecent() {
       setOrdersLoading(true)
@@ -81,7 +89,7 @@ export default function AnalyticsPage() {
         .select("total_cents, store_id, state, faire_created_at")
         .gte("faire_created_at", sixMonthsAgo.toISOString())
         .order("faire_created_at", { ascending: false })
-        .limit(500)
+        .range(0, 9999)
       if (activeBrand !== "all") query = query.eq("store_id", activeBrand)
       const { data } = await query
       setOrders((data ?? []) as OrderRow[])

@@ -243,7 +243,18 @@ export default function ConsolidatedAnalyticsPage() {
     orderStatsDateFilter,
   )
 
-  /* -------------- Period-scoped real count / sum queries -------------- */
+  /* -------------- Period-scoped real count / sum queries --------------
+   * Powers the "Total Revenue" and "Total Orders" KPI cards at the top of
+   * the page. Old path fetched up to 50 000 rows of total_cents and summed
+   * in JS — PostgREST's default max-rows (1 000) silently capped it, so
+   * both KPIs under-reported for any period that contained >1 000 orders.
+   *
+   * Fix: reuse the b2b.faire_store_revenue(p_start) RPC — it aggregates
+   * revenue_cents and order_count server-side per store in one round-trip.
+   * Sum across stores (or scope to a single store) to produce both KPIs.
+   * This is strictly more correct than the client reduce and also faster
+   * (returns ~17 rows instead of 10k+).
+   */
   const [periodTotalOrders, setPeriodTotalOrders] = useState<number>(0)
   const [periodTotalRevenueCents, setPeriodTotalRevenueCents] = useState<number>(0)
   const [periodCountsLoading, setPeriodCountsLoading] = useState(true)
@@ -254,27 +265,33 @@ export default function ConsolidatedAnalyticsPage() {
       setPeriodCountsLoading(true)
       const startIso = periodStartIso(period)
 
-      let countQ = supabaseB2B
-        .from("faire_orders")
-        .select("*", { count: "exact", head: true })
-      if (storeFilter) countQ = countQ.eq("store_id", storeFilter)
-      if (startIso) countQ = countQ.gte("faire_created_at", startIso)
-
-      let revQ = supabaseB2B
-        .from("faire_orders")
-        .select("total_cents")
-        .range(0, 50000)
-      if (storeFilter) revQ = revQ.eq("store_id", storeFilter)
-      if (startIso) revQ = revQ.gte("faire_created_at", startIso)
-
-      const [{ count }, { data: revData }] = await Promise.all([countQ, revQ])
+      const { data, error } = await supabaseB2B.rpc("faire_store_revenue", {
+        p_start: startIso,
+      })
       if (cancelled) return
-      setPeriodTotalOrders(count ?? 0)
-      const sumCents = (revData ?? []).reduce(
-        (s: number, r: { total_cents: number | null }) => s + (r.total_cents ?? 0),
+
+      if (error) {
+        console.error("faire_store_revenue RPC error (period totals):", error)
+        setPeriodTotalOrders(0)
+        setPeriodTotalRevenueCents(0)
+        setPeriodCountsLoading(false)
+        return
+      }
+
+      const rows = ((data ?? []) as Array<{
+        store_id: string
+        order_count: number
+        revenue_cents: number | string
+      }>).filter((r) => !storeFilter || r.store_id === storeFilter)
+
+      const totalOrders = rows.reduce((s, r) => s + (r.order_count ?? 0), 0)
+      const totalRevenue = rows.reduce(
+        (s, r) => s + Number(r.revenue_cents ?? 0),
         0,
       )
-      setPeriodTotalRevenueCents(sumCents)
+
+      setPeriodTotalOrders(totalOrders)
+      setPeriodTotalRevenueCents(totalRevenue)
       setPeriodCountsLoading(false)
     }
     run()

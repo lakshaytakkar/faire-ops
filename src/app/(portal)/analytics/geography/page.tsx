@@ -204,7 +204,12 @@ export default function GeographyAnalyticsPage() {
   const [citySortDir, setCitySortDir] = useState<SortDirection>("desc")
   const [cityPage, setCityPage] = useState(0)
 
-  /* ---- Fetch orders (limited for performance) ---- */
+  /* ---- Fetch orders for geography aggregations ----
+   * Old .limit(500) silently excluded older orders from the state /
+   * international / top-state totals (labelled as authoritative).
+   * Bumped to .range(0, 9999) — safe at current volume (~1.8k orders),
+   * revisit with a b2b.faire_state_revenue RPC if the data grows past
+   * ~10k. */
   useEffect(() => {
     async function fetchAll() {
       setLoading(true)
@@ -212,7 +217,7 @@ export default function GeographyAnalyticsPage() {
         .from("faire_orders")
         .select("shipping_address, total_cents, store_id")
         .order("faire_created_at", { ascending: false })
-        .limit(500)
+        .range(0, 9999)
       setOrders((data ?? []) as OrderRow[])
       setLoading(false)
     }
