@@ -459,9 +459,8 @@ export function HomeLauncher({
       {/* Wallpaper — renders once and stays mounted across view switches */}
       <WallpaperSwitcher wallpapers={WALLPAPERS} />
 
-      {/* Top-right corner — view tabs + Help button */}
-      <div className="absolute top-4 right-4 z-10 flex items-center gap-1">
-        {/* Tab pill — Home / Plugins / Projects */}
+      {/* Top-left corner — view tab pill (Home / Plugins / Projects) */}
+      <div className="absolute top-4 left-4 z-10">
         <div className="inline-flex items-center gap-0.5 h-8 p-0.5 rounded-md border border-border/80 bg-card shadow-sm">
           <button
             type="button"
@@ -506,7 +505,10 @@ export function HomeLauncher({
             Projects
           </button>
         </div>
+      </div>
 
+      {/* Top-right corner — Help button */}
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-1">
         <Link
           href="/workspace/knowledge"
           className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-border/80 bg-card shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
