@@ -779,7 +779,7 @@ export function ProfileDrawer({
                 >
                   <Hash className="h-3 w-3 text-muted-foreground" />
                   <span className="truncate flex-1">{name}</span>
-                  <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                  <CheckCircle2 className="h-3 w-3 text-success" />
                 </li>
               ))}
             </ul>
