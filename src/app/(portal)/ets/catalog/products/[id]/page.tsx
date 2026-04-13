@@ -5,17 +5,6 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { ArrowLeft, Package } from "lucide-react"
 import { supabaseEts } from "@/lib/supabase"
-import { SubNav } from "@/components/shared/sub-nav"
-
-const SUB_NAV_ITEMS = [
-  { title: "Dashboard", href: "/ets/dashboard" },
-  { title: "Products", href: "/ets/products" },
-  { title: "Stores", href: "/ets/stores" },
-  { title: "Clients", href: "/ets/clients" },
-  { title: "Vendors", href: "/ets/vendors" },
-  { title: "More", href: "/ets/more" },
-]
-
 export default function EtsProductDetail() {
   const params = useParams<{ id: string }>()
   const id = params.id
@@ -42,8 +31,6 @@ export default function EtsProductDetail() {
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
-      <SubNav items={SUB_NAV_ITEMS} />
-
       <Link
         href="/ets/products"
         className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"

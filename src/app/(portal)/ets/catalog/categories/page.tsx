@@ -2,17 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { supabaseEts } from "@/lib/supabase"
-import { SubNav } from "@/components/shared/sub-nav"
-
-const SUB_NAV_ITEMS = [
-  { title: "Dashboard", href: "/ets/dashboard" },
-  { title: "Products", href: "/ets/products" },
-  { title: "Stores", href: "/ets/stores" },
-  { title: "Clients", href: "/ets/clients" },
-  { title: "Vendors", href: "/ets/vendors" },
-  { title: "More", href: "/ets/more" },
-]
-
 interface CategoryRow {
   id: string
   name: string
@@ -50,8 +39,6 @@ export default function EtsCategoriesPage() {
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
-      <SubNav items={SUB_NAV_ITEMS} />
-
       <div>
         <h1 className="text-2xl font-bold">Categories</h1>
         <p className="mt-1 text-sm text-muted-foreground">

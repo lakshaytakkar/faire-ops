@@ -12,16 +12,6 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import { supabaseEts } from "@/lib/supabase"
-import { SubNav } from "@/components/shared/sub-nav"
-
-const SUB_NAV_ITEMS = [
-  { title: "Dashboard", href: "/ets/dashboard" },
-  { title: "Products", href: "/ets/products" },
-  { title: "Stores", href: "/ets/stores" },
-  { title: "Clients", href: "/ets/clients" },
-  { title: "Vendors", href: "/ets/vendors" },
-  { title: "More", href: "/ets/more" },
-]
 
 interface Counts {
   stores: number
@@ -77,8 +67,6 @@ export default function EtsDashboard() {
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
-      <SubNav items={SUB_NAV_ITEMS} />
-
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">EazyToSell Admin</h1>
@@ -128,15 +116,15 @@ export default function EtsDashboard() {
           Quick access
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 p-5">
-          <QuickLink href="/ets/products" label="Product catalog" sub="599 SKUs" />
-          <QuickLink href="/ets/categories" label="Categories" sub="78 taxonomy nodes" />
-          <QuickLink href="/ets/clients" label="Client pipeline" sub="27 formation clients" />
+          <QuickLink href="/ets/catalog/products" label="Product catalog" sub="599 SKUs" />
+          <QuickLink href="/ets/catalog/categories" label="Categories" sub="78 taxonomy nodes" />
+          <QuickLink href="/ets/sales/clients" label="Client pipeline" sub="27 formation clients" />
           <QuickLink href="/ets/stores" label="Live stores" sub="1 store tracked" />
           <QuickLink href="/ets/vendors" label="Vendor roster" sub="5 suppliers" />
           <QuickLink
-            href="/ets/more"
-            label="More admin tools"
-            sub="~35 pages scaffolded"
+            href="/ets/supply/launches"
+            label="Supply chain"
+            sub="launches, China batches, dispatch"
           />
         </div>
       </div>

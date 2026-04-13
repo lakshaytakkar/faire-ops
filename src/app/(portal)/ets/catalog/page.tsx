@@ -3,10 +3,10 @@
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
-export default function EtsIndexRedirect() {
+export default function EtsCatalogIndex() {
   const router = useRouter()
   useEffect(() => {
-    router.replace("/ets/overview")
+    router.replace("/ets/catalog/products")
   }, [router])
   return null
 }

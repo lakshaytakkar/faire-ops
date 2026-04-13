@@ -4,17 +4,6 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { Search, Package, ArrowRight } from "lucide-react"
 import { supabaseEts } from "@/lib/supabase"
-import { SubNav } from "@/components/shared/sub-nav"
-
-const SUB_NAV_ITEMS = [
-  { title: "Dashboard", href: "/ets/dashboard" },
-  { title: "Products", href: "/ets/products" },
-  { title: "Stores", href: "/ets/stores" },
-  { title: "Clients", href: "/ets/clients" },
-  { title: "Vendors", href: "/ets/vendors" },
-  { title: "More", href: "/ets/more" },
-]
-
 interface ProductRow {
   id: string
   product_code: string | null
@@ -102,8 +91,6 @@ export default function EtsProductsPage() {
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
-      <SubNav items={SUB_NAV_ITEMS} />
-
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Products</h1>

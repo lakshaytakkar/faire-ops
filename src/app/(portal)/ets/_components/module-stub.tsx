@@ -2,27 +2,13 @@
 
 import Link from "next/link"
 import { ArrowRight, Clock, type LucideIcon } from "lucide-react"
-import { SubNav } from "@/components/shared/sub-nav"
 
 /**
  * Shared placeholder component for ETS-scoped universal modules that
- * aren't built yet. Every /ets/<module> stub renders this so the user
- * sees a consistent "scoped to ETS, coming soon, cross-venture view
- * still available" experience.
- *
- * Keep the ETS SubNav at the top so navigation stays inside the
- * EazyToSell space — the whole point is that clicking right-dock Chat
- * from /ets/dashboard never yanks the user out of ETS.
+ * aren't built yet. Navigation is handled by the top nav (7 sections
+ * with sub-item rows) plus the right WorkspaceDock — no per-page SubNav
+ * needed.
  */
-
-const ETS_SUBNAV = [
-  { title: "Dashboard", href: "/ets/dashboard" },
-  { title: "Products", href: "/ets/products" },
-  { title: "Stores", href: "/ets/stores" },
-  { title: "Clients", href: "/ets/clients" },
-  { title: "Vendors", href: "/ets/vendors" },
-  { title: "More", href: "/ets/more" },
-]
 
 export interface ModuleStubProps {
   icon: LucideIcon
@@ -41,8 +27,6 @@ export function EtsModuleStub({
 }: ModuleStubProps) {
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
-      <SubNav items={ETS_SUBNAV} />
-
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">

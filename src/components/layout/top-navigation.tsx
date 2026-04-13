@@ -15,7 +15,6 @@ import {
   Layers,
   Check,
   Truck,
-  Grid3x3,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useBrandFilter } from "@/lib/brand-filter-context"
@@ -76,43 +75,90 @@ const PLACEHOLDER_USDROP: NavItem[] = [
   { title: "Analytics", url: "/usdrop/analytics", icon: LayoutDashboard },
 ]
 
-// ETS (EazyToSell) — retail store-launch venture. Mirrors the ETS SubNav
-// on /ets/* pages. Sub-items point to the built pages; /ets/more is the
-// catalogue of planned pages that aren't wired yet.
+// ETS (EazyToSell) — Store Launch + Supply Partner platform. Top nav is
+// organised around the superadmin's workflow: pre-deal (Sales) → goods we
+// sell partners (Catalog) → getting goods there (Supply) → running stores
+// (Stores) → our supply-side (Vendors) → money flows (Finance). Overview
+// is the daily KPI landing.
 const PLACEHOLDER_ETS: NavItem[] = [
   {
-    title: "Dashboard",
-    url: "/ets/dashboard",
+    title: "Overview",
+    url: "/ets/overview",
     icon: LayoutDashboard,
   },
   {
-    title: "Products",
-    url: "/ets/products",
+    title: "Sales",
+    url: "/ets/sales/pipeline",
+    icon: Target,
+    subItems: [
+      { title: "Pipeline", url: "/ets/sales/pipeline" },
+      { title: "Clients", url: "/ets/sales/clients" },
+      { title: "Proposals", url: "/ets/sales/proposals" },
+      { title: "Calculator", url: "/ets/sales/calculator" },
+      { title: "Milestones", url: "/ets/sales/milestones" },
+      { title: "Activities", url: "/ets/sales/activities" },
+    ],
+  },
+  {
+    title: "Catalog",
+    url: "/ets/catalog/products",
     icon: Package,
     subItems: [
-      { title: "All Products", url: "/ets/products" },
-      { title: "Categories", url: "/ets/categories" },
+      { title: "Products", url: "/ets/catalog/products" },
+      { title: "Categories", url: "/ets/catalog/categories" },
+      { title: "Collections", url: "/ets/catalog/collections" },
+      { title: "Pricing", url: "/ets/catalog/pricing" },
+      { title: "Bulk upload", url: "/ets/catalog/bulk-upload" },
+      { title: "Setup kit", url: "/ets/catalog/setup-kit" },
+    ],
+  },
+  {
+    title: "Supply",
+    url: "/ets/supply/launches",
+    icon: Truck,
+    subItems: [
+      { title: "Launches", url: "/ets/supply/launches" },
+      { title: "China batches", url: "/ets/supply/china-batches" },
+      { title: "Dispatch", url: "/ets/supply/dispatch" },
+      { title: "Warehouse", url: "/ets/supply/warehouse" },
+      { title: "Stock", url: "/ets/supply/stock" },
+      { title: "QC", url: "/ets/supply/qc" },
+      { title: "Fulfillment", url: "/ets/supply/fulfillment" },
     ],
   },
   {
     title: "Stores",
     url: "/ets/stores",
     icon: Blocks,
-  },
-  {
-    title: "Clients",
-    url: "/ets/clients",
-    icon: Users,
+    subItems: [
+      { title: "All stores", url: "/ets/stores" },
+      { title: "Staff", url: "/ets/stores/staff" },
+      { title: "BOQ", url: "/ets/stores/boq" },
+      { title: "Documents", url: "/ets/stores/documents" },
+    ],
   },
   {
     title: "Vendors",
     url: "/ets/vendors",
-    icon: Truck,
+    icon: Users,
+    subItems: [
+      { title: "All vendors", url: "/ets/vendors" },
+      { title: "Orders", url: "/ets/vendors/orders" },
+      { title: "Payouts", url: "/ets/vendors/payouts" },
+      { title: "Vendor products", url: "/ets/vendors/products" },
+      { title: "KYC", url: "/ets/vendors/kyc" },
+    ],
   },
   {
-    title: "More",
-    url: "/ets/more",
-    icon: Grid3x3,
+    title: "Finance",
+    url: "/ets/finance/payments",
+    icon: Wallet,
+    subItems: [
+      { title: "Payments", url: "/ets/finance/payments" },
+      { title: "Invoices", url: "/ets/finance/invoices" },
+      { title: "Analytics", url: "/ets/finance/analytics" },
+      { title: "POS Audit", url: "/ets/finance/pos-audit" },
+    ],
   },
 ]
 
