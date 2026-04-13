@@ -14,6 +14,8 @@ import {
   ChevronDown,
   Layers,
   Check,
+  Truck,
+  Grid3x3,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useBrandFilter } from "@/lib/brand-filter-context"
@@ -72,6 +74,46 @@ const PLACEHOLDER_USDROP: NavItem[] = [
   { title: "Products", url: "/usdrop/products", icon: Package },
   { title: "Vendors", url: "/usdrop/vendors", icon: Users },
   { title: "Analytics", url: "/usdrop/analytics", icon: LayoutDashboard },
+]
+
+// ETS (EazyToSell) — retail store-launch venture. Mirrors the ETS SubNav
+// on /ets/* pages. Sub-items point to the built pages; /ets/more is the
+// catalogue of planned pages that aren't wired yet.
+const PLACEHOLDER_ETS: NavItem[] = [
+  {
+    title: "Dashboard",
+    url: "/ets/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Products",
+    url: "/ets/products",
+    icon: Package,
+    subItems: [
+      { title: "All Products", url: "/ets/products" },
+      { title: "Categories", url: "/ets/categories" },
+    ],
+  },
+  {
+    title: "Stores",
+    url: "/ets/stores",
+    icon: Blocks,
+  },
+  {
+    title: "Clients",
+    url: "/ets/clients",
+    icon: Users,
+  },
+  {
+    title: "Vendors",
+    url: "/ets/vendors",
+    icon: Truck,
+  },
+  {
+    title: "More",
+    url: "/ets/more",
+    icon: Grid3x3,
+  },
 ]
 
 const NAV_ITEMS: NavItem[] = [
@@ -424,6 +466,7 @@ export function TopNavigation() {
       case "legal":  return PLACEHOLDER_LEGAL
       case "goyo":   return PLACEHOLDER_GOYO
       case "usdrop": return PLACEHOLDER_USDROP
+      case "ets":    return PLACEHOLDER_ETS
       case "b2b-ecommerce":
       default:       return NAV_ITEMS
     }
