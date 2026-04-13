@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { UserDockMenu } from "@/components/layout/user-dock-menu"
+import { getActiveSpaceSlug } from "@/components/layout/space-dock"
 import {
   Calendar,
   ClipboardList,
@@ -28,27 +29,44 @@ import {
   ChevronRight,
 } from "lucide-react"
 
+/**
+ * Each workspace item has a universal `module` slug plus a `legacyHref`
+ * that points at the route the B2B-ecommerce space uses today. When the
+ * active space is `b2b-ecommerce` we keep `legacyHref` (current
+ * behavior, zero regression). For every other space we route to
+ * `/<space-slug>/<module>`, so each venture has its own scoped
+ * chat / calendar / tasks / etc.
+ */
 const WORKSPACE_ITEMS = [
-  { href: "/workspace/calendar", icon: Calendar, label: "Calendar" },
-  { href: "/operations/tasks", icon: ClipboardList, label: "Tasks" },
-  { href: "/workspace/team", icon: Users, label: "Team" },
-  { href: "/workspace/chat", icon: MessageCircle, label: "Chat" },
-  { href: "/workspace/qa/dashboard", icon: ShieldCheck, label: "QA" },
-  { href: "/workspace/emails/dashboard", icon: Megaphone, label: "Comms" },
-  { href: "/workspace/tickets", icon: LifeBuoy, label: "Tickets" },
-  { href: "/workspace/inbox", icon: Bell, label: "Inbox" },
-  { href: "/workspace/research", icon: Telescope, label: "Research" },
-  { href: "/workspace/training", icon: GraduationCap, label: "Learning" },
-  { href: "/workspace/knowledge", icon: BookOpen, label: "Help" },
-  { href: "/workspace/links", icon: Link2, label: "Links" },
-  { href: "/workspace/files", icon: FolderOpen, label: "Files" },
-  { href: "/automations/overview", icon: Zap, label: "Automations" },
-  { href: "/analytics/revenue", icon: BarChart3, label: "Analytics" },
-  { href: "/workspace/ai-tools", icon: Sparkles, label: "AI Tools" },
-  { href: "/workspace/ai-team", icon: Users, label: "Remote" },
-  { href: "/workspace/gmail", icon: Mail, label: "Gmail" },
-  { href: "/workspace/settings", icon: Settings, label: "Settings" },
+  { module: "calendar",    legacyHref: "/workspace/calendar",         icon: Calendar,       label: "Calendar" },
+  { module: "tasks",       legacyHref: "/operations/tasks",           icon: ClipboardList,  label: "Tasks" },
+  { module: "team",        legacyHref: "/workspace/team",             icon: Users,          label: "Team" },
+  { module: "chat",        legacyHref: "/workspace/chat",             icon: MessageCircle,  label: "Chat" },
+  { module: "qa",          legacyHref: "/workspace/qa/dashboard",     icon: ShieldCheck,    label: "QA" },
+  { module: "emails",      legacyHref: "/workspace/emails/dashboard", icon: Megaphone,      label: "Comms" },
+  { module: "tickets",     legacyHref: "/workspace/tickets",          icon: LifeBuoy,       label: "Tickets" },
+  { module: "inbox",       legacyHref: "/workspace/inbox",            icon: Bell,           label: "Inbox" },
+  { module: "research",    legacyHref: "/workspace/research",         icon: Telescope,      label: "Research" },
+  { module: "training",    legacyHref: "/workspace/training",         icon: GraduationCap,  label: "Learning" },
+  { module: "knowledge",   legacyHref: "/workspace/knowledge",        icon: BookOpen,       label: "Help" },
+  { module: "links",       legacyHref: "/workspace/links",            icon: Link2,          label: "Links" },
+  { module: "files",       legacyHref: "/workspace/files",            icon: FolderOpen,     label: "Files" },
+  { module: "automations", legacyHref: "/automations/overview",       icon: Zap,            label: "Automations" },
+  { module: "analytics",   legacyHref: "/analytics/revenue",          icon: BarChart3,      label: "Analytics" },
+  { module: "ai-tools",    legacyHref: "/workspace/ai-tools",         icon: Sparkles,       label: "AI Tools" },
+  { module: "ai-team",     legacyHref: "/workspace/ai-team",          icon: Users,          label: "Remote" },
+  { module: "gmail",       legacyHref: "/workspace/gmail",            icon: Mail,           label: "Gmail" },
+  { module: "settings",    legacyHref: "/workspace/settings",         icon: Settings,       label: "Settings" },
 ] as const
+
+type WorkspaceItem = (typeof WORKSPACE_ITEMS)[number]
+
+function resolveHref(item: WorkspaceItem, activeSlug: string): string {
+  // B2B owns the root routes today — keep legacy paths unchanged.
+  if (activeSlug === "b2b-ecommerce") return item.legacyHref
+  // Every other space gets /<slug>/<module>.
+  return `/${activeSlug}/${item.module}`
+}
 
 const STORAGE_KEY = "teamops:right-dock-collapsed"
 
@@ -68,6 +86,7 @@ const STORAGE_KEY = "teamops:right-dock-collapsed"
  */
 export function WorkspaceDock() {
   const pathname = usePathname()
+  const activeSlug = getActiveSpaceSlug(pathname)
   const [collapsed, setCollapsed] = useState(false)
   const [hydrated, setHydrated] = useState(false)
 
@@ -109,13 +128,14 @@ export function WorkspaceDock() {
       {/* Scrollable nav list fills remaining vertical space */}
       <nav className="flex-1 flex flex-col overflow-y-auto">
         {WORKSPACE_ITEMS.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+          const href = resolveHref(item, activeSlug)
+          const isActive = pathname === href || pathname.startsWith(href + "/")
           const Icon = item.icon
 
           return (
             <Link
-              key={item.href}
-              href={item.href}
+              key={item.module}
+              href={href}
               className={cn(
                 "relative flex items-center h-12 text-sm font-medium transition-colors group shrink-0",
                 isCollapsed ? "justify-center" : "gap-2 px-3",
