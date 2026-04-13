@@ -107,6 +107,8 @@ interface ExternalApp {
 }
 
 const EXTERNAL_APPS: ExternalApp[] = [
+  { name: "EazyToSell", domain: "ets-landing.vercel.app", url: "https://ets-landing.vercel.app", description: "Store Launch Program — Indian partner retailers", category: "website", status: "live", icon: Globe, color: "#10b981" },
+  { name: "EazyToSell Portal", domain: "ets-client.vercel.app", url: "https://ets-client.vercel.app", description: "Partners + cashiers + vendors — shared login", category: "client-portal", status: "live", icon: Store, color: "#10b981" },
   { name: "LegalNations", domain: "legalnations.com", url: "https://legalnations.com", description: "LLC formation landing page", category: "website", status: "planned", icon: Globe, color: "#10b981" },
   { name: "GoyoTours", domain: "goyotours.com", url: "https://goyotours.com", description: "Travel booking landing page", category: "website", status: "planned", icon: Globe, color: "#f59e0b" },
   { name: "USDrop AI", domain: "usdropai.com", url: "https://usdropai.com", description: "Dropshipping SaaS landing page", category: "website", status: "planned", icon: Globe, color: "#ec4899" },

@@ -35,6 +35,7 @@ import {
   Package,
   Zap,
   Inbox,
+  Store,
   Home,
   ChevronLeft,
   ChevronRight,
@@ -55,6 +56,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Package,
   Zap,
   Inbox,
+  Store,
 }
 
 /**
@@ -101,6 +103,7 @@ const PATH_PREFIXES_BY_SLUG: Record<string, string[]> = {
   "goyo": ["/goyo"],
   "usdrop": ["/usdrop"],
   "eazysell": ["/eazysell"],
+  "ets": ["/ets"],
   "toysinbulk": ["/toysinbulk"],
   "suprans-app": ["/suprans-app"],
 }

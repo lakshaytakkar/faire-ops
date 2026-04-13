@@ -14,6 +14,16 @@ export const supabaseB2B = createClient(supabaseUrl, supabaseAnonKey, {
   db: { schema: "b2b" },
 })
 
+// Suprans Lead Hub + landing page content (suprans.*)
+export const supabaseSuprans = createClient(supabaseUrl, supabaseAnonKey, {
+  db: { schema: "suprans" },
+})
+
+// EazyToSell admin portal (ets.*)
+export const supabaseEts = createClient(supabaseUrl, supabaseAnonKey, {
+  db: { schema: "ets" },
+})
+
 /* ------------------------------------------------------------------ */
 /*  Store types                                                        */
 /* ------------------------------------------------------------------ */
