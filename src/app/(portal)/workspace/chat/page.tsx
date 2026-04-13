@@ -17,6 +17,8 @@ import {
   ProfileDrawer,
   type ProfileSubject,
 } from "@/components/chat/chat-drawers"
+import { AddMembersToChannelModal } from "@/components/chat/add-members-modal"
+import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -395,9 +397,25 @@ export default function ChatPage() {
     | { kind: "profile"; subject: ProfileSubject }
     | null
   const [drawer, setDrawer] = useState<DrawerState>(null)
+  // Bumped whenever the roster for the currently-open drawer needs to
+  // re-fetch (e.g. after adding / removing a member).
+  const [channelRosterReloadKey, setChannelRosterReloadKey] = useState(0)
   // Cache of (userName -> set of channelIds) so the profile drawer can show
   // shared channels without another DB round-trip each open.
   const [memberChannels, setMemberChannels] = useState<Record<string, string[]>>({})
+
+  // Secondary flows launched from the channel drawer
+  const [addMembersForChannel, setAddMembersForChannel] = useState<
+    | { id: string; name: string; existingNames: string[] }
+    | null
+  >(null)
+  const [confirmDelete, setConfirmDelete] = useState<Channel | null>(null)
+  const [confirmLeave, setConfirmLeave] = useState<Channel | null>(null)
+  const [confirmRemoveMember, setConfirmRemoveMember] = useState<
+    | { channelId: string; channelName: string; userId: string; memberName: string }
+    | null
+  >(null)
+  const [mutationBusy, setMutationBusy] = useState(false)
 
   // ---- search ----
   const [searchQuery, setSearchQuery] = useState("")
@@ -1157,6 +1175,155 @@ export default function ChatPage() {
       .filter((n): n is string => typeof n === "string")
   }
 
+  // ---- channel mutations ----
+  async function handleUpdateChannel(
+    channelId: string,
+    patch: { name?: string; description?: string | null; is_private?: boolean },
+  ): Promise<{ ok: boolean; errorMessage?: string }> {
+    const { data, error } = await supabase
+      .from("chat_channels")
+      .update(patch)
+      .eq("id", channelId)
+      .select()
+      .single()
+    if (error || !data) {
+      const msg = error?.message ?? "Update failed"
+      toast.error("Couldn't save channel", { description: msg })
+      return { ok: false, errorMessage: msg }
+    }
+    setChannels((prev) =>
+      prev.map((c) => (c.id === channelId ? { ...c, ...(data as Channel) } : c)),
+    )
+    toast.success("Channel updated")
+    return { ok: true }
+  }
+
+  async function handleDeleteChannel(channel: Channel) {
+    setMutationBusy(true)
+    // Best-effort cascading deletes — members + messages + reads. If any
+    // individual call fails we log but still try to remove the channel row.
+    await Promise.allSettled([
+      supabase.from("chat_channel_members").delete().eq("channel_id", channel.id),
+      supabase.from("chat_messages").delete().eq("channel_id", channel.id),
+      supabase.from("chat_channel_reads").delete().eq("channel_id", channel.id),
+    ])
+    const { error } = await supabase
+      .from("chat_channels")
+      .delete()
+      .eq("id", channel.id)
+    setMutationBusy(false)
+    if (error) {
+      toast.error("Couldn't delete channel", { description: error.message })
+      return
+    }
+    setChannels((prev) => prev.filter((c) => c.id !== channel.id))
+    setConfirmDelete(null)
+    setDrawer(null)
+    if (selectedChannelId === channel.id) {
+      // Move to the next available channel, or clear
+      const remaining = channels.filter((c) => c.id !== channel.id)
+      if (remaining.length > 0) {
+        selectChannel(remaining[0])
+      } else {
+        setSelectedChannelId(null)
+      }
+    }
+    toast.success(`Deleted #${channel.name}`)
+  }
+
+  async function handleAddMembersToChannel(
+    channelId: string,
+    userIds: string[],
+  ): Promise<{ ok: boolean; errorMessage?: string }> {
+    const rows = userIds
+      .map((id) => teamMembers.find((m) => m.id === id))
+      .filter((m): m is TeamMember => !!m)
+      .map((m) => ({
+        channel_id: channelId,
+        user_id: m.id,
+        member_name: m.name,
+        role: "member" as const,
+        added_by: CURRENT_USER_ID,
+      }))
+    if (rows.length === 0) return { ok: true }
+    const { error } = await supabase.from("chat_channel_members").insert(rows)
+    if (error) {
+      toast.error("Couldn't add people", { description: error.message })
+      return { ok: false, errorMessage: error.message }
+    }
+    toast.success(
+      `Added ${rows.length} ${rows.length === 1 ? "person" : "people"}`,
+    )
+    // Refresh the roster in the drawer + the shared-channels cache
+    setChannelRosterReloadKey((k) => k + 1)
+    setMemberChannels((prev) => {
+      const next = { ...prev }
+      for (const r of rows) {
+        const arr = next[r.member_name] ?? []
+        if (!arr.includes(r.channel_id)) arr.push(r.channel_id)
+        next[r.member_name] = arr
+      }
+      return next
+    })
+    return { ok: true }
+  }
+
+  async function handleRemoveMember(
+    channelId: string,
+    userId: string,
+    memberName: string,
+  ) {
+    setMutationBusy(true)
+    const { error } = await supabase
+      .from("chat_channel_members")
+      .delete()
+      .eq("channel_id", channelId)
+      .eq("user_id", userId)
+    setMutationBusy(false)
+    if (error) {
+      toast.error("Couldn't remove member", { description: error.message })
+      return
+    }
+    setConfirmRemoveMember(null)
+    setChannelRosterReloadKey((k) => k + 1)
+    setMemberChannels((prev) => {
+      const next = { ...prev }
+      const arr = (next[memberName] ?? []).filter((cid) => cid !== channelId)
+      next[memberName] = arr
+      return next
+    })
+    toast.success(`Removed ${memberName}`)
+  }
+
+  async function handleLeaveChannel(channel: Channel) {
+    setMutationBusy(true)
+    const { error } = await supabase
+      .from("chat_channel_members")
+      .delete()
+      .eq("channel_id", channel.id)
+      .eq("user_id", CURRENT_USER_ID)
+    setMutationBusy(false)
+    if (error) {
+      toast.error("Couldn't leave channel", { description: error.message })
+      return
+    }
+    setConfirmLeave(null)
+    setDrawer(null)
+    setMemberChannels((prev) => {
+      const next = { ...prev }
+      const arr = (next[CURRENT_USER] ?? []).filter((cid) => cid !== channel.id)
+      next[CURRENT_USER] = arr
+      return next
+    })
+    // Move off the channel if currently viewing it
+    if (selectedChannelId === channel.id) {
+      const remaining = channels.filter((c) => c.id !== channel.id)
+      if (remaining.length > 0) selectChannel(remaining[0])
+      else setSelectedChannelId(null)
+    }
+    toast.success(`Left #${channel.name}`)
+  }
+
   // ---- search messages ----
   const filteredMessages = useMemo(() => {
     if (!showSearch || !searchQuery.trim()) return messages
@@ -1769,17 +1936,36 @@ export default function ChatPage() {
               status: m.status,
               avatar_url: m.avatar_url ?? null,
             }))}
+            currentUserName={CURRENT_USER}
+            reloadKey={channelRosterReloadKey}
             onClose={() => setDrawer(null)}
             onPickMember={(name) => openProfileFor(name)}
-            onAddMembersClick={() => {
-              // Stub for the next pass — today just close + open the create
-              // flow so the user has a path to add people (by creating a
-              // fresh channel). Full "add to existing" lives in a follow-up.
-              setDrawer(null)
-              toast.message("Adding to an existing channel is coming soon", {
-                description: "For now, use + next to Channels to create a new one with the right roster.",
+            onUpdateChannel={(patch) => handleUpdateChannel(activeChannel.id, patch)}
+            onRequestAddMembers={async () => {
+              // Pull the current roster so the modal can exclude them
+              const { data } = await supabase
+                .from("chat_channel_members")
+                .select("member_name")
+                .eq("channel_id", activeChannel.id)
+              const existingNames = ((data ?? []) as Array<{ member_name: string }>).map(
+                (r) => r.member_name,
+              )
+              setAddMembersForChannel({
+                id: activeChannel.id,
+                name: activeChannel.name,
+                existingNames,
               })
             }}
+            onRequestDelete={() => setConfirmDelete(activeChannel)}
+            onRequestLeave={() => setConfirmLeave(activeChannel)}
+            onRequestRemoveMember={(row) =>
+              setConfirmRemoveMember({
+                channelId: activeChannel.id,
+                channelName: activeChannel.name,
+                userId: row.user_id,
+                memberName: row.member_name,
+              })
+            }
           />
         )}
         {drawer?.kind === "profile" && (
@@ -1881,6 +2067,76 @@ export default function ChatPage() {
         }))}
         currentUserName={CURRENT_USER}
         currentUserAvatar={avatarMap[CURRENT_USER]}
+      />
+
+      {/* Add members to an existing channel */}
+      <AddMembersToChannelModal
+        open={!!addMembersForChannel}
+        channelName={addMembersForChannel?.name ?? ""}
+        teamMembers={teamMembers.map((m) => ({
+          id: m.id,
+          name: m.name,
+          role: m.role,
+          avatar_url: m.avatar_url ?? null,
+        }))}
+        existingMemberNames={addMembersForChannel?.existingNames ?? []}
+        onClose={() => setAddMembersForChannel(null)}
+        onSubmit={async (userIds) => {
+          if (!addMembersForChannel) return { ok: false }
+          return handleAddMembersToChannel(addMembersForChannel.id, userIds)
+        }}
+      />
+
+      {/* Confirm: delete channel */}
+      <ConfirmDialog
+        open={!!confirmDelete}
+        tone="destructive"
+        title={confirmDelete ? `Delete #${confirmDelete.name}?` : ""}
+        description="Messages, members and read state for this channel will be permanently removed. This can't be undone."
+        confirmLabel="Delete channel"
+        busy={mutationBusy}
+        onCancel={() => (mutationBusy ? undefined : setConfirmDelete(null))}
+        onConfirm={() => { if (confirmDelete) handleDeleteChannel(confirmDelete) }}
+      />
+
+      {/* Confirm: leave channel */}
+      <ConfirmDialog
+        open={!!confirmLeave}
+        tone="default"
+        title={confirmLeave ? `Leave #${confirmLeave.name}?` : ""}
+        description="You'll stop getting messages and the channel will disappear from your sidebar. You can re-join later if an admin invites you."
+        confirmLabel="Leave channel"
+        busy={mutationBusy}
+        onCancel={() => (mutationBusy ? undefined : setConfirmLeave(null))}
+        onConfirm={() => { if (confirmLeave) handleLeaveChannel(confirmLeave) }}
+      />
+
+      {/* Confirm: remove member */}
+      <ConfirmDialog
+        open={!!confirmRemoveMember}
+        tone="destructive"
+        title={
+          confirmRemoveMember
+            ? `Remove ${confirmRemoveMember.memberName}?`
+            : ""
+        }
+        description={
+          confirmRemoveMember
+            ? `${confirmRemoveMember.memberName} will lose access to #${confirmRemoveMember.channelName}. They won't be notified.`
+            : undefined
+        }
+        confirmLabel="Remove"
+        busy={mutationBusy}
+        onCancel={() => (mutationBusy ? undefined : setConfirmRemoveMember(null))}
+        onConfirm={() => {
+          if (confirmRemoveMember) {
+            handleRemoveMember(
+              confirmRemoveMember.channelId,
+              confirmRemoveMember.userId,
+              confirmRemoveMember.memberName,
+            )
+          }
+        }}
       />
     </div>
   )
