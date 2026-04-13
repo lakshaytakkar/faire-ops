@@ -12,6 +12,11 @@ import { toast } from "sonner"
 import { supabase, supabaseB2B } from "@/lib/supabase"
 import { RichTextEditor, RichTextRenderer, richTextToPlain } from "@/components/shared/rich-text-editor"
 import { CreateChannelModal, type CreateChannelPayload } from "@/components/chat/create-channel-modal"
+import {
+  ChannelDrawer,
+  ProfileDrawer,
+  type ProfileSubject,
+} from "@/components/chat/chat-drawers"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -381,6 +386,18 @@ export default function ChatPage() {
 
   // ---- channel creation ----
   const [showCreateChannel, setShowCreateChannel] = useState(false)
+
+  // ---- right-side drawer (channel details / person profile) ----
+  // One drawer at a time — opening a new one replaces the current. Clicking
+  // a member in the channel drawer swaps it for that member's profile.
+  type DrawerState =
+    | { kind: "channel"; channelId: string }
+    | { kind: "profile"; subject: ProfileSubject }
+    | null
+  const [drawer, setDrawer] = useState<DrawerState>(null)
+  // Cache of (userName -> set of channelIds) so the profile drawer can show
+  // shared channels without another DB round-trip each open.
+  const [memberChannels, setMemberChannels] = useState<Record<string, string[]>>({})
 
   // ---- search ----
   const [searchQuery, setSearchQuery] = useState("")
@@ -1030,6 +1047,116 @@ export default function ChatPage() {
     return messages.find((m) => m.id === replyToId)
   }
 
+  // ---- drawer plumbing ----
+  // Preload which channels each member belongs to so the profile drawer
+  // can show "shared channels" instantly. Cheap one-shot query; refreshes
+  // when the channel list changes (e.g. after creating a new channel).
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const { data } = await supabase
+        .from("chat_channel_members")
+        .select("channel_id, member_name")
+      if (cancelled) return
+      const next: Record<string, string[]> = {}
+      for (const row of ((data ?? []) as Array<{ channel_id: string; member_name: string }>)) {
+        const arr = next[row.member_name] ?? []
+        arr.push(row.channel_id)
+        next[row.member_name] = arr
+      }
+      setMemberChannels(next)
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [channels.length])
+
+  function openProfileFor(name: string) {
+    // Resolve the clicked name against known team_members + vendors.
+    const tm = teamMembers.find((m) => m.name === name)
+    if (tm) {
+      setDrawer({
+        kind: "profile",
+        subject: {
+          kind: "team",
+          id: tm.id,
+          name: tm.name,
+          role: tm.role,
+          status: tm.status,
+          avatar_url: tm.avatar_url ?? null,
+        },
+      })
+      return
+    }
+    const v = vendors.find((vv) => vv.name === name)
+    if (v) {
+      setDrawer({
+        kind: "profile",
+        subject: {
+          kind: "vendor",
+          id: v.id,
+          name: v.name,
+          contact_name: v.contact_name,
+        },
+      })
+      return
+    }
+    // Unknown sender (e.g. the current user hard-coded as "Lakshay" without
+    // a team_members row). Fall back to a minimal profile.
+    setDrawer({
+      kind: "profile",
+      subject: {
+        kind: "team",
+        id: name,
+        name,
+        role: name === CURRENT_USER ? "You" : "Team member",
+        status: "online",
+        avatar_url: avatarMap[name] ?? null,
+      },
+    })
+  }
+
+  function openChannelDrawer() {
+    if (!selectedChannelId || !activeChannel) return
+    setDrawer({ kind: "channel", channelId: selectedChannelId })
+  }
+
+  function handleHeaderClick() {
+    if (activeChannel) {
+      openChannelDrawer()
+    } else if (selectedMember) {
+      openProfileFor(selectedMember.name)
+    } else if (selectedVendor) {
+      openProfileFor(selectedVendor.name)
+    }
+  }
+
+  // "Send message" inside ProfileDrawer — triggers the existing DM flow.
+  async function handleStartDmFromDrawer(name: string) {
+    setDrawer(null)
+    const tm = teamMembers.find((m) => m.name === name)
+    if (tm) {
+      await selectMember(tm)
+      return
+    }
+    const v = vendors.find((vv) => vv.name === name)
+    if (v) {
+      await selectVendor(v)
+    }
+  }
+
+  // Shared channels between the current user and the drawer subject.
+  function sharedChannelNamesFor(otherName: string): string[] {
+    const mine = new Set(memberChannels[CURRENT_USER] ?? [])
+    const theirs = memberChannels[otherName] ?? []
+    const ids = theirs.filter((id) => mine.has(id))
+    const byId = new Map(channels.map((c) => [c.id, c.name]))
+    return ids
+      .map((id) => byId.get(id))
+      .filter((n): n is string => typeof n === "string")
+  }
+
   // ---- search messages ----
   const filteredMessages = useMemo(() => {
     if (!showSearch || !searchQuery.trim()) return messages
@@ -1196,16 +1323,31 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* ======== Right Main Area ======== */}
+        {/* ======== Right Main Area (messages + optional drawer) ======== */}
+        <div className="flex-1 flex min-w-0">
         <div className="flex-1 flex flex-col min-w-0 relative">
-          {/* Header */}
+          {/* Header — title is clickable to open the channel/profile drawer */}
           <div className="px-5 py-3 border-b flex items-center gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold">{headerTitle}</div>
+            <button
+              type="button"
+              onClick={handleHeaderClick}
+              disabled={!activeChatId}
+              aria-label={
+                activeChannel
+                  ? `Open channel details for #${activeChannel.name}`
+                  : selectedMember
+                    ? `Open profile for ${selectedMember.name}`
+                    : selectedVendor
+                      ? `Open profile for ${selectedVendor.name}`
+                      : "Chat"
+              }
+              className="flex-1 min-w-0 text-left rounded-md px-1 -mx-1 py-0.5 hover:bg-muted/40 transition-colors disabled:cursor-default disabled:hover:bg-transparent active:scale-[0.99]"
+            >
+              <div className="text-sm font-semibold truncate">{headerTitle}</div>
               {headerDescription && (
                 <p className="text-xs text-muted-foreground truncate">{headerDescription}</p>
               )}
-            </div>
+            </button>
             <kbd className="hidden md:inline-flex items-center gap-1 rounded border bg-muted/40 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
               <span>⌘</span>K
             </kbd>
@@ -1305,7 +1447,12 @@ export default function ChatPage() {
                       onMouseLeave={() => { setHoveredMsgId(null); if (emojiPickerMsgId === msg.id) setEmojiPickerMsgId(null) }}
                     >
                       {!grouped && (
-                        <div className="shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => openProfileFor(msg.sender_name)}
+                          aria-label={`Open profile for ${msg.sender_name}`}
+                          className="shrink-0 rounded-full hover:opacity-80 transition-opacity active:scale-95"
+                        >
                           {senderAvatar ? (
                             <img src={senderAvatar} alt="" className="w-8 h-8 rounded-full object-cover" />
                           ) : (
@@ -1317,13 +1464,20 @@ export default function ChatPage() {
                               {getInitials(msg.sender_name)}
                             </div>
                           )}
-                        </div>
+                        </button>
                       )}
 
                       <div className="flex-1 min-w-0">
                         {!grouped && (
                           <div className="flex items-baseline gap-2">
-                            <span className="text-sm font-semibold">{msg.sender_name}</span>
+                            <button
+                              type="button"
+                              onClick={() => openProfileFor(msg.sender_name)}
+                              aria-label={`Open profile for ${msg.sender_name}`}
+                              className="text-sm font-semibold text-foreground hover:text-primary hover:underline underline-offset-2 transition-colors cursor-pointer"
+                            >
+                              {msg.sender_name}
+                            </button>
                             <span className="text-xs text-muted-foreground" title={new Date(msg.created_at).toLocaleString()}>
                               {formatTime(msg.created_at)}
                             </span>
@@ -1596,6 +1750,51 @@ export default function ChatPage() {
               {sending ? "Sending..." : pendingFiles.some((p) => p.uploading) ? "Uploading..." : "Send"}
             </button>
           </div>
+        </div>
+
+        {/* Right-side drawer (channel details / person profile) */}
+        {drawer?.kind === "channel" && activeChannel && (
+          <ChannelDrawer
+            channel={{
+              id: activeChannel.id,
+              name: activeChannel.name,
+              description: activeChannel.description,
+              is_private: activeChannel.is_private,
+              created_at: activeChannel.created_at,
+            }}
+            teamMembers={teamMembers.map((m) => ({
+              id: m.id,
+              name: m.name,
+              role: m.role,
+              status: m.status,
+              avatar_url: m.avatar_url ?? null,
+            }))}
+            onClose={() => setDrawer(null)}
+            onPickMember={(name) => openProfileFor(name)}
+            onAddMembersClick={() => {
+              // Stub for the next pass — today just close + open the create
+              // flow so the user has a path to add people (by creating a
+              // fresh channel). Full "add to existing" lives in a follow-up.
+              setDrawer(null)
+              toast.message("Adding to an existing channel is coming soon", {
+                description: "For now, use + next to Channels to create a new one with the right roster.",
+              })
+            }}
+          />
+        )}
+        {drawer?.kind === "profile" && (
+          <ProfileDrawer
+            subject={drawer.subject}
+            currentUserName={CURRENT_USER}
+            sharedChannelNames={
+              drawer.subject.kind === "team"
+                ? sharedChannelNamesFor(drawer.subject.name)
+                : []
+            }
+            onClose={() => setDrawer(null)}
+            onStartDm={(name) => handleStartDmFromDrawer(name)}
+          />
+        )}
         </div>
       </div>
 
