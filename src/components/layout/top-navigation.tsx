@@ -16,6 +16,11 @@ import {
   Check,
   Truck,
   FolderKanban,
+  ShieldCheck,
+  ListTodo,
+  Rocket,
+  Map as MapIcon,
+  FileText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useBrandFilter } from "@/lib/brand-filter-context"
@@ -51,6 +56,7 @@ const PLACEHOLDER_HQ: NavItem[] = [
   { title: "Finance", url: "/hq/finance", icon: Wallet },
   { title: "Projects", url: "/hq/projects", icon: Blocks },
   { title: "Compliance", url: "/hq/compliance", icon: Target },
+  { title: "Calls", url: "/hq/calls/dashboard", icon: ShieldCheck },
 ]
 
 const PLACEHOLDER_LEGAL: NavItem[] = [
@@ -166,6 +172,15 @@ const PLACEHOLDER_ETS: NavItem[] = [
       { title: "Analytics", url: "/ets/finance/analytics" },
     ],
   },
+]
+
+const PLACEHOLDER_DEVELOPMENT: NavItem[] = [
+  { title: "Overview", url: "/development/overview", icon: LayoutDashboard },
+  { title: "Projects", url: "/development/projects", icon: FolderKanban },
+  { title: "Sprints", url: "/development/sprints", icon: ListTodo },
+  { title: "Deployments", url: "/development/deployments", icon: Rocket },
+  { title: "Roadmap", url: "/development/roadmap", icon: MapIcon },
+  { title: "Changelog", url: "/development/changelog", icon: FileText },
 ]
 
 const NAV_ITEMS: NavItem[] = [
@@ -518,7 +533,8 @@ export function TopNavigation() {
       case "legal":  return PLACEHOLDER_LEGAL
       case "goyo":   return PLACEHOLDER_GOYO
       case "usdrop": return PLACEHOLDER_USDROP
-      case "ets":    return PLACEHOLDER_ETS
+      case "ets":         return PLACEHOLDER_ETS
+      case "development": return PLACEHOLDER_DEVELOPMENT
       case "b2b-ecommerce":
       default:       return NAV_ITEMS
     }
