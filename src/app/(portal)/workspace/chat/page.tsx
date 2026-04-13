@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback, useMemo } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo, Suspense } from "react"
 import { createPortal } from "react-dom"
 import {
   Hash, Send, Users, Building2, Paperclip, X, FileText, Download,
@@ -21,6 +21,7 @@ import {
 } from "@/components/chat/chat-drawers"
 import { AddMembersToChannelModal } from "@/components/chat/add-members-modal"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
+import { useActiveSpace } from "@/lib/use-active-space"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -358,7 +359,8 @@ function MessageSkeleton() {
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
-export default function ChatPage() {
+function ChatPageInner() {
+  const activeSpace = useActiveSpace().slug
   const online = useOnline()
 
   // ---- data state ----
@@ -539,8 +541,8 @@ export default function ChatPage() {
   useEffect(() => {
     async function load() {
       const [chRes, tmRes, vRes] = await Promise.all([
-        supabase.from("chat_channels").select("*").order("created_at", { ascending: true }),
-        supabase.from("team_members").select("id, name, role, status, avatar_url").order("name"),
+        supabase.from("chat_channels").select("*").eq("space_slug", activeSpace).order("created_at", { ascending: true }),
+        supabase.from("team_members").select("id, name, role, status, avatar_url").eq("space_slug", activeSpace).order("name"),
         supabaseB2B.from("faire_vendors").select("id, name, contact_name").order("name"),
       ])
       const chs = (chRes.data ?? []) as Channel[]
@@ -552,7 +554,7 @@ export default function ChatPage() {
       }
     }
     load()
-  }, [])
+  }, [activeSpace])
 
   // ---- fetch messages when selection changes ----
   const fetchMessages = useCallback(
@@ -561,6 +563,7 @@ export default function ChatPage() {
       const { data } = await supabase
         .from("chat_messages")
         .select("*")
+        .eq("space_slug", activeSpace)
         .eq("channel_id", channelId)
         .order("created_at", { ascending: true })
       const rows = (data ?? []) as ChatMessage[]
@@ -703,6 +706,7 @@ export default function ChatPage() {
     const { data: existing } = await supabase
       .from("chat_dm_channels")
       .select("id")
+      .eq("space_slug", activeSpace)
       .eq("participant_1", p1)
       .eq("participant_2", p2)
       .maybeSingle()
@@ -711,7 +715,7 @@ export default function ChatPage() {
 
     const { data: created } = await supabase
       .from("chat_dm_channels")
-      .insert({ participant_1: p1, participant_2: p2 })
+      .insert({ participant_1: p1, participant_2: p2, space_slug: activeSpace })
       .select("id")
       .single()
 
@@ -826,6 +830,7 @@ export default function ChatPage() {
           message_type: payload.message_type,
           attachments: payload.attachments,
           reply_to: payload.reply_to,
+          space_slug: activeSpace,
         })
         .select("id, created_at")
         .single()
@@ -1001,6 +1006,7 @@ export default function ChatPage() {
         name: payload.name,
         description: payload.description || null,
         is_private: payload.isPrivate,
+        space_slug: activeSpace,
       })
       .select()
       .single()
@@ -2166,5 +2172,13 @@ export default function ChatPage() {
         }}
       />
     </div>
+  )
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<div className="max-w-[1440px] mx-auto w-full"><div className="h-8 w-40 rounded bg-muted animate-pulse" /></div>}>
+      <ChatPageInner />
+    </Suspense>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, Suspense } from "react"
 import Link from "next/link"
 import {
   LifeBuoy,
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SubNav } from "@/components/shared/sub-nav"
 import { NewTicketModal } from "@/components/shared/new-ticket-modal"
+import { useActiveSpace } from "@/lib/use-active-space"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -157,7 +158,8 @@ function formatDue(iso: string | null) {
 // Page
 // ---------------------------------------------------------------------------
 
-export default function AllTicketsPage() {
+function AllTicketsPageInner() {
+  const activeSpace = useActiveSpace().slug
   const [tickets, setTickets] = useState<TicketRow[]>([])
   const [categories, setCategories] = useState<CategoryRow[]>([])
   const [users, setUsers] = useState<UserRow[]>([])
@@ -186,6 +188,7 @@ export default function AllTicketsPage() {
         .select(
           "id, ticket_number, title, description, source, status, priority, category_id, assignee_user_id, reporter_name, due_at, updated_at, created_at",
         )
+        .eq("space_slug", activeSpace)
         .order("updated_at", { ascending: false })
         .limit(1000),
       supabase.from("ticket_categories").select("id, name, source").order("name"),
@@ -199,7 +202,7 @@ export default function AllTicketsPage() {
 
   useEffect(() => {
     load()
-  }, [])
+  }, [activeSpace])
 
   const categoryMap = useMemo(() => {
     const m = new Map<string, CategoryRow>()
@@ -646,6 +649,14 @@ export default function AllTicketsPage() {
         onCreated={() => load()}
       />
     </div>
+  )
+}
+
+export default function AllTicketsPage() {
+  return (
+    <Suspense fallback={<div className="max-w-[1440px] mx-auto w-full"><div className="h-8 w-40 rounded bg-muted animate-pulse" /></div>}>
+      <AllTicketsPageInner />
+    </Suspense>
   )
 }
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, useMemo } from "react"
+import { useEffect, useState, useCallback, useMemo, Suspense } from "react"
 import {
   Plus,
   ExternalLink,
@@ -18,6 +18,7 @@ import { Dialog } from "@base-ui/react/dialog"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useActiveSpace } from "@/lib/use-active-space"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -180,7 +181,8 @@ const SEED_LINKS: Omit<ImportantLink, "id" | "created_at">[] = [
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
-export default function LinksPage() {
+function LinksPageInner() {
+  const activeSpace = useActiveSpace().slug
   const [links, setLinks] = useState<ImportantLink[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -195,6 +197,7 @@ export default function LinksPage() {
     const { data, error } = await supabase
       .from("important_links")
       .select("*")
+      .eq("space_slug", activeSpace)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false })
 
@@ -207,6 +210,11 @@ export default function LinksPage() {
 
     /* Seed defaults if empty */
     if (!data || data.length === 0) {
+      if (activeSpace !== "b2b-ecommerce") {
+        setLinks([])
+        setLoading(false)
+        return
+      }
       const { data: seeded, error: seedErr } = await supabase
         .from("important_links")
         .insert(SEED_LINKS)
@@ -218,7 +226,7 @@ export default function LinksPage() {
     }
 
     setLoading(false)
-  }, [])
+  }, [activeSpace])
 
   useEffect(() => {
     fetchLinks()
@@ -253,6 +261,7 @@ export default function LinksPage() {
       is_pinned: form.is_pinned,
       icon: null,
       sort_order: links.length + 1,
+      space_slug: activeSpace,
     }
 
     await supabase.from("important_links").insert(payload)
@@ -548,5 +557,13 @@ export default function LinksPage() {
         </Dialog.Portal>
       </Dialog.Root>
     </div>
+  )
+}
+
+export default function LinksPage() {
+  return (
+    <Suspense fallback={<div className="max-w-[1440px] mx-auto w-full"><div className="h-8 w-40 rounded bg-muted animate-pulse" /></div>}>
+      <LinksPageInner />
+    </Suspense>
   )
 }

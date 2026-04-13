@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState, useCallback, useMemo } from "react"
+import { useEffect, useState, useCallback, useMemo, Suspense } from "react"
+import { useActiveSpace } from "@/lib/use-active-space"
 import {
   ChevronLeft,
   ChevronRight,
@@ -261,6 +262,15 @@ function getWeekDays(baseDate: Date) {
 /* ------------------------------------------------------------------ */
 
 export default function CalendarPage() {
+  return (
+    <Suspense fallback={<div className="max-w-[1440px] mx-auto w-full"><div className="h-8 w-40 rounded bg-muted animate-pulse" /></div>}>
+      <CalendarPageInner />
+    </Suspense>
+  )
+}
+
+function CalendarPageInner() {
+  const activeSpace = useActiveSpace().slug
   const today = new Date()
   const [currentYear, setCurrentYear] = useState(today.getFullYear())
   const [currentMonth, setCurrentMonth] = useState(today.getMonth())
@@ -308,6 +318,7 @@ export default function CalendarPage() {
     const { data, error } = await supabase
       .from("calendar_events")
       .select("*")
+      .eq("space_slug", activeSpace)
       .gte("start_time", rangeStart.toISOString())
       .lte("start_time", rangeEnd.toISOString())
       .order("start_time", { ascending: true })
@@ -320,20 +331,21 @@ export default function CalendarPage() {
     }
     setLoading(false)
     return data ?? []
-  }, [currentYear, currentMonth, viewMode, weekBase])
+  }, [currentYear, currentMonth, viewMode, weekBase, activeSpace])
 
   /* ---- Seed on first load ---- */
 
   const seedIfEmpty = useCallback(async (fetched: CalendarEvent[]) => {
     if (fetched.length > 0) return
-    const seeds = buildSeedEvents(currentYear, currentMonth)
+    if (activeSpace !== "b2b-ecommerce") return
+    const seeds = buildSeedEvents(currentYear, currentMonth).map((s) => ({ ...s, space_slug: activeSpace }))
     const { error } = await supabase.from("calendar_events").insert(seeds)
     if (error) {
       console.error("Seed error:", error)
       return
     }
     await fetchEvents()
-  }, [currentYear, currentMonth, fetchEvents])
+  }, [currentYear, currentMonth, fetchEvents, activeSpace])
 
   useEffect(() => {
     let cancelled = false
@@ -453,6 +465,7 @@ export default function CalendarPage() {
       location: formLocation.trim() || null,
       store_id: null,
       created_by: formAssignee || null,
+      space_slug: activeSpace,
     }
 
     if (editingEvent) {

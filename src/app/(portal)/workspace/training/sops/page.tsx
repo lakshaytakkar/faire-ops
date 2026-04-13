@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react"
 import {
   FileText,
   ExternalLink,
@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabase"
 import { SubNav } from "@/components/shared/sub-nav"
+import { useActiveSpace } from "@/lib/use-active-space"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -43,7 +44,8 @@ const SOP_CATEGORY_BADGE: Record<string, string> = {
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
-export default function SOPsPage() {
+function SOPsPageInner() {
+  const activeSpace = useActiveSpace().slug
   const [sops, setSops] = useState<SOP[]>([])
   const [loadingSops, setLoadingSops] = useState(true)
   const [search, setSearch] = useState("")
@@ -54,10 +56,11 @@ export default function SOPsPage() {
     const { data } = await supabase
       .from("sops")
       .select("*")
+      .eq("space_slug", activeSpace)
       .order("created_at", { ascending: false })
     setSops(data ?? [])
     setLoadingSops(false)
-  }, [])
+  }, [activeSpace])
 
   useEffect(() => {
     fetchSops()
@@ -207,5 +210,13 @@ export default function SOPsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function SOPsPage() {
+  return (
+    <Suspense fallback={<div className="max-w-[1440px] mx-auto w-full"><div className="h-8 w-40 rounded bg-muted animate-pulse" /></div>}>
+      <SOPsPageInner />
+    </Suspense>
   )
 }

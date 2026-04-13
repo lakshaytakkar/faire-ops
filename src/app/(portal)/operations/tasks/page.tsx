@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import {
   CheckSquare,
   Clock,
@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { TreeExplorer, type TreeNode } from "@/components/shared/tree-explorer"
+import { useActiveSpace } from "@/lib/use-active-space"
 
 interface Task {
   id: string
@@ -99,7 +100,8 @@ function formatDueDate(dueDate: string): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
-export default function TasksPage() {
+function TasksPageInner() {
+  const activeSpace = useActiveSpace().slug
   interface Subtask { id: string; title: string; is_done: boolean; sort_order: number }
   interface TaskComment { id: string; sender_name: string; body: string; created_at: string }
   interface TaskLink { id: string; title: string; url: string }
@@ -179,6 +181,7 @@ export default function TasksPage() {
       due_date: newTask.due_date || new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
       status: "todo",
       tags,
+      space_slug: activeSpace,
     }).select().single()
     setCreating(false)
     if (!error && data) {
@@ -192,12 +195,12 @@ export default function TasksPage() {
 
   // Fetch team avatars once
   useEffect(() => {
-    supabase.from("team_members").select("name, avatar_url").then(({ data }) => {
+    supabase.from("team_members").select("name, avatar_url").eq("space_slug", activeSpace).then(({ data }) => {
       const map: Record<string, string> = {}
       for (const m of (data ?? [])) if (m.avatar_url) map[m.name] = m.avatar_url
       setTeamAvatars(map)
     })
-  }, [])
+  }, [activeSpace])
 
   // Load task details when selected
   useEffect(() => {
@@ -245,6 +248,7 @@ export default function TasksPage() {
       const { data, error } = await supabase
         .from("tasks")
         .select("*")
+        .eq("space_slug", activeSpace)
         .order("sort_order")
         .order("due_date")
       if (!error && data) {
@@ -253,7 +257,7 @@ export default function TasksPage() {
       setLoading(false)
     }
     fetchTasks()
-  }, [])
+  }, [activeSpace])
 
   async function updateTaskStatus(taskId: string, newStatus: Task["status"]) {
     const { error } = await supabase
@@ -891,5 +895,13 @@ export default function TasksPage() {
         )
       })()}
     </div>
+  )
+}
+
+export default function TasksPage() {
+  return (
+    <Suspense fallback={<div className="max-w-[1440px] mx-auto w-full"><div className="h-8 w-40 rounded bg-muted animate-pulse" /></div>}>
+      <TasksPageInner />
+    </Suspense>
   )
 }

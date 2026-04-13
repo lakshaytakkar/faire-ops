@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef, Suspense } from "react"
 import {
   PlayCircle,
   Video,
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabase"
 import { SubNav } from "@/components/shared/sub-nav"
+import { useActiveSpace } from "@/lib/use-active-space"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -67,7 +68,8 @@ const SEED_VIDEOS = [
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
-export default function TrainingVideosPage() {
+function TrainingVideosPageInner() {
+  const activeSpace = useActiveSpace().slug
   const [videos, setVideos] = useState<TrainingVideo[]>([])
   const [loadingVideos, setLoadingVideos] = useState(true)
   const [activeCategory, setActiveCategory] = useState("All")
@@ -80,24 +82,26 @@ export default function TrainingVideosPage() {
     const { data } = await supabase
       .from("training_videos")
       .select("*")
+      .eq("space_slug", activeSpace)
       .order("sort_order", { ascending: true })
     setVideos(data ?? [])
     setLoadingVideos(false)
     return data ?? []
-  }, [])
+  }, [activeSpace])
 
   /* ---- Seed videos if empty ---- */
   useEffect(() => {
     if (seeded.current) return
     seeded.current = true
     ;(async () => {
+      if (activeSpace !== "b2b-ecommerce") return
       const videoData = await fetchVideos()
       if (videoData.length === 0) {
         await supabase.from("training_videos").insert(SEED_VIDEOS)
         fetchVideos()
       }
     })()
-  }, [fetchVideos])
+  }, [fetchVideos, activeSpace])
 
   /* ---- Delete video ---- */
   const deleteVideo = async (id: string) => {
@@ -271,6 +275,7 @@ export default function TrainingVideosPage() {
       {/* Add Video Dialog */}
       {showDialog && (
         <AddVideoDialog
+          activeSpace={activeSpace}
           onClose={() => setShowDialog(false)}
           onSaved={() => {
             setShowDialog(false)
@@ -282,14 +287,24 @@ export default function TrainingVideosPage() {
   )
 }
 
+export default function TrainingVideosPage() {
+  return (
+    <Suspense fallback={<div className="max-w-[1440px] mx-auto w-full"><div className="h-8 w-40 rounded bg-muted animate-pulse" /></div>}>
+      <TrainingVideosPageInner />
+    </Suspense>
+  )
+}
+
 /* ------------------------------------------------------------------ */
 /*  Add Video Dialog                                                   */
 /* ------------------------------------------------------------------ */
 
 function AddVideoDialog({
+  activeSpace,
   onClose,
   onSaved,
 }: {
+  activeSpace: string
   onClose: () => void
   onSaved: () => void
 }) {
@@ -318,6 +333,7 @@ function AddVideoDialog({
       duration_minutes: parseInt(form.duration_minutes) || 0,
       is_required: form.is_required,
       sort_order: 99,
+      space_slug: activeSpace,
     })
     setSaving(false)
     onSaved()

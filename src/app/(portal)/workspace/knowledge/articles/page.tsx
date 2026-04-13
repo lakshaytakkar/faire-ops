@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef, Suspense } from "react"
 import {
   BookOpen,
   FolderOpen,
@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabase"
 import { SubNav } from "@/components/shared/sub-nav"
+import { useActiveSpace } from "@/lib/use-active-space"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -583,7 +584,8 @@ Monitor your Faire Direct performance in your dashboard. Track how many retailer
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
-export default function KnowledgeArticlesPage() {
+function KnowledgeArticlesPageInner() {
+  const activeSpace = useActiveSpace().slug
   const [articles, setArticles] = useState<KnowledgeArticle[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -599,25 +601,27 @@ export default function KnowledgeArticlesPage() {
     const { data } = await supabase
       .from("knowledge_articles")
       .select("*")
+      .eq("space_slug", activeSpace)
       .order("is_pinned", { ascending: false })
       .order("created_at", { ascending: false })
     setArticles(data ?? [])
     setLoading(false)
     return data ?? []
-  }, [])
+  }, [activeSpace])
 
   /* ---- Seed if empty ---- */
   useEffect(() => {
     if (seeded.current) return
     seeded.current = true
     ;(async () => {
+      if (activeSpace !== "b2b-ecommerce") return
       const data = await fetchArticles()
       if (data.length === 0) {
         await supabase.from("knowledge_articles").insert(SEED_ARTICLES)
         fetchArticles()
       }
     })()
-  }, [fetchArticles])
+  }, [fetchArticles, activeSpace])
 
   /* ---- Toggle pin ---- */
   const togglePin = async (id: string, current: boolean) => {
@@ -984,6 +988,7 @@ export default function KnowledgeArticlesPage() {
       {/* Add Article Dialog */}
       {showDialog && (
         <AddArticleDialog
+          activeSpace={activeSpace}
           onClose={() => setShowDialog(false)}
           onSaved={() => {
             setShowDialog(false)
@@ -995,14 +1000,24 @@ export default function KnowledgeArticlesPage() {
   )
 }
 
+export default function KnowledgeArticlesPage() {
+  return (
+    <Suspense fallback={<div className="max-w-[1440px] mx-auto w-full"><div className="h-8 w-40 rounded bg-muted animate-pulse" /></div>}>
+      <KnowledgeArticlesPageInner />
+    </Suspense>
+  )
+}
+
 /* ------------------------------------------------------------------ */
 /*  Add Article Dialog                                                 */
 /* ------------------------------------------------------------------ */
 
 function AddArticleDialog({
+  activeSpace,
   onClose,
   onSaved,
 }: {
+  activeSpace: string
   onClose: () => void
   onSaved: () => void
 }) {
@@ -1038,6 +1053,7 @@ function AddArticleDialog({
       bullet_points: [],
       tags,
       is_pinned: form.is_pinned,
+      space_slug: activeSpace,
     })
     setSaving(false)
     onSaved()

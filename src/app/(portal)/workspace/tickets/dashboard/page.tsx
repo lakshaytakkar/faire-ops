@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, Suspense } from "react"
 import Link from "next/link"
 import {
   LifeBuoy,
@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SubNav } from "@/components/shared/sub-nav"
 import { NewTicketModal } from "@/components/shared/new-ticket-modal"
+import { useActiveSpace } from "@/lib/use-active-space"
 
 // ---------------------------------------------------------------------------
 // Types & constants
@@ -133,7 +134,8 @@ function formatDue(iso: string | null): { label: string; overdue: boolean } {
 // Page
 // ---------------------------------------------------------------------------
 
-export default function TicketsDashboardPage() {
+function TicketsDashboardPageInner() {
+  const activeSpace = useActiveSpace().slug
   const [tickets, setTickets] = useState<TicketRow[]>([])
   const [categories, setCategories] = useState<CategoryRow[]>([])
   const [users, setUsers] = useState<UserRow[]>([])
@@ -148,6 +150,7 @@ export default function TicketsDashboardPage() {
         .select(
           "id, ticket_number, title, source, status, priority, category_id, assignee_user_id, reporter_name, due_at, resolved_at, closed_at, created_at, updated_at",
         )
+        .eq("space_slug", activeSpace)
         .order("created_at", { ascending: false })
         .limit(500),
       supabase.from("ticket_categories").select("id, name, color"),
@@ -161,7 +164,7 @@ export default function TicketsDashboardPage() {
 
   useEffect(() => {
     load()
-  }, [])
+  }, [activeSpace])
 
   // ---- Derived metrics ----
   const now = Date.now()
@@ -601,6 +604,14 @@ export default function TicketsDashboardPage() {
         onCreated={() => load()}
       />
     </div>
+  )
+}
+
+export default function TicketsDashboardPage() {
+  return (
+    <Suspense fallback={<div className="max-w-[1440px] mx-auto w-full"><div className="h-8 w-40 rounded bg-muted animate-pulse" /></div>}>
+      <TicketsDashboardPageInner />
+    </Suspense>
   )
 }
 

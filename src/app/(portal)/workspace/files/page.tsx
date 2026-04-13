@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, useMemo, type ReactNode } from "react"
+import { useEffect, useState, useCallback, useMemo, Suspense, type ReactNode } from "react"
 import {
   Search,
   Upload,
@@ -27,6 +27,7 @@ import type { LucideIcon } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useActiveSpace } from "@/lib/use-active-space"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -154,7 +155,8 @@ function buildTree(files: FileRecord[]): TreeNode[] {
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
-export default function FilesPage() {
+function FilesPageInner() {
+  const activeSpace = useActiveSpace().slug
   const [files, setFiles] = useState<FileRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -189,6 +191,7 @@ export default function FilesPage() {
     const { data, error } = await supabase
       .from("files")
       .select("*")
+      .eq("space_slug", activeSpace)
       .order("created_at", { ascending: false })
 
     if (error) {
@@ -198,7 +201,7 @@ export default function FilesPage() {
       setFiles(data ?? [])
     }
     setLoading(false)
-  }, [])
+  }, [activeSpace])
 
   useEffect(() => {
     fetchFiles()
@@ -743,5 +746,13 @@ export default function FilesPage() {
         </span>
       </div>
     </div>
+  )
+}
+
+export default function FilesPage() {
+  return (
+    <Suspense fallback={<div className="max-w-[1440px] mx-auto w-full"><div className="h-8 w-40 rounded bg-muted animate-pulse" /></div>}>
+      <FilesPageInner />
+    </Suspense>
   )
 }
