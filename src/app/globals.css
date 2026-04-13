@@ -237,6 +237,24 @@
   .sidebar-nav-item {
     animation: sidebar-fade-in 0.25s cubic-bezier(0.25, 0.1, 0.25, 1) backwards;
   }
+
+  /* Chat microinteractions — referenced by chat/page.tsx via Tailwind
+     arbitrary values (animate-[messageIn_160ms_ease-out] etc.). */
+  @keyframes messageIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes reactionPop {
+    0%   { transform: scale(0.6); opacity: 0; }
+    60%  { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes toolbarIn {
+    from { opacity: 0; transform: translateY(-2px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
 }
 
 /* Hide scrollbars but keep scroll functionality */

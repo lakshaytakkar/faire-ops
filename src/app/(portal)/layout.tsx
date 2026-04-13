@@ -3,6 +3,7 @@ import { SpaceDock } from "@/components/layout/space-dock"
 import { WorkspaceDock } from "@/components/layout/workspace-dock"
 import { BrandFilterProvider } from "@/lib/brand-filter-context"
 import { AuthProvider } from "@/lib/auth-context"
+import { Toaster } from "sonner"
 
 export default function PortalLayout({
   children,
@@ -24,6 +25,16 @@ export default function PortalLayout({
           {/* Right dock — workspace tools + user menu at top */}
           <WorkspaceDock />
         </div>
+        <Toaster
+          position="bottom-right"
+          richColors
+          closeButton
+          toastOptions={{
+            style: {
+              fontFamily: "var(--font-plus-jakarta)",
+            },
+          }}
+        />
       </BrandFilterProvider>
     </AuthProvider>
   )

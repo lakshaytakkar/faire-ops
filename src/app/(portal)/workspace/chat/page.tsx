@@ -1,11 +1,14 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react"
+import { createPortal } from "react-dom"
 import {
   Hash, Send, Users, Building2, Paperclip, X, FileText, Download,
   Image as ImageIcon, Reply, Smile, Pencil, Trash2, Check, Plus,
-  ChevronDown, MessageSquare, Search,
+  ChevronDown, MessageSquare, Search, WifiOff, RotateCcw, AlertTriangle,
+  Copy, CornerDownLeft,
 } from "lucide-react"
+import { toast } from "sonner"
 import { supabase, supabaseB2B } from "@/lib/supabase"
 import { RichTextEditor, RichTextRenderer, richTextToPlain } from "@/components/shared/rich-text-editor"
 
@@ -31,6 +34,8 @@ interface Channel {
   last_message_at?: string | null
 }
 
+type SendStatus = "sent" | "pending" | "failed"
+
 interface ChatMessage {
   id: string
   channel_id: string
@@ -43,6 +48,17 @@ interface ChatMessage {
   edited_at?: string | null
   is_deleted?: boolean
   reactions?: Record<string, string[]>
+  /** Client-only: "pending" while the insert is in-flight, "failed" after
+   * an error. Never stored in the DB. Used to render failure UX + retry. */
+  __status?: SendStatus
+  /** Client-only: raw payload we can replay on retry. */
+  __retry?: {
+    channel_id: string
+    body: string
+    message_type: string
+    attachments: Attachment[]
+    reply_to: string | null
+  }
 }
 
 interface TeamMember {
@@ -71,6 +87,10 @@ interface DmChannel {
 /* ------------------------------------------------------------------ */
 
 const CURRENT_USER = "Lakshay"
+// Hardcoded lakshay user_id. Dev-fallback path while Supabase Auth session
+// isn't wired yet — matches the SUPERADMIN_FALLBACK_EMAIL flow in
+// auth-context.tsx. Needed to key server-side chat read state per user.
+const CURRENT_USER_ID = "5962af62-87a0-41e6-83c3-317f3501c590"
 
 const STATUS_DOT: Record<string, string> = {
   online: "bg-emerald-500",
@@ -103,9 +123,24 @@ function getInitials(name: string): string {
     .slice(0, 2)
 }
 
+/** Slack-style relative time: "just now" / "5m" / "12:34" / "Yesterday 12:34" / "Mar 4". */
 function formatTime(iso: string): string {
   const d = new Date(iso)
-  return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+  const now = new Date()
+  const diffSec = (now.getTime() - d.getTime()) / 1000
+
+  if (diffSec < 45) return "just now"
+  if (diffSec < 60 * 60) return `${Math.max(1, Math.floor(diffSec / 60))}m`
+
+  const sameDay = d.toDateString() === now.toDateString()
+  const yesterday = new Date(now)
+  yesterday.setDate(yesterday.getDate() - 1)
+  const isYesterday = d.toDateString() === yesterday.toDateString()
+
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+  if (sameDay) return time
+  if (isYesterday) return `Yesterday ${time}`
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" })
 }
 
 function formatDate(iso: string): string {
@@ -139,6 +174,23 @@ function isDifferentDay(a: string, b: string): boolean {
   return new Date(a).toDateString() !== new Date(b).toDateString()
 }
 
+/** Minimal online/offline hook — navigator.onLine + event listeners. */
+function useOnline(): boolean {
+  const [online, setOnline] = useState(true)
+  useEffect(() => {
+    setOnline(typeof navigator === "undefined" ? true : navigator.onLine)
+    const on = () => setOnline(true)
+    const off = () => setOnline(false)
+    window.addEventListener("online", on)
+    window.addEventListener("offline", off)
+    return () => {
+      window.removeEventListener("online", on)
+      window.removeEventListener("offline", off)
+    }
+  }, [])
+  return online
+}
+
 /* ------------------------------------------------------------------ */
 /*  Sub-components                                                     */
 /* ------------------------------------------------------------------ */
@@ -169,14 +221,15 @@ function AttachmentPreview({ att, onRemove }: { att: PendingAttachment; onRemove
         </p>
       </div>
       {att.uploading && (
-        <div className="w-4 h-4 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin shrink-0" />
+        <div className="w-4 h-4 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin shrink-0" aria-label="Uploading" />
       )}
       {att.uploaded && (
-        <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+        <Check className="w-4 h-4 text-emerald-500 shrink-0" aria-label="Uploaded" />
       )}
       <button
         onClick={onRemove}
-        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer active:scale-95"
+        aria-label={`Remove attachment ${att.file.name}`}
       >
         <X className="w-3 h-3" />
       </button>
@@ -192,8 +245,15 @@ function MessageAttachments({ attachments }: { attachments: Attachment[] }) {
     <div className="mt-1.5 space-y-2">
       {images.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {images.map((img, i) => (
-            <a key={i} href={img.url} target="_blank" rel="noopener noreferrer" className="block">
+          {images.map((img) => (
+            <a
+              key={img.path || img.url}
+              href={img.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block"
+              aria-label={`Open image ${img.name}`}
+            >
               <img
                 src={img.url}
                 alt={img.name}
@@ -205,20 +265,20 @@ function MessageAttachments({ attachments }: { attachments: Attachment[] }) {
       )}
       {files.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          {files.map((f, i) => (
+          {files.map((f) => (
             <a
-              key={i}
+              key={f.path || f.url}
               href={f.url}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 px-3 py-2 rounded-lg border bg-muted/50 hover:bg-muted transition-colors max-w-sm"
             >
-              <FileText className="w-5 h-5 text-blue-500 shrink-0" />
+              <FileText className="w-5 h-5 text-blue-500 shrink-0" aria-hidden="true" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium truncate">{f.name}</p>
                 <p className="text-xs text-muted-foreground">{formatFileSize(f.size)}</p>
               </div>
-              <Download className="w-4 h-4 text-muted-foreground shrink-0" />
+              <Download className="w-4 h-4 text-muted-foreground shrink-0" aria-hidden="true" />
             </a>
           ))}
         </div>
@@ -245,7 +305,8 @@ function ReactionPills({
           <button
             key={emoji}
             onClick={() => onToggle(emoji)}
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-colors cursor-pointer ${
+            aria-label={`${emoji} reaction, ${users.length} ${users.length === 1 ? "person" : "people"}${isMine ? ", including you — click to remove" : " — click to add"}`}
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-all cursor-pointer active:scale-95 animate-[reactionPop_160ms_cubic-bezier(.2,.8,.2,1.4)] ${
               isMine
                 ? "bg-primary/10 border-primary/30 text-primary"
                 : "bg-muted border-transparent text-muted-foreground hover:border-border"
@@ -260,16 +321,40 @@ function ReactionPills({
   )
 }
 
+/** Shimmer skeleton used during initial message fetch. */
+function MessageSkeleton() {
+  return (
+    <div className="space-y-4 py-4 px-1">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="flex gap-3 items-start animate-pulse">
+          <div className="w-8 h-8 rounded-full bg-muted shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="flex gap-2 items-center">
+              <div className="h-3 w-24 rounded bg-muted" />
+              <div className="h-3 w-12 rounded bg-muted/60" />
+            </div>
+            <div className={`h-3 rounded bg-muted/80 ${i === 1 ? "w-3/5" : "w-4/5"}`} />
+            {i !== 1 && <div className="h-3 w-2/5 rounded bg-muted/60" />}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 /* ------------------------------------------------------------------ */
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
 export default function ChatPage() {
+  const online = useOnline()
+
   // ---- data state ----
   const [channels, setChannels] = useState<Channel[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [vendors, setVendors] = useState<VendorContact[]>([])
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messagesLoading, setMessagesLoading] = useState(false)
 
   // ---- selection state ----
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null)
@@ -302,17 +387,37 @@ export default function ChatPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [showSearch, setShowSearch] = useState(false)
 
-  // ---- unread tracking ----
+  // ---- quick switcher (Cmd/Ctrl+K) ----
+  const [switcherOpen, setSwitcherOpen] = useState(false)
+  const [switcherQuery, setSwitcherQuery] = useState("")
+
+  // ---- server-persisted unread state ----
+  // Map keys: channel id (both regular channels and DM channels share
+  // the chat_messages.channel_id column). Value = ISO timestamp of the
+  // most recent read. Read from chat_channel_reads + chat_dm_reads on
+  // mount and refreshed when the user opens a channel.
   const [lastRead, setLastRead] = useState<Record<string, string>>({})
 
-  // ---- refs ----
+  // ---- scroll anchoring ----
+  // When the user is reading history (scrolled up), don't auto-jump to
+  // bottom on new arrivals — show a "new messages" pill instead.
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const isAtBottomRef = useRef(true)
+  const [newMessagesCount, setNewMessagesCount] = useState(0)
+
+  // ---- unread divider (rendered once between last-read and first-unread on
+  //      channel open). Computed when messages load for a channel. ----
+  const [unreadBoundaryId, setUnreadBoundaryId] = useState<string | null>(null)
+
+  // ---- refs ----
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // ---- derived ----
   const activeChannel = channels.find((c) => c.id === selectedChannelId) ?? null
   const activeChatId = dmChannelId ?? selectedChannelId
+  const activeChatIsDm = !!dmChannelId
 
   const headerTitle = selectedVendor
     ? selectedVendor.name
@@ -336,37 +441,61 @@ export default function ChatPage() {
     return map
   }, [teamMembers])
 
-  // Unread counts per channel
+  // Unread channel set — derived from DB-persisted lastRead vs channel.last_message_at
   const unreadChannels = useMemo(() => {
     const set = new Set<string>()
     for (const ch of channels) {
-      if (ch.last_message_at && lastRead[ch.id]) {
-        if (new Date(ch.last_message_at) > new Date(lastRead[ch.id])) {
-          set.add(ch.id)
-        }
-      } else if (ch.last_message_at && !lastRead[ch.id]) {
+      if (!ch.last_message_at) continue
+      const read = lastRead[ch.id]
+      if (!read || new Date(ch.last_message_at) > new Date(read)) {
         set.add(ch.id)
       }
     }
     return set
   }, [channels, lastRead])
 
-  // ---- load last-read from localStorage ----
+  // ---- load last-read state from DB on mount ----
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("chat_last_read")
-      if (stored) setLastRead(JSON.parse(stored))
-    } catch {}
+    async function loadReadState() {
+      try {
+        const [chRes, dmRes] = await Promise.all([
+          supabase
+            .from("chat_channel_reads")
+            .select("channel_id, last_read_at")
+            .eq("user_id", CURRENT_USER_ID),
+          supabase
+            .from("chat_dm_reads")
+            .select("dm_channel_id, last_read_at")
+            .eq("user_id", CURRENT_USER_ID),
+        ])
+        const next: Record<string, string> = {}
+        for (const r of (chRes.data ?? []) as Array<{ channel_id: string; last_read_at: string }>) {
+          next[r.channel_id] = r.last_read_at
+        }
+        for (const r of (dmRes.data ?? []) as Array<{ dm_channel_id: string; last_read_at: string }>) {
+          next[r.dm_channel_id] = r.last_read_at
+        }
+        setLastRead(next)
+      } catch {
+        /* RLS / network — degrade silently; unread state stays empty */
+      }
+    }
+    loadReadState()
   }, [])
 
-  function markAsRead(channelId: string) {
-    const now = new Date().toISOString()
-    setLastRead((prev) => {
-      const next = { ...prev, [channelId]: now }
-      localStorage.setItem("chat_last_read", JSON.stringify(next))
-      return next
-    })
-  }
+  const markAsRead = useCallback(
+    async (channelId: string, isDm: boolean) => {
+      const now = new Date().toISOString()
+      setLastRead((prev) => ({ ...prev, [channelId]: now }))
+      const table = isDm ? "chat_dm_reads" : "chat_channel_reads"
+      const idCol = isDm ? "dm_channel_id" : "channel_id"
+      await supabase.from(table).upsert(
+        { user_id: CURRENT_USER_ID, [idCol]: channelId, last_read_at: now, updated_at: now },
+        { onConflict: `user_id,${idCol}` },
+      )
+    },
+    [],
+  )
 
   // ---- fetch channels + team + vendors on mount ----
   useEffect(() => {
@@ -388,21 +517,44 @@ export default function ChatPage() {
   }, [])
 
   // ---- fetch messages when selection changes ----
-  const fetchMessages = useCallback(async (channelId: string) => {
-    const { data } = await supabase
-      .from("chat_messages")
-      .select("*")
-      .eq("channel_id", channelId)
-      .order("created_at", { ascending: true })
-    setMessages((data ?? []) as ChatMessage[])
-    markAsRead(channelId)
-  }, [])
+  const fetchMessages = useCallback(
+    async (channelId: string, isDm: boolean) => {
+      setMessagesLoading(true)
+      const { data } = await supabase
+        .from("chat_messages")
+        .select("*")
+        .eq("channel_id", channelId)
+        .order("created_at", { ascending: true })
+      const rows = (data ?? []) as ChatMessage[]
+      setMessages(rows)
+      setMessagesLoading(false)
+      setNewMessagesCount(0)
+
+      // Compute unread boundary BEFORE marking as read: first message with
+      // created_at > lastRead[channelId] AND from another sender.
+      const read = lastRead[channelId]
+      if (read) {
+        const boundary = rows.find(
+          (m) => new Date(m.created_at) > new Date(read) && m.sender_name !== CURRENT_USER,
+        )
+        setUnreadBoundaryId(boundary ? boundary.id : null)
+      } else {
+        setUnreadBoundaryId(null)
+      }
+
+      // Now mark as read (updates state after boundary is computed)
+      markAsRead(channelId, isDm)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [markAsRead],
+  )
 
   useEffect(() => {
     if (activeChatId) {
-      fetchMessages(activeChatId)
+      fetchMessages(activeChatId, activeChatIsDm)
     }
-  }, [activeChatId, fetchMessages])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeChatId, activeChatIsDm])
 
   // ---- Realtime subscription ----
   useEffect(() => {
@@ -422,30 +574,59 @@ export default function ChatPage() {
           if (payload.eventType === "INSERT") {
             const newMsg = payload.new as ChatMessage
             setMessages((prev) => {
-              // Avoid duplicates from optimistic updates
               if (prev.some((m) => m.id === newMsg.id)) return prev
               return [...prev, newMsg]
             })
-            markAsRead(activeChatId)
+            // If the user isn't at the bottom AND it's not their own message,
+            // bump the "new messages" counter instead of auto-scrolling.
+            if (!isAtBottomRef.current && newMsg.sender_name !== CURRENT_USER) {
+              setNewMessagesCount((c) => c + 1)
+            } else if (isAtBottomRef.current) {
+              // They're already at the bottom — scroll to show the new msg
+              requestAnimationFrame(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+              })
+              markAsRead(activeChatId, activeChatIsDm)
+            }
           } else if (payload.eventType === "UPDATE") {
             const updated = payload.new as ChatMessage
-            setMessages((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
+            setMessages((prev) =>
+              prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m)),
+            )
           } else if (payload.eventType === "DELETE") {
             const deleted = payload.old as { id: string }
             setMessages((prev) => prev.filter((m) => m.id !== deleted.id))
           }
-        }
+        },
       )
       .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [activeChatId])
+  }, [activeChatId, activeChatIsDm, markAsRead])
 
-  // ---- auto-scroll ----
+  // ---- scroll anchoring: track whether user is at bottom ----
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    const el = messagesContainerRef.current
+    if (!el) return
+    const onScroll = () => {
+      // 80px threshold — anything within 80px of the bottom counts as "at bottom"
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+      isAtBottomRef.current = nearBottom
+      if (nearBottom && newMessagesCount > 0) setNewMessagesCount(0)
+    }
+    el.addEventListener("scroll", onScroll, { passive: true })
+    // Initialise as at-bottom
+    onScroll()
+    return () => el.removeEventListener("scroll", onScroll)
+  }, [newMessagesCount])
+
+  // ---- auto-scroll ONLY if we were already near the bottom ----
+  useEffect(() => {
+    if (isAtBottomRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    }
   }, [messages.length])
 
   // ---- auto-resize textarea ----
@@ -456,22 +637,40 @@ export default function ChatPage() {
     }
   }, [inputValue])
 
+  // ---- global keyboard shortcuts ----
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const meta = e.metaKey || e.ctrlKey
+      if (meta && e.key.toLowerCase() === "k") {
+        e.preventDefault()
+        setSwitcherOpen((v) => !v)
+        setSwitcherQuery("")
+      } else if (e.key === "Escape") {
+        if (switcherOpen) setSwitcherOpen(false)
+        else if (emojiPickerMsgId) setEmojiPickerMsgId(null)
+        else if (editingId) setEditingId(null)
+        else if (replyTo) setReplyTo(null)
+        else if (showSearch) { setShowSearch(false); setSearchQuery("") }
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [switcherOpen, emojiPickerMsgId, editingId, replyTo, showSearch])
+
   // ---- DM channel helper ----
   async function getOrCreateDmChannel(otherName: string): Promise<string | null> {
     const p1 = CURRENT_USER < otherName ? CURRENT_USER : otherName
     const p2 = CURRENT_USER < otherName ? otherName : CURRENT_USER
 
-    // Check existing
     const { data: existing } = await supabase
       .from("chat_dm_channels")
       .select("id")
       .eq("participant_1", p1)
       .eq("participant_2", p2)
-      .single()
+      .maybeSingle()
 
     if (existing) return existing.id
 
-    // Create
     const { data: created } = await supabase
       .from("chat_dm_channels")
       .insert({ participant_1: p1, participant_2: p2 })
@@ -489,6 +688,8 @@ export default function ChatPage() {
     setSelectedChannelId(ch.id)
     setReplyTo(null)
     setEditingId(null)
+    setNewMessagesCount(0)
+    isAtBottomRef.current = true
   }
 
   async function selectMember(member: TeamMember) {
@@ -497,6 +698,8 @@ export default function ChatPage() {
     setSelectedMember(member)
     setReplyTo(null)
     setEditingId(null)
+    setNewMessagesCount(0)
+    isAtBottomRef.current = true
     const dmId = await getOrCreateDmChannel(member.name)
     setDmChannelId(dmId)
   }
@@ -507,13 +710,19 @@ export default function ChatPage() {
     setSelectedVendor(vendor)
     setReplyTo(null)
     setEditingId(null)
+    setNewMessagesCount(0)
+    isAtBottomRef.current = true
     const dmId = await getOrCreateDmChannel(vendor.name)
     setDmChannelId(dmId)
   }
 
-  // ---- file handling — upload immediately on select ----
+  // ---- file handling ----
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
+    const tooBig = files.filter((f) => f.size > MAX_FILE_SIZE)
+    if (tooBig.length > 0) {
+      toast.error(`${tooBig.length} file${tooBig.length === 1 ? "" : "s"} exceeded the 10 MB limit`)
+    }
     const valid = files.filter((f) => f.size <= MAX_FILE_SIZE)
     if (fileInputRef.current) fileInputRef.current.value = ""
 
@@ -525,7 +734,6 @@ export default function ChatPage() {
       }
       setPendingFiles((prev) => [...prev, pending])
 
-      // Upload in background
       const formData = new FormData()
       formData.append("file", file)
       try {
@@ -533,17 +741,19 @@ export default function ChatPage() {
         if (res.ok) {
           const data = (await res.json()) as Attachment
           setPendingFiles((prev) =>
-            prev.map((p) => (p.file === file ? { ...p, uploading: false, uploaded: data } : p))
+            prev.map((p) => (p.file === file ? { ...p, uploading: false, uploaded: data } : p)),
           )
         } else {
           setPendingFiles((prev) =>
-            prev.map((p) => (p.file === file ? { ...p, uploading: false, error: true } : p))
+            prev.map((p) => (p.file === file ? { ...p, uploading: false, error: true } : p)),
           )
+          toast.error(`Upload failed: ${file.name}`)
         }
       } catch {
         setPendingFiles((prev) =>
-          prev.map((p) => (p.file === file ? { ...p, uploading: false, error: true } : p))
+          prev.map((p) => (p.file === file ? { ...p, uploading: false, error: true } : p)),
         )
+        toast.error(`Upload failed: ${file.name}`)
       }
     }
   }
@@ -556,7 +766,67 @@ export default function ChatPage() {
     })
   }
 
-  // ---- send message (files already uploaded) ----
+  // ---- send message core — INSERT to DB, resolve/fail optimistic bubble ----
+  const insertMessage = useCallback(
+    async (
+      optimisticId: string,
+      payload: {
+        channel_id: string
+        body: string
+        message_type: string
+        attachments: Attachment[]
+        reply_to: string | null
+      },
+      isDm: boolean,
+    ) => {
+      const { data: inserted, error } = await supabase
+        .from("chat_messages")
+        .insert({
+          channel_id: payload.channel_id,
+          sender_name: CURRENT_USER,
+          body: payload.body,
+          message_type: payload.message_type,
+          attachments: payload.attachments,
+          reply_to: payload.reply_to,
+        })
+        .select("id, created_at")
+        .single()
+
+      if (error || !inserted) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === optimisticId
+              ? { ...m, __status: "failed", __retry: payload }
+              : m,
+          ),
+        )
+        toast.error("Message failed to send", {
+          description: error?.message ?? "Network or permission error",
+        })
+        return false
+      }
+
+      // Swap the optimistic id for the real DB id so realtime echoes are deduped
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === optimisticId
+            ? { ...m, id: inserted.id, created_at: inserted.created_at, __status: "sent", __retry: undefined }
+            : m,
+        ),
+      )
+
+      // Bump the channel's last_message_at for the sidebar ordering / unread
+      if (isDm) {
+        await supabase.from("chat_dm_channels").update({ last_message_at: inserted.created_at }).eq("id", payload.channel_id)
+      } else {
+        await supabase.from("chat_channels").update({ last_message_at: inserted.created_at }).eq("id", payload.channel_id)
+      }
+      return true
+    },
+    [],
+  )
+
+  // ---- send (user-triggered from composer) ----
   async function handleSend(htmlOverride?: string) {
     const text = (htmlOverride ?? inputValue).trim()
     const plainText = richTextToPlain(text)
@@ -566,8 +836,6 @@ export default function ChatPage() {
     setSending(true)
 
     const attachments = readyFiles.map((p) => p.uploaded!)
-
-    // Clean up previews
     pendingFiles.forEach((p) => { if (p.preview) URL.revokeObjectURL(p.preview) })
     setPendingFiles([])
 
@@ -577,19 +845,16 @@ export default function ChatPage() {
     if (hasImages && !hasFiles && !text) messageType = "image"
     else if (hasFiles && !hasImages && !text) messageType = "file"
 
-    // Insert to DB first, get the real ID back to avoid realtime duplicates
-    const { data: inserted } = await supabase.from("chat_messages").insert({
+    const optimisticId = `pending-${crypto.randomUUID()}`
+    const payload = {
       channel_id: activeChatId,
-      sender_name: CURRENT_USER,
       body: text,
       message_type: messageType,
-      attachments: attachments.length > 0 ? attachments : [],
+      attachments,
       reply_to: replyTo?.id ?? null,
-    }).select("id").single()
-
-    // Add to local state with the real DB id
-    const newMsg: ChatMessage = {
-      id: inserted?.id ?? crypto.randomUUID(),
+    }
+    const optimistic: ChatMessage = {
+      id: optimisticId,
       channel_id: activeChatId,
       sender_name: CURRENT_USER,
       body: text,
@@ -598,25 +863,29 @@ export default function ChatPage() {
       attachments,
       reply_to: replyTo?.id ?? null,
       reactions: {},
+      __status: "pending",
     }
-    setMessages((prev) => {
-      // Guard against realtime already having added it
-      if (prev.some((m) => m.id === newMsg.id)) return prev
-      return [...prev, newMsg]
-    })
-
+    setMessages((prev) => [...prev, optimistic])
     setInputValue("")
     setReplyTo(null)
+    // Optimistic send always scrolls us to the bottom (we just composed it)
+    isAtBottomRef.current = true
+    requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }))
 
-    // Update last_message_at
-    if (dmChannelId) {
-      await supabase.from("chat_dm_channels").update({ last_message_at: new Date().toISOString() }).eq("id", dmChannelId)
-    } else if (selectedChannelId) {
-      await supabase.from("chat_channels").update({ last_message_at: new Date().toISOString() }).eq("id", selectedChannelId)
-    }
+    await insertMessage(optimisticId, payload, activeChatIsDm)
 
     setSending(false)
     textareaRef.current?.focus()
+  }
+
+  // ---- retry failed send ----
+  async function retryMessage(msgId: string) {
+    const msg = messages.find((m) => m.id === msgId)
+    if (!msg || !msg.__retry) return
+    setMessages((prev) =>
+      prev.map((m) => (m.id === msgId ? { ...m, __status: "pending" } : m)),
+    )
+    await insertMessage(msgId, msg.__retry, activeChatIsDm)
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -640,7 +909,8 @@ export default function ChatPage() {
     reactions[emoji] = users
 
     setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, reactions } : m)))
-    await supabase.from("chat_messages").update({ reactions }).eq("id", msgId)
+    const { error } = await supabase.from("chat_messages").update({ reactions }).eq("id", msgId)
+    if (error) toast.error("Reaction didn't save", { description: error.message })
   }
 
   // ---- edit ----
@@ -649,46 +919,62 @@ export default function ChatPage() {
     if (!text) return
     setMessages((prev) =>
       prev.map((m) =>
-        m.id === msgId ? { ...m, body: text, edited_at: new Date().toISOString() } : m
-      )
+        m.id === msgId ? { ...m, body: text, edited_at: new Date().toISOString() } : m,
+      ),
     )
     setEditingId(null)
-    await supabase
+    const { error } = await supabase
       .from("chat_messages")
       .update({ body: text, edited_at: new Date().toISOString() })
       .eq("id", msgId)
+    if (error) toast.error("Edit didn't save", { description: error.message })
   }
 
   // ---- delete ----
   async function deleteMessage(msgId: string) {
     setMessages((prev) =>
-      prev.map((m) => (m.id === msgId ? { ...m, is_deleted: true, body: "" } : m))
+      prev.map((m) => (m.id === msgId ? { ...m, is_deleted: true, body: "" } : m)),
     )
-    await supabase.from("chat_messages").update({ is_deleted: true, body: "" }).eq("id", msgId)
+    const { error } = await supabase.from("chat_messages").update({ is_deleted: true, body: "" }).eq("id", msgId)
+    if (error) toast.error("Delete didn't save", { description: error.message })
+  }
+
+  // ---- copy message text ----
+  async function copyMessageText(msg: ChatMessage) {
+    try {
+      await navigator.clipboard.writeText(richTextToPlain(msg.body))
+      toast.success("Copied")
+    } catch {
+      toast.error("Clipboard unavailable")
+    }
   }
 
   // ---- create channel ----
   async function createChannel() {
     const name = newChannelName.trim().toLowerCase().replace(/\s+/g, "-")
     if (!name) return
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("chat_channels")
       .insert({ name, description: newChannelDesc.trim() || null })
       .select()
       .single()
+    if (error) {
+      toast.error("Couldn't create channel", { description: error.message })
+      return
+    }
     if (data) {
       setChannels((prev) => [...prev, data as Channel])
       setSelectedChannelId(data.id)
       setSelectedMember(null)
       setSelectedVendor(null)
       setDmChannelId(null)
+      toast.success(`Created #${data.name}`)
     }
     setShowNewChannel(false)
     setNewChannelName("")
     setNewChannelDesc("")
   }
 
-  // ---- find reply source ----
   function findReplySource(replyToId: string | null | undefined): ChatMessage | undefined {
     if (!replyToId) return undefined
     return messages.find((m) => m.id === replyToId)
@@ -699,34 +985,58 @@ export default function ChatPage() {
     if (!showSearch || !searchQuery.trim()) return messages
     const q = searchQuery.toLowerCase()
     return messages.filter(
-      (m) => m.body.toLowerCase().includes(q) || m.sender_name.toLowerCase().includes(q)
+      (m) => m.body.toLowerCase().includes(q) || m.sender_name.toLowerCase().includes(q),
     )
   }, [messages, searchQuery, showSearch])
 
   const displayMessages = showSearch && searchQuery.trim() ? filteredMessages : messages
 
+  // ---- quick switcher entries ----
+  const switcherItems = useMemo(() => {
+    const q = switcherQuery.trim().toLowerCase()
+    const channelItems = channels
+      .filter((c) => !q || c.name.toLowerCase().includes(q))
+      .map((c) => ({ kind: "channel" as const, id: c.id, label: `#${c.name}`, ch: c }))
+    const memberItems = teamMembers
+      .filter((m) => !q || m.name.toLowerCase().includes(q))
+      .map((m) => ({ kind: "member" as const, id: m.id, label: m.name, member: m }))
+    return [...channelItems, ...memberItems].slice(0, 8)
+  }, [switcherQuery, channels, teamMembers])
+
   // ---- render ----
   return (
     <div className="max-w-[1440px] mx-auto w-full">
+      {/* Offline banner */}
+      {!online && (
+        <div
+          className="mb-2 flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800"
+          role="status"
+          aria-live="polite"
+        >
+          <WifiOff className="w-3.5 h-3.5" aria-hidden="true" />
+          You&apos;re offline — messages will send when the connection is back.
+        </div>
+      )}
+
       <div className="h-[calc(100vh-120px)] flex rounded-lg border bg-card overflow-hidden">
         {/* ======== Left Sidebar ======== */}
         <div className="w-72 border-r flex flex-col bg-card">
           {/* Channels Header */}
           <div className="px-4 pt-4 pb-2 flex items-center justify-between">
             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-              <Hash className="w-3.5 h-3.5" />
+              <Hash className="w-3.5 h-3.5" aria-hidden="true" />
               Channels
             </h3>
             <button
               onClick={() => setShowNewChannel(true)}
-              className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+              className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95"
+              aria-label="Create channel"
               title="Create channel"
             >
               <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          {/* New Channel Form */}
           {showNewChannel && (
             <div className="px-3 pb-2 space-y-1.5">
               <input
@@ -736,6 +1046,7 @@ export default function ChatPage() {
                 onChange={(e) => setNewChannelName(e.target.value)}
                 className="w-full h-8 rounded border px-2 text-xs bg-transparent focus:outline-none focus:ring-1 focus:ring-ring"
                 autoFocus
+                aria-label="New channel name"
                 onKeyDown={(e) => { if (e.key === "Enter") createChannel(); if (e.key === "Escape") setShowNewChannel(false) }}
               />
               <input
@@ -744,18 +1055,19 @@ export default function ChatPage() {
                 value={newChannelDesc}
                 onChange={(e) => setNewChannelDesc(e.target.value)}
                 className="w-full h-8 rounded border px-2 text-xs bg-transparent focus:outline-none focus:ring-1 focus:ring-ring"
+                aria-label="New channel description"
                 onKeyDown={(e) => { if (e.key === "Enter") createChannel(); if (e.key === "Escape") setShowNewChannel(false) }}
               />
               <div className="flex gap-1.5">
                 <button
                   onClick={createChannel}
-                  className="flex-1 h-7 rounded bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors cursor-pointer"
+                  className="flex-1 h-7 rounded bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors cursor-pointer active:scale-95"
                 >
                   Create
                 </button>
                 <button
                   onClick={() => { setShowNewChannel(false); setNewChannelName(""); setNewChannelDesc("") }}
-                  className="flex-1 h-7 rounded border text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+                  className="flex-1 h-7 rounded border text-xs font-medium hover:bg-muted transition-colors cursor-pointer active:scale-95"
                 >
                   Cancel
                 </button>
@@ -772,6 +1084,8 @@ export default function ChatPage() {
                 <button
                   key={ch.id}
                   onClick={() => selectChannel(ch)}
+                  aria-label={`Channel ${ch.name}${hasUnread ? ", unread" : ""}`}
+                  aria-current={isActive ? "page" : undefined}
                   className={`flex items-center gap-2 w-full px-3 py-2 text-left text-sm rounded-md transition-colors cursor-pointer ${
                     isActive
                       ? "bg-primary/10 text-primary font-semibold"
@@ -781,7 +1095,7 @@ export default function ChatPage() {
                   <span className="text-muted-foreground">#</span>
                   <span className="flex-1 truncate">{ch.name}</span>
                   {hasUnread && (
-                    <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                    <span className="w-2 h-2 rounded-full bg-primary shrink-0" aria-hidden="true" />
                   )}
                 </button>
               )
@@ -791,7 +1105,7 @@ export default function ChatPage() {
           {/* Team */}
           <div className="px-4 pt-5 pb-2">
             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5" />
+              <Users className="w-3.5 h-3.5" aria-hidden="true" />
               Team
             </h3>
           </div>
@@ -802,6 +1116,8 @@ export default function ChatPage() {
                 <button
                   key={member.id}
                   onClick={() => selectMember(member)}
+                  aria-label={`Direct message ${member.name}, status ${member.status}`}
+                  aria-current={isActive ? "page" : undefined}
                   className={`flex items-center gap-2.5 w-full px-3 py-2 text-left text-sm rounded-md transition-colors cursor-pointer ${
                     isActive
                       ? "bg-primary/10 text-primary font-semibold"
@@ -810,7 +1126,7 @@ export default function ChatPage() {
                 >
                   <div className="relative shrink-0">
                     {member.avatar_url ? (
-                      <img src={member.avatar_url} alt={member.name} className="w-7 h-7 rounded-full object-cover" />
+                      <img src={member.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover" />
                     ) : (
                       <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
                         {getInitials(member.name)}
@@ -818,6 +1134,7 @@ export default function ChatPage() {
                     )}
                     <span
                       className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card ${STATUS_DOT[member.status] ?? STATUS_DOT.offline}`}
+                      aria-hidden="true"
                     />
                   </div>
                   <span className="truncate">{member.name}</span>
@@ -829,7 +1146,7 @@ export default function ChatPage() {
           {/* Vendors */}
           <div className="px-4 pt-3 pb-2">
             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5" />
+              <Building2 className="w-3.5 h-3.5" aria-hidden="true" />
               Vendors
             </h3>
           </div>
@@ -840,6 +1157,8 @@ export default function ChatPage() {
                 <button
                   key={vendor.id}
                   onClick={() => selectVendor(vendor)}
+                  aria-label={`Direct message vendor ${vendor.name}`}
+                  aria-current={isActive ? "page" : undefined}
                   className={`flex items-center gap-2.5 w-full px-3 py-2 text-left text-sm rounded-md transition-colors cursor-pointer ${
                     isActive
                       ? "bg-primary/10 text-primary font-semibold"
@@ -866,7 +1185,7 @@ export default function ChatPage() {
         </div>
 
         {/* ======== Right Main Area ======== */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 relative">
           {/* Header */}
           <div className="px-5 py-3 border-b flex items-center gap-3">
             <div className="flex-1 min-w-0">
@@ -875,9 +1194,14 @@ export default function ChatPage() {
                 <p className="text-xs text-muted-foreground truncate">{headerDescription}</p>
               )}
             </div>
+            <kbd className="hidden md:inline-flex items-center gap-1 rounded border bg-muted/40 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+              <span>⌘</span>K
+            </kbd>
             <button
               onClick={() => { setShowSearch(!showSearch); setSearchQuery("") }}
-              className={`w-8 h-8 rounded-md flex items-center justify-center transition-colors cursor-pointer ${
+              aria-label={showSearch ? "Close search" : "Search messages"}
+              aria-pressed={showSearch}
+              className={`w-8 h-8 rounded-md flex items-center justify-center transition-colors cursor-pointer active:scale-95 ${
                 showSearch ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"
               }`}
               title="Search messages"
@@ -886,7 +1210,6 @@ export default function ChatPage() {
             </button>
           </div>
 
-          {/* Search bar */}
           {showSearch && (
             <div className="px-5 py-2 border-b">
               <input
@@ -896,23 +1219,52 @@ export default function ChatPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full h-8 rounded border px-3 text-sm bg-transparent focus:outline-none focus:ring-1 focus:ring-ring"
                 autoFocus
+                aria-label="Search messages"
               />
             </div>
           )}
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-0.5">
-            {displayMessages.map((msg, idx) => {
-              const prev = idx > 0 ? displayMessages[idx - 1] : null
-              const showDateSep = !prev || isDifferentDay(prev.created_at, msg.created_at)
-              const grouped = prev && !showDateSep && isSameGroup(prev, msg)
-              const isMe = msg.sender_name === CURRENT_USER
-              const senderAvatar = avatarMap[msg.sender_name] ?? null
-              const replySrc = findReplySource(msg.reply_to)
-              const isHovered = hoveredMsgId === msg.id
-              const isEditing = editingId === msg.id
+          <div
+            ref={messagesContainerRef}
+            className="flex-1 overflow-y-auto px-5 py-4 space-y-0.5"
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions"
+          >
+            {messagesLoading && messages.length === 0 ? (
+              <MessageSkeleton />
+            ) : (
+              displayMessages.map((msg, idx) => {
+                const prev = idx > 0 ? displayMessages[idx - 1] : null
+                const showDateSep = !prev || isDifferentDay(prev.created_at, msg.created_at)
+                const grouped = prev && !showDateSep && isSameGroup(prev, msg)
+                const isMe = msg.sender_name === CURRENT_USER
+                const senderAvatar = avatarMap[msg.sender_name] ?? null
+                const replySrc = findReplySource(msg.reply_to)
+                const isHovered = hoveredMsgId === msg.id
+                const isEditing = editingId === msg.id
+                const isPending = msg.__status === "pending"
+                const isFailed = msg.__status === "failed"
+                const showUnreadDivider = unreadBoundaryId === msg.id
 
-              if (msg.is_deleted) {
+                if (msg.is_deleted) {
+                  return (
+                    <div key={msg.id}>
+                      {showDateSep && (
+                        <div className="flex items-center gap-3 py-3">
+                          <div className="flex-1 h-px bg-border" />
+                          <span className="text-xs font-medium text-muted-foreground">{formatDate(msg.created_at)}</span>
+                          <div className="flex-1 h-px bg-border" />
+                        </div>
+                      )}
+                      <div className="flex gap-3 items-start py-1 pl-11">
+                        <p className="text-sm text-muted-foreground italic">This message was deleted</p>
+                      </div>
+                    </div>
+                  )
+                }
+
                 return (
                   <div key={msg.id}>
                     {showDateSep && (
@@ -922,181 +1274,198 @@ export default function ChatPage() {
                         <div className="flex-1 h-px bg-border" />
                       </div>
                     )}
-                    <div className="flex gap-3 items-start py-1 pl-11">
-                      <p className="text-sm text-muted-foreground italic">This message was deleted</p>
-                    </div>
-                  </div>
-                )
-              }
 
-              return (
-                <div key={msg.id}>
-                  {/* Date Separator */}
-                  {showDateSep && (
-                    <div className="flex items-center gap-3 py-3">
-                      <div className="flex-1 h-px bg-border" />
-                      <span className="text-xs font-medium text-muted-foreground">{formatDate(msg.created_at)}</span>
-                      <div className="flex-1 h-px bg-border" />
-                    </div>
-                  )}
-
-                  {/* Message */}
-                  <div
-                    className={`relative group flex gap-3 items-start rounded-md transition-colors ${
-                      grouped ? "py-0.5 pl-11" : "py-2"
-                    } ${isHovered ? "bg-muted/40" : "hover:bg-muted/30"}`}
-                    onMouseEnter={() => setHoveredMsgId(msg.id)}
-                    onMouseLeave={() => { setHoveredMsgId(null); if (emojiPickerMsgId === msg.id) setEmojiPickerMsgId(null) }}
-                  >
-                    {/* Avatar (only for first in group) */}
-                    {!grouped && (
-                      <div className="shrink-0">
-                        {senderAvatar ? (
-                          <img src={senderAvatar} alt={msg.sender_name} className="w-8 h-8 rounded-full object-cover" />
-                        ) : (
-                          <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                              isMe ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {getInitials(msg.sender_name)}
-                          </div>
-                        )}
+                    {showUnreadDivider && (
+                      <div className="flex items-center gap-3 py-2" role="separator" aria-label="New messages">
+                        <div className="flex-1 h-px bg-red-500/40" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-red-500">
+                          New
+                        </span>
+                        <div className="flex-1 h-px bg-red-500/40" />
                       </div>
                     )}
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
+                    <div
+                      className={`relative group flex gap-3 items-start rounded-md transition-colors animate-[messageIn_160ms_ease-out] ${
+                        grouped ? "py-0.5 pl-11" : "py-2"
+                      } ${isHovered ? "bg-muted/40" : "hover:bg-muted/30"} ${isPending ? "opacity-60" : ""} ${isFailed ? "bg-red-50/40" : ""}`}
+                      onMouseEnter={() => setHoveredMsgId(msg.id)}
+                      onMouseLeave={() => { setHoveredMsgId(null); if (emojiPickerMsgId === msg.id) setEmojiPickerMsgId(null) }}
+                    >
                       {!grouped && (
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-sm font-semibold">{msg.sender_name}</span>
-                          <span className="text-xs text-muted-foreground">{formatTime(msg.created_at)}</span>
-                          {msg.edited_at && (
-                            <span className="text-[10px] text-muted-foreground">(edited)</span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Reply indicator */}
-                      {replySrc && (
-                        <div className="flex items-center gap-1.5 mb-1 text-xs text-muted-foreground">
-                          <Reply className="w-3 h-3 rotate-180" />
-                          <span className="font-medium">{replySrc.sender_name}</span>
-                          <span className="truncate max-w-xs opacity-70">{richTextToPlain(replySrc.body).slice(0, 80)}</span>
-                        </div>
-                      )}
-
-                      {/* Message body */}
-                      {isEditing ? (
-                        <div className="flex gap-2 items-end mt-0.5">
-                          <textarea
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            className="flex-1 min-h-[36px] max-h-[100px] rounded border px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-1 focus:ring-ring resize-none"
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveEdit(msg.id) }
-                              if (e.key === "Escape") setEditingId(null)
-                            }}
-                          />
-                          <button
-                            onClick={() => saveEdit(msg.id)}
-                            className="h-8 px-3 rounded bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 cursor-pointer"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setEditingId(null)}
-                            className="h-8 px-3 rounded border text-xs font-medium hover:bg-muted cursor-pointer"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          {msg.body && (
-                            <div className="mt-0.5">
-                              <RichTextRenderer content={msg.body} />
+                        <div className="shrink-0">
+                          {senderAvatar ? (
+                            <img src={senderAvatar} alt="" className="w-8 h-8 rounded-full object-cover" />
+                          ) : (
+                            <div
+                              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                                isMe ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {getInitials(msg.sender_name)}
                             </div>
                           )}
-                          {/* Attachments */}
-                          {msg.attachments && msg.attachments.length > 0 && (
-                            <MessageAttachments attachments={msg.attachments} />
-                          )}
-                        </>
+                        </div>
                       )}
 
-                      {/* Reactions */}
-                      {msg.reactions && (
-                        <ReactionPills
-                          reactions={msg.reactions}
-                          onToggle={(emoji) => toggleReaction(msg.id, emoji)}
-                        />
-                      )}
-                    </div>
+                      <div className="flex-1 min-w-0">
+                        {!grouped && (
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-sm font-semibold">{msg.sender_name}</span>
+                            <span className="text-xs text-muted-foreground" title={new Date(msg.created_at).toLocaleString()}>
+                              {formatTime(msg.created_at)}
+                            </span>
+                            {msg.edited_at && (
+                              <span className="text-[10px] text-muted-foreground">(edited)</span>
+                            )}
+                          </div>
+                        )}
 
-                    {/* Hover Actions */}
-                    {isHovered && !isEditing && (
-                      <div className="absolute -top-3 right-2 flex items-center gap-0.5 bg-card border rounded-md shadow-sm px-1 py-0.5 z-10">
-                        <button
-                          onClick={() => setReplyTo(msg)}
-                          className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-                          title="Reply"
-                        >
-                          <Reply className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setEmojiPickerMsgId(emojiPickerMsgId === msg.id ? null : msg.id)}
-                          className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-                          title="React"
-                        >
-                          <Smile className="w-3.5 h-3.5" />
-                        </button>
-                        {isMe && (
+                        {replySrc && (
+                          <div className="flex items-center gap-1.5 mb-1 text-xs text-muted-foreground">
+                            <Reply className="w-3 h-3 rotate-180" aria-hidden="true" />
+                            <span className="font-medium">{replySrc.sender_name}</span>
+                            <span className="truncate max-w-xs opacity-70">{richTextToPlain(replySrc.body).slice(0, 80)}</span>
+                          </div>
+                        )}
+
+                        {isEditing ? (
+                          <div className="flex gap-2 items-end mt-0.5">
+                            <textarea
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              className="flex-1 min-h-[36px] max-h-[100px] rounded border px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                              autoFocus
+                              aria-label="Edit message"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveEdit(msg.id) }
+                                if (e.key === "Escape") setEditingId(null)
+                              }}
+                            />
+                            <button
+                              onClick={() => saveEdit(msg.id)}
+                              className="h-8 px-3 rounded bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 cursor-pointer active:scale-95"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingId(null)}
+                              className="h-8 px-3 rounded border text-xs font-medium hover:bg-muted cursor-pointer active:scale-95"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
                           <>
-                            <button
-                              onClick={() => { setEditingId(msg.id); setEditValue(msg.body) }}
-                              className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-                              title="Edit"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => deleteMessage(msg.id)}
-                              className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            {msg.body && (
+                              <div className="mt-0.5">
+                                <RichTextRenderer content={msg.body} />
+                              </div>
+                            )}
+                            {msg.attachments && msg.attachments.length > 0 && (
+                              <MessageAttachments attachments={msg.attachments} />
+                            )}
                           </>
                         )}
 
-                        {/* Emoji picker dropdown */}
-                        {emojiPickerMsgId === msg.id && (
-                          <div className="absolute top-full right-0 mt-1 bg-card border rounded-lg shadow-lg p-1.5 flex gap-1 z-20">
-                            {QUICK_EMOJIS.map((e) => (
-                              <button
-                                key={e.label}
-                                onClick={() => toggleReaction(msg.id, e.emoji)}
-                                className="w-8 h-8 rounded hover:bg-muted flex items-center justify-center text-base transition-colors cursor-pointer"
-                                title={e.label}
-                              >
-                                {e.emoji}
-                              </button>
-                            ))}
+                        {msg.reactions && (
+                          <ReactionPills
+                            reactions={msg.reactions}
+                            onToggle={(emoji) => toggleReaction(msg.id, emoji)}
+                          />
+                        )}
+
+                        {/* Failed state — inline retry */}
+                        {isFailed && (
+                          <div className="mt-1 flex items-center gap-2 text-[11px] text-red-600">
+                            <AlertTriangle className="w-3 h-3" aria-hidden="true" />
+                            <span>Failed to send.</span>
+                            <button
+                              onClick={() => retryMessage(msg.id)}
+                              className="inline-flex items-center gap-0.5 font-medium underline hover:no-underline cursor-pointer"
+                            >
+                              <RotateCcw className="w-3 h-3" aria-hidden="true" />
+                              Retry
+                            </button>
                           </div>
                         )}
                       </div>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
 
-            {displayMessages.length === 0 && (
+                      {isHovered && !isEditing && !isPending && !isFailed && (
+                        <div className="absolute -top-3 right-2 flex items-center gap-0.5 bg-card border rounded-md shadow-sm px-1 py-0.5 z-10 animate-[toolbarIn_120ms_ease-out]">
+                          <button
+                            onClick={() => setReplyTo(msg)}
+                            aria-label="Reply to message"
+                            className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95"
+                            title="Reply"
+                          >
+                            <Reply className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setEmojiPickerMsgId(emojiPickerMsgId === msg.id ? null : msg.id)}
+                            aria-label="Add reaction"
+                            aria-expanded={emojiPickerMsgId === msg.id}
+                            className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95"
+                            title="React"
+                          >
+                            <Smile className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => copyMessageText(msg)}
+                            aria-label="Copy message text"
+                            className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95"
+                            title="Copy"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                          {isMe && (
+                            <>
+                              <button
+                                onClick={() => { setEditingId(msg.id); setEditValue(msg.body) }}
+                                aria-label="Edit message"
+                                className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95"
+                                title="Edit"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => deleteMessage(msg.id)}
+                                aria-label="Delete message"
+                                className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer active:scale-95"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          )}
+
+                          {emojiPickerMsgId === msg.id && (
+                            <div className="absolute top-full right-0 mt-1 bg-card border rounded-lg shadow-lg p-1.5 flex gap-1 z-20 animate-[toolbarIn_100ms_ease-out]">
+                              {QUICK_EMOJIS.map((e) => (
+                                <button
+                                  key={e.label}
+                                  onClick={() => toggleReaction(msg.id, e.emoji)}
+                                  aria-label={`React with ${e.label}`}
+                                  className="w-8 h-8 rounded hover:bg-muted flex items-center justify-center text-base transition-colors cursor-pointer active:scale-95"
+                                  title={e.label}
+                                >
+                                  {e.emoji}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })
+            )}
+
+            {!messagesLoading && displayMessages.length === 0 && (
               <div className="flex-1 flex items-center justify-center h-full">
                 <div className="text-center">
-                  <MessageSquare className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                  <MessageSquare className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" aria-hidden="true" />
                   <p className="text-sm text-muted-foreground">
                     {showSearch && searchQuery
                       ? "No messages match your search"
@@ -1112,29 +1481,48 @@ export default function ChatPage() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Reply Banner */}
+          {/* "New messages" floating pill — only when not at bottom */}
+          {newMessagesCount > 0 && (
+            <button
+              onClick={() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+                setNewMessagesCount(0)
+                if (activeChatId) markAsRead(activeChatId, activeChatIsDm)
+              }}
+              aria-label={`Scroll to ${newMessagesCount} new message${newMessagesCount === 1 ? "" : "s"}`}
+              className="absolute bottom-[7.5rem] right-5 z-20 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-lg hover:bg-primary/90 cursor-pointer active:scale-95 animate-[toolbarIn_160ms_ease-out]"
+            >
+              <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
+              {newMessagesCount} new
+            </button>
+          )}
+
           {replyTo && (
             <div className="px-5 py-2 border-t bg-muted/30 flex items-center gap-3">
-              <Reply className="w-4 h-4 text-muted-foreground shrink-0 rotate-180" />
+              <Reply className="w-4 h-4 text-muted-foreground shrink-0 rotate-180" aria-hidden="true" />
               <div className="flex-1 min-w-0">
                 <span className="text-xs font-semibold">{replyTo.sender_name}</span>
                 <p className="text-xs text-muted-foreground truncate">{richTextToPlain(replyTo.body).slice(0, 100)}</p>
               </div>
               <button
                 onClick={() => setReplyTo(null)}
-                className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                aria-label="Cancel reply"
+                className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer active:scale-95"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
           )}
 
-          {/* File Preview Strip */}
           {pendingFiles.length > 0 && (
             <div className="px-5 py-2 border-t bg-muted/20">
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {pendingFiles.map((pf, i) => (
-                  <AttachmentPreview key={i} att={pf} onRemove={() => removePendingFile(i)} />
+                  <AttachmentPreview
+                    key={`${pf.file.name}-${pf.file.size}-${pf.file.lastModified}-${i}`}
+                    att={pf}
+                    onRemove={() => removePendingFile(i)}
+                  />
                 ))}
               </div>
             </div>
@@ -1149,11 +1537,13 @@ export default function ChatPage() {
               accept="image/*,.pdf,.doc,.docx,.xlsx,.csv,.txt,.zip"
               onChange={handleFileSelect}
               className="hidden"
+              aria-hidden="true"
             />
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={!activeChatId}
-              className="w-10 h-10 rounded-lg border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer shrink-0"
+              aria-label="Attach file"
+              className="w-10 h-10 rounded-lg border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer shrink-0 active:scale-95"
               title="Attach file"
             >
               <Paperclip className="w-4 h-4" />
@@ -1183,18 +1573,89 @@ export default function ChatPage() {
                 !activeChatId ||
                 sending
               }
-              className="inline-flex items-center justify-center gap-2 h-10 px-4 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:pointer-events-none cursor-pointer shrink-0"
+              aria-label={sending ? "Sending" : pendingFiles.some((p) => p.uploading) ? "Uploading attachments" : "Send message"}
+              className="inline-flex items-center justify-center gap-2 h-10 px-4 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:pointer-events-none cursor-pointer shrink-0 active:scale-95"
             >
               {sending ? (
-                <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" aria-hidden="true" />
               ) : (
-                <Send className="w-4 h-4" />
+                <Send className="w-4 h-4" aria-hidden="true" />
               )}
               {sending ? "Sending..." : pendingFiles.some((p) => p.uploading) ? "Uploading..." : "Send"}
             </button>
           </div>
         </div>
       </div>
+
+      {/* Cmd/Ctrl+K Switcher */}
+      {switcherOpen && typeof window !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] bg-black/40 backdrop-blur-sm animate-[toolbarIn_120ms_ease-out]"
+          onClick={() => setSwitcherOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Jump to channel or person"
+        >
+          <div
+            className="w-full max-w-lg rounded-xl border bg-card shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 border-b px-4 py-3">
+              <Search className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+              <input
+                type="text"
+                autoFocus
+                value={switcherQuery}
+                onChange={(e) => setSwitcherQuery(e.target.value)}
+                placeholder="Jump to channel or person…"
+                className="flex-1 bg-transparent text-sm focus:outline-none"
+                aria-label="Jump to channel or person"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && switcherItems.length > 0) {
+                    const first = switcherItems[0]
+                    if (first.kind === "channel") selectChannel(first.ch)
+                    else selectMember(first.member)
+                    setSwitcherOpen(false)
+                  }
+                }}
+              />
+              <kbd className="rounded border bg-muted/40 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                Esc
+              </kbd>
+            </div>
+            <div className="max-h-[50vh] overflow-y-auto py-1">
+              {switcherItems.length === 0 ? (
+                <p className="px-4 py-6 text-center text-sm text-muted-foreground">No matches.</p>
+              ) : (
+                switcherItems.map((item, i) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      if (item.kind === "channel") selectChannel(item.ch)
+                      else selectMember(item.member)
+                      setSwitcherOpen(false)
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted/60 transition-colors cursor-pointer"
+                  >
+                    {item.kind === "channel" ? (
+                      <Hash className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
+                    ) : (
+                      <CornerDownLeft className="w-3.5 h-3.5 text-muted-foreground rotate-180" aria-hidden="true" />
+                    )}
+                    <span className="flex-1 truncate">{item.label}</span>
+                    {i === 0 && (
+                      <kbd className="rounded border bg-muted/40 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                        ↵
+                      </kbd>
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   )
 }
