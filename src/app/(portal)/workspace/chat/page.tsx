@@ -12,6 +12,8 @@ import { toast } from "sonner"
 import { supabase, supabaseB2B } from "@/lib/supabase"
 import { RichTextEditor, RichTextRenderer, richTextToPlain } from "@/components/shared/rich-text-editor"
 import { CreateChannelModal, type CreateChannelPayload } from "@/components/chat/create-channel-modal"
+import { MentionChip } from "@/components/chat/mention-chip"
+import { parseMentionedBody, looksLikePlainMentionBody } from "@/lib/mentions"
 import {
   ChannelDrawer,
   ProfileDrawer,
@@ -1704,8 +1706,20 @@ export default function ChatPage() {
                         ) : (
                           <>
                             {msg.body && (
-                              <div className="mt-0.5">
-                                <RichTextRenderer content={msg.body} />
+                              <div className="mt-0.5 text-sm text-foreground leading-relaxed">
+                                {looksLikePlainMentionBody(msg.body) ? (
+                                  parseMentionedBody(msg.body).map((seg, i) =>
+                                    seg.type === "text" ? (
+                                      <span key={i} style={{ whiteSpace: "pre-wrap" }}>
+                                        {seg.text}
+                                      </span>
+                                    ) : (
+                                      <MentionChip key={i} mention={seg.mention} />
+                                    ),
+                                  )
+                                ) : (
+                                  <RichTextRenderer content={msg.body} />
+                                )}
                               </div>
                             )}
                             {msg.attachments && msg.attachments.length > 0 && (
