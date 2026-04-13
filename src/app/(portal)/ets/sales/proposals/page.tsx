@@ -133,7 +133,7 @@ export default function EtsSalesProposalsPage() {
         !tableMissing && (
           <button
             onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
           >
             <Plus className="size-4" /> New proposal
           </button>
@@ -145,7 +145,7 @@ export default function EtsSalesProposalsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+              className="h-10 px-3 rounded-md border border-border bg-card text-sm"
             >
               <option value="all">All statuses</option>
               <option value="draft">Draft</option>
@@ -181,7 +181,7 @@ export default function EtsSalesProposalsPage() {
           <tbody>
             {loading
               ? Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b border-border/60">
+                  <tr key={i} className="border-b border-border">
                     {Array.from({ length: 5 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full animate-pulse rounded bg-muted" />
@@ -196,7 +196,7 @@ export default function EtsSalesProposalsPage() {
                         {p.title ?? "Untitled"}
                       </div>
                       {p.template_type && (
-                        <div className="text-[10px] text-muted-foreground mt-0.5">
+                        <div className="text-xs text-muted-foreground mt-0.5">
                           {p.template_type}
                         </div>
                       )}
@@ -323,14 +323,14 @@ function NewProposalDrawer({
         <>
           <button
             onClick={onClose}
-            className="h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium hover:bg-muted/40"
+            className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/40"
           >
             Cancel
           </button>
           <button
             onClick={submit}
             disabled={busy}
-            className="h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60"
+            className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
           >
             {busy ? "Creating…" : "Create"}
           </button>
@@ -342,7 +342,7 @@ function NewProposalDrawer({
           <select
             value={clientId}
             onChange={(e) => setClientId(e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
           >
             <option value="">Select a client…</option>
             {clients.map((c) => (
@@ -356,7 +356,7 @@ function NewProposalDrawer({
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             placeholder="Launch Pro proposal — Mumbai store"
           />
         </Field>
@@ -364,7 +364,7 @@ function NewProposalDrawer({
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
           >
             <option value="draft">Draft</option>
             <option value="sent">Sent</option>
@@ -378,7 +378,7 @@ function NewProposalDrawer({
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
           <Field label="Valid until">
@@ -386,7 +386,7 @@ function NewProposalDrawer({
               type="date"
               value={validUntil}
               onChange={(e) => setValidUntil(e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
         </div>
@@ -395,7 +395,7 @@ function NewProposalDrawer({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            className="w-full rounded-md border border-border/80 bg-background px-3 py-2 text-sm"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
           />
         </Field>
         {err && (

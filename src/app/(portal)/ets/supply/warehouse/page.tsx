@@ -98,13 +98,13 @@ export default function EtsWarehousePage() {
               placeholder="Search batch / vessel…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+              className="w-full h-10 px-3 rounded-md border border-border bg-card text-sm"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+            className="h-10 px-3 rounded-md border border-border bg-card text-sm"
           >
             <option value="all">All statuses</option>
             {VISIBLE.map((s) => (
@@ -193,18 +193,18 @@ function KpiCard({
   hint?: string
 }) {
   return (
-    <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4">
+    <div className="rounded-lg border border-border bg-card shadow-sm p-4">
       <div className="flex items-center gap-2">
-        <span className="inline-flex size-8 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-700">
+        <span className="inline-flex size-8 items-center justify-center rounded-md bg-muted text-foreground">
           <Icon className="size-4" />
         </span>
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {label}
         </div>
       </div>
       <div className="mt-2 text-2xl font-bold">{value}</div>
       {hint && (
-        <div className="mt-0.5 text-[11px] text-muted-foreground">{hint}</div>
+        <div className="mt-0.5 text-xs text-muted-foreground">{hint}</div>
       )}
     </div>
   )

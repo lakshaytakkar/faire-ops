@@ -210,7 +210,7 @@ function RightRail({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4 space-y-3">
+      <div className="rounded-lg border border-border bg-card shadow-sm p-4 space-y-3">
         <h3 className="text-sm font-semibold">Status</h3>
         <Selector label="Status" value={order.status} options={STATUS_OPTIONS} onChange={(v) => patch({ status: v })} disabled={busy} />
         <Selector label="Payment status" value={order.payment_status} options={PAYMENT_OPTIONS} onChange={(v) => patch({ payment_status: v })} disabled={busy} />
@@ -222,12 +222,12 @@ function RightRail({
               type="date"
               value={expected ?? ""}
               onChange={(e) => setExpected(e.target.value)}
-              className="flex-1 h-9 rounded-md border border-border/80 bg-background px-2 text-sm"
+              className="flex-1 h-9 rounded-md border border-border bg-background px-2 text-sm"
             />
             <button
               onClick={() => patch({ expected_delivery: expected || null })}
               disabled={busy}
-              className="h-9 px-3 rounded-md bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-60"
+              className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-60"
             >
               Save
             </button>
@@ -235,7 +235,7 @@ function RightRail({
         </div>
       </div>
 
-      <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4 space-y-2">
+      <div className="rounded-lg border border-border bg-card shadow-sm p-4 space-y-2">
         <h3 className="text-sm font-semibold">Meta</h3>
         <MetaRow label="Order #" value={order.order_number} />
         <MetaRow label="Type" value={order.order_type} />
@@ -276,7 +276,7 @@ function Selector({
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full h-9 rounded-md border border-border/80 bg-background px-2 text-sm"
+        className="w-full h-9 rounded-md border border-border bg-background px-2 text-sm"
       >
         <option value="">— Select —</option>
         {options.map((o) => <option key={o} value={o}>{o}</option>)}
@@ -312,7 +312,7 @@ function ItemsTab({ orderId }: { orderId: string }) {
       <div className="flex justify-end">
         <button
           onClick={() => setAdding(true)}
-          className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700"
+          className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90"
         >
           <Plus className="size-3.5" /> Add item
         </button>
@@ -406,8 +406,8 @@ function AddItemDrawer({
       title="Add line item"
       footer={
         <>
-          <button onClick={onClose} className="h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium hover:bg-muted/40">Cancel</button>
-          <button onClick={submit} disabled={busy} className="h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60">
+          <button onClick={onClose} className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/40">Cancel</button>
+          <button onClick={submit} disabled={busy} className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60">
             {busy ? "Adding…" : "Add"}
           </button>
         </>
@@ -416,21 +416,21 @@ function AddItemDrawer({
       <div className="space-y-4">
         <div>
           <label className="block text-xs font-medium text-muted-foreground mb-1">Product name<span className="text-rose-600 ml-0.5">*</span></label>
-          <input value={productName} onChange={(e) => setProductName(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+          <input value={productName} onChange={(e) => setProductName(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1">Quantity</label>
-            <input type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+            <input type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
           </div>
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1">Unit price (₹)</label>
-            <input type="number" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+            <input type="number" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
           </div>
         </div>
         <div>
           <label className="block text-xs font-medium text-muted-foreground mb-1">Status</label>
-          <input value={status} onChange={(e) => setStatus(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+          <input value={status} onChange={(e) => setStatus(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
         </div>
         {err && <div className="rounded-md bg-rose-50 text-rose-700 px-3 py-2 text-xs">{err}</div>}
       </div>
@@ -585,12 +585,12 @@ function NotesTab({
   if (!editing) {
     return (
       <div className="space-y-3">
-        <div className="rounded-md border border-border/60 bg-muted/20 p-4 text-sm whitespace-pre-wrap min-h-[120px]">
+        <div className="rounded-md border border-border bg-muted/20 p-4 text-sm whitespace-pre-wrap min-h-[120px]">
           {order.notes ?? <span className="text-muted-foreground italic">No notes yet.</span>}
         </div>
         <button
           onClick={() => { setValue(order.notes ?? ""); setEditing(true) }}
-          className="h-8 px-2.5 rounded-md border border-border/80 bg-card text-xs font-medium hover:bg-muted/40"
+          className="h-8 px-2.5 rounded-md border border-border bg-card text-xs font-medium hover:bg-muted/40"
         >
           Edit notes
         </button>
@@ -604,14 +604,14 @@ function NotesTab({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         rows={8}
-        className="w-full rounded-md border border-border/80 bg-background px-3 py-2 text-sm"
+        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
       />
       <div className="flex gap-2 justify-end">
-        <button onClick={() => setEditing(false)} className="h-8 px-2.5 rounded-md border border-border/80 bg-card text-xs font-medium hover:bg-muted/40">Cancel</button>
+        <button onClick={() => setEditing(false)} className="h-8 px-2.5 rounded-md border border-border bg-card text-xs font-medium hover:bg-muted/40">Cancel</button>
         <button
           onClick={async () => { await patch({ notes: value || null }); setEditing(false) }}
           disabled={busy}
-          className="h-8 px-2.5 rounded-md bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-60"
+          className="h-8 px-2.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-60"
         >
           Save
         </button>

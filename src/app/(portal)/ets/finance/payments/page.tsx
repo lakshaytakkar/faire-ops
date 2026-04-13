@@ -145,13 +145,13 @@ export default function EtsFinancePaymentsPage() {
               placeholder="Search ref, notes, client, order…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 pl-10 pr-3 rounded-md border border-border/80 bg-card text-sm"
+              className="w-full h-10 pl-10 pr-3 rounded-md border border-border bg-card text-sm"
             />
           </div>
           <select
             value={methodFilter}
             onChange={(e) => setMethodFilter(e.target.value)}
-            className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+            className="h-10 px-3 rounded-md border border-border bg-card text-sm"
           >
             <option value="all">All methods</option>
             {methods.map((m) => (
@@ -163,7 +163,7 @@ export default function EtsFinancePaymentsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+            className="h-10 px-3 rounded-md border border-border bg-card text-sm"
           >
             <option value="all">All statuses</option>
             {statuses.map((s) => (
@@ -196,7 +196,7 @@ export default function EtsFinancePaymentsPage() {
           <tbody>
             {loading
               ? Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i} className="border-b border-border/60">
+                  <tr key={i} className="border-b border-border">
                     {Array.from({ length: 8 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full animate-pulse rounded bg-muted" />
@@ -213,7 +213,7 @@ export default function EtsFinancePaymentsPage() {
                       {p.client_id ? (
                         <Link
                           href={`/ets/sales/clients/${p.client_id}`}
-                          className="font-medium hover:text-emerald-700"
+                          className="font-medium hover:text-primary"
                         >
                           {clients.get(p.client_id) ?? "—"}
                         </Link>
@@ -225,7 +225,7 @@ export default function EtsFinancePaymentsPage() {
                       {p.order_id ? (
                         <Link
                           href={`/ets/orders/${p.order_id}`}
-                          className="font-mono hover:text-emerald-700"
+                          className="font-mono hover:text-primary"
                         >
                           {orders.get(p.order_id) ?? "—"}
                         </Link>

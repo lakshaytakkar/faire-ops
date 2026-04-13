@@ -102,7 +102,7 @@ export default function EtsCatalogPricingPage() {
       action={
         <button
           onClick={() => setCreating(true)}
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
         >
           <Plus className="size-4" /> New setting
         </button>
@@ -117,7 +117,7 @@ export default function EtsCatalogPricingPage() {
             <button
               onClick={seedDefaults}
               disabled={seeding}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
             >
               {seeding ? "Seeding…" : "Initialize defaults"}
             </button>
@@ -136,7 +136,7 @@ export default function EtsCatalogPricingPage() {
           <tbody>
             {loading
               ? Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i} className="border-b border-border/60">
+                  <tr key={i} className="border-b border-border">
                     {Array.from({ length: 6 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full animate-pulse rounded bg-muted" />
@@ -163,10 +163,10 @@ export default function EtsCatalogPricingPage() {
                             }}
                             className="h-7 w-24 rounded border border-border bg-background px-2 text-sm text-right"
                           />
-                          <button onClick={() => saveEdit(r)} className="p-1 rounded hover:bg-emerald-50 text-emerald-600">
+                          <button onClick={() => saveEdit(r)} className="p-1 rounded hover:bg-muted text-foreground">
                             <Check className="size-3.5" />
                           </button>
-                          <button onClick={() => setEditingId(null)} className="p-1 rounded hover:bg-rose-50 text-rose-600">
+                          <button onClick={() => setEditingId(null)} className="p-1 rounded hover:bg-muted text-muted-foreground">
                             <XIcon className="size-3.5" />
                           </button>
                         </span>
@@ -262,14 +262,14 @@ function NewSettingDrawer({
         <>
           <button
             onClick={onClose}
-            className="h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium hover:bg-muted/40"
+            className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/40"
           >
             Cancel
           </button>
           <button
             onClick={submit}
             disabled={busy}
-            className="h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60"
+            className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
           >
             {busy ? "Creating…" : "Create"}
           </button>
@@ -278,17 +278,17 @@ function NewSettingDrawer({
     >
       <div className="space-y-4">
         <Field label="Key" required>
-          <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="USD_CNY_RATE" className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm font-mono" />
+          <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="USD_CNY_RATE" className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm font-mono" />
         </Field>
         <Field label="Label" required>
-          <input value={label} onChange={(e) => setLabel(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+          <input value={label} onChange={(e) => setLabel(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Value" required>
-            <input type="number" step="0.01" value={value} onChange={(e) => setValue(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+            <input type="number" step="0.01" value={value} onChange={(e) => setValue(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
           </Field>
           <Field label="Unit">
-            <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="%, USD/CBM…" className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+            <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="%, USD/CBM…" className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
           </Field>
         </div>
         {err && <div className="rounded-md bg-rose-50 text-rose-700 px-3 py-2 text-xs">{err}</div>}

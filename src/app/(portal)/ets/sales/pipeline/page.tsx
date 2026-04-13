@@ -125,7 +125,7 @@ export default function EtsPipelinePage() {
       action={
         <Link
           href="/ets/sales/clients"
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium hover:bg-muted/40"
+          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/40"
         >
           List view
         </Link>
@@ -145,7 +145,7 @@ export default function EtsPipelinePage() {
           cta={
             <Link
               href="/ets/sales/clients"
-              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700"
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90"
             >
               Go to clients
             </Link>
@@ -160,18 +160,18 @@ export default function EtsPipelinePage() {
                 key={s.id}
                 onDragOver={onDragOver}
                 onDrop={(e) => onDrop(e, s.id)}
-                className="rounded-lg border border-border/80 bg-card/60 min-h-[200px]"
+                className="rounded-lg border border-border bg-card/60 min-h-[200px]"
               >
-                <div className="px-3 py-2.5 border-b border-border/60 flex items-center gap-2">
+                <div className="px-3 py-2.5 border-b border-border flex items-center gap-2">
                   <span className={`inline-block size-2 rounded-full ${s.color}`} />
                   <h3 className="text-xs font-semibold flex-1 truncate">{s.label}</h3>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
                     {list.length}
                   </span>
                 </div>
                 <div className="p-2 space-y-2">
                   {list.length === 0 ? (
-                    <div className="text-[11px] text-muted-foreground text-center py-4">
+                    <div className="text-xs text-muted-foreground text-center py-4">
                       Drop clients here
                     </div>
                   ) : (
@@ -180,7 +180,7 @@ export default function EtsPipelinePage() {
                         key={c.id}
                         draggable
                         onDragStart={(e) => onDragStart(e, c.id)}
-                        className={`group rounded-md border border-border/80 bg-card p-2.5 shadow-sm cursor-grab active:cursor-grabbing hover:shadow transition-shadow ${pending.has(c.id) ? "opacity-60" : ""}`}
+                        className={`group rounded-md border border-border bg-card p-2.5 shadow-sm cursor-grab active:cursor-grabbing hover:shadow transition-shadow ${pending.has(c.id) ? "opacity-60" : ""}`}
                       >
                         <Link
                           href={`/ets/sales/clients/${c.id}`}
@@ -190,14 +190,14 @@ export default function EtsPipelinePage() {
                           }}
                         >
                           <div className="flex items-start gap-2">
-                            <div className="size-7 rounded-full bg-emerald-500/10 text-emerald-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+                            <div className="size-7 rounded-full bg-muted text-foreground flex items-center justify-center text-xs font-bold shrink-0">
                               {formatInitials(c.name)}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="text-xs font-semibold truncate">
                                 {c.name}
                               </div>
-                              <div className="text-[11px] text-muted-foreground truncate">
+                              <div className="text-xs text-muted-foreground truncate">
                                 {c.city ?? "—"}
                               </div>
                             </div>
@@ -205,7 +205,7 @@ export default function EtsPipelinePage() {
                           </div>
                           <div className="mt-2 flex items-center justify-between gap-1.5 flex-wrap">
                             {c.total_paid != null && (
-                              <span className="text-[10px] font-mono text-emerald-700">
+                              <span className="text-xs font-mono text-emerald-700">
                                 {formatCurrency(c.total_paid)}
                               </span>
                             )}
@@ -217,7 +217,7 @@ export default function EtsPipelinePage() {
                             )}
                           </div>
                           {(c.manager_name || c.assigned_to) && (
-                            <div className="mt-1 text-[10px] text-muted-foreground truncate">
+                            <div className="mt-1 text-xs text-muted-foreground truncate">
                               👤 {c.manager_name ?? c.assigned_to}
                             </div>
                           )}

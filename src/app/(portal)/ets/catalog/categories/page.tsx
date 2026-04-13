@@ -90,7 +90,7 @@ export default function EtsCategoriesPage() {
         </div>
         <button
           onClick={() => setCreating(true)}
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
         >
           <Plus className="size-4" /> New Category
         </button>
@@ -99,11 +99,11 @@ export default function EtsCategoriesPage() {
       {!loading && rows.length === 0 ? (
         <EtsEmptyState icon={FolderTree} title="No categories yet" description="Add a root category to start the tree." />
       ) : (
-        <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+        <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border/60 bg-muted/30">
+                <tr className="border-b border-border bg-muted/30">
                   <Th>Name</Th>
                   <Th>Level</Th>
                   <Th className="text-right">Customs %</Th>
@@ -116,7 +116,7 @@ export default function EtsCategoriesPage() {
               <tbody>
                 {loading
                   ? Array.from({ length: 10 }).map((_, i) => (
-                      <tr key={i} className="border-b border-border/60">
+                      <tr key={i} className="border-b border-border">
                         {Array.from({ length: 7 }).map((_, j) => (
                           <td key={j} className="px-4 py-3">
                             <div className="h-4 w-full animate-pulse rounded bg-muted" />
@@ -184,7 +184,7 @@ function CatTreeRow({
     <>
       <tr
         onClick={() => onEdit(cat)}
-        className="border-b border-border/60 last:border-0 hover:bg-muted/30 cursor-pointer"
+        className="border-b border-border last:border-0 hover:bg-muted/30 cursor-pointer"
       >
         <td className="px-4 py-2">
           <div className="flex items-center gap-1" style={{ paddingLeft: depth * 16 }}>
@@ -203,7 +203,7 @@ function CatTreeRow({
             )}
             <span className="font-medium">{cat.name}</span>
             {kids.length > 0 && (
-              <span className="text-[10px] text-muted-foreground ml-1">({kids.length})</span>
+              <span className="text-xs text-muted-foreground ml-1">({kids.length})</span>
             )}
           </div>
         </td>
@@ -213,7 +213,7 @@ function CatTreeRow({
         <td className="px-4 py-2 font-mono text-xs text-muted-foreground">{cat.hs_code ?? "—"}</td>
         <td className="px-4 py-2">
           <span
-            className={`inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded ${
+            className={`inline-flex items-center text-xs font-medium px-1.5 py-0.5 rounded ${
               cat.compliance_default === "safe"
                 ? "bg-emerald-50 text-emerald-700"
                 : cat.compliance_default === "restricted"
@@ -336,8 +336,8 @@ function CategoryDrawer({
       title={mode === "edit" ? "Edit category" : "New category"}
       footer={
         <>
-          <button onClick={onClose} className="h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium hover:bg-muted/40">Cancel</button>
-          <button onClick={submit} disabled={busy} className="h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60">
+          <button onClick={onClose} className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/40">Cancel</button>
+          <button onClick={submit} disabled={busy} className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60">
             {busy ? "Saving…" : mode === "edit" ? "Save" : "Create"}
           </button>
         </>
@@ -345,10 +345,10 @@ function CategoryDrawer({
     >
       <div className="space-y-4">
         <Field label="Name" required>
-          <input value={name} onChange={(e) => setName(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+          <input value={name} onChange={(e) => setName(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
         </Field>
         <Field label="Parent">
-          <select value={parentId} onChange={(e) => setParentId(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm">
+          <select value={parentId} onChange={(e) => setParentId(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm">
             <option value="">— root —</option>
             {parentOptions.map((c) => (
               <option key={c.id} value={c.id}>
@@ -358,13 +358,13 @@ function CategoryDrawer({
           </select>
         </Field>
         <Field label="Slug">
-          <input value={slug} onChange={(e) => setSlug(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm font-mono" />
+          <input value={slug} onChange={(e) => setSlug(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm font-mono" />
         </Field>
         <Field label="Description">
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full rounded-md border border-border/80 bg-background px-3 py-2 text-sm" />
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
         </Field>
         <Field label="Sort order">
-          <input type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+          <input type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
         </Field>
         {err && <div className="rounded-md bg-rose-50 text-rose-700 px-3 py-2 text-xs">{err}</div>}
       </div>

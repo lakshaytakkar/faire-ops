@@ -149,7 +149,7 @@ export default function EtsSalesMilestonesPage() {
         !tableMissing && (
           <button
             onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
           >
             <Plus className="size-4" /> New milestone
           </button>
@@ -158,7 +158,7 @@ export default function EtsSalesMilestonesPage() {
       filters={
         !tableMissing && (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-lg border border-border/80 bg-card p-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-lg border border-border bg-card p-4">
               <Kpi label="Pending count" value={kpis.pendingCount} />
               <Kpi
                 label="Pending total"
@@ -174,7 +174,7 @@ export default function EtsSalesMilestonesPage() {
               <select
                 value={clientFilter}
                 onChange={(e) => setClientFilter(e.target.value)}
-                className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+                className="h-10 px-3 rounded-md border border-border bg-card text-sm"
               >
                 <option value="all">All clients</option>
                 {clients.map((c) => (
@@ -186,7 +186,7 @@ export default function EtsSalesMilestonesPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+                className="h-10 px-3 rounded-md border border-border bg-card text-sm"
               >
                 <option value="all">All statuses</option>
                 <option value="pending">Pending</option>
@@ -198,13 +198,13 @@ export default function EtsSalesMilestonesPage() {
                 type="date"
                 value={from}
                 onChange={(e) => setFrom(e.target.value)}
-                className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+                className="h-10 px-3 rounded-md border border-border bg-card text-sm"
               />
               <input
                 type="date"
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
-                className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+                className="h-10 px-3 rounded-md border border-border bg-card text-sm"
               />
             </div>
           </>
@@ -238,7 +238,7 @@ export default function EtsSalesMilestonesPage() {
           <tbody>
             {loading
               ? Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b border-border/60">
+                  <tr key={i} className="border-b border-border">
                     {Array.from({ length: 8 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full animate-pulse rounded bg-muted" />
@@ -272,7 +272,7 @@ export default function EtsSalesMilestonesPage() {
                             e.stopPropagation()
                             markPaid(m.id)
                           }}
-                          className="inline-flex items-center gap-1 h-7 px-2 rounded text-[11px] font-medium border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                          className="inline-flex items-center gap-1 h-7 px-2 rounded text-xs font-medium border bg-background text-foreground hover:bg-muted"
                         >
                           <Check className="size-3" /> Mark paid
                         </button>
@@ -306,7 +306,7 @@ export default function EtsSalesMilestonesPage() {
 function Kpi({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </div>
       <div className="mt-1 text-base font-semibold">{value}</div>
@@ -404,14 +404,14 @@ function MilestoneDrawer({
         <>
           <button
             onClick={onClose}
-            className="h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium hover:bg-muted/40"
+            className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/40"
           >
             Cancel
           </button>
           <button
             onClick={submit}
             disabled={busy}
-            className="h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60"
+            className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
           >
             {busy ? "Saving…" : "Save"}
           </button>
@@ -426,7 +426,7 @@ function MilestoneDrawer({
               setClientId(e.target.value)
               setStoreId("")
             }}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
           >
             <option value="">Select…</option>
             {clients.map((c) => (
@@ -440,7 +440,7 @@ function MilestoneDrawer({
           <select
             value={storeId}
             onChange={(e) => setStoreId(e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
           >
             <option value="">—</option>
             {filteredStores.map((s) => (
@@ -454,7 +454,7 @@ function MilestoneDrawer({
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             placeholder="Token, agreement, fit-out…"
           />
         </Field>
@@ -464,7 +464,7 @@ function MilestoneDrawer({
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
           <Field label="Due date">
@@ -472,7 +472,7 @@ function MilestoneDrawer({
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
         </div>
@@ -480,7 +480,7 @@ function MilestoneDrawer({
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
           >
             <option value="pending">Pending</option>
             <option value="paid">Paid</option>

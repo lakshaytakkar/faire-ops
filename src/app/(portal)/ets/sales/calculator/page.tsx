@@ -77,7 +77,7 @@ export default function EtsSalesCalculatorPage() {
           : "Loading defaults from price_settings…"
       }
     >
-      <section className="rounded-lg border border-border/80 bg-card shadow-sm p-5">
+      <section className="rounded-lg border border-border bg-card shadow-sm p-5">
         <h2 className="text-sm font-semibold mb-4">Inputs</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Field label="Store area (sqft)">
@@ -85,7 +85,7 @@ export default function EtsSalesCalculatorPage() {
               type="number"
               value={area}
               onChange={(e) => setArea(Number(e.target.value) || 0)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
           <Field label="Package tier">
@@ -94,7 +94,7 @@ export default function EtsSalesCalculatorPage() {
               onChange={(e) =>
                 setTier(e.target.value as keyof typeof TIER_BASE)
               }
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             >
               {Object.keys(TIER_BASE).map((t) => (
                 <option key={t} value={t}>
@@ -109,7 +109,7 @@ export default function EtsSalesCalculatorPage() {
               step="0.01"
               value={usdCny}
               onChange={(e) => setUsdCny(Number(e.target.value) || 0)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
           <Field label="INR/USD rate">
@@ -118,7 +118,7 @@ export default function EtsSalesCalculatorPage() {
               step="0.01"
               value={inrUsd}
               onChange={(e) => setInrUsd(Number(e.target.value) || 0)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
           <Field label="Freight per CBM (USD)">
@@ -126,7 +126,7 @@ export default function EtsSalesCalculatorPage() {
               type="number"
               value={freightCbm}
               onChange={(e) => setFreightCbm(Number(e.target.value) || 0)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
           <Field label="Markup % (opening)">
@@ -134,7 +134,7 @@ export default function EtsSalesCalculatorPage() {
               type="number"
               value={markup}
               onChange={(e) => setMarkup(Number(e.target.value) || 0)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
         </div>
@@ -220,11 +220,11 @@ function OutputCard({
       className={
         "rounded-lg border bg-card shadow-sm p-4 " +
         (accent
-          ? "border-emerald-500/40 ring-1 ring-emerald-500/10"
-          : "border-border/80")
+          ? "border-primary/40 ring-1 ring-primary/10"
+          : "border-border")
       }
     >
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </div>
       <div
@@ -236,7 +236,7 @@ function OutputCard({
         {value}
       </div>
       {hint && (
-        <div className="mt-0.5 text-[11px] text-muted-foreground">{hint}</div>
+        <div className="mt-0.5 text-xs text-muted-foreground">{hint}</div>
       )}
     </div>
   )

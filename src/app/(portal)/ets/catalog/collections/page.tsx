@@ -70,7 +70,7 @@ export default function EtsCatalogCollectionsPage() {
       action={
         <button
           onClick={() => setCreating(true)}
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
         >
           <Plus className="size-4" /> New Collection
         </button>
@@ -98,7 +98,7 @@ export default function EtsCatalogCollectionsPage() {
           <tbody>
             {loading
               ? Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i} className="border-b border-border/60">
+                  <tr key={i} className="border-b border-border">
                     {Array.from({ length: 9 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full animate-pulse rounded bg-muted" />
@@ -280,8 +280,8 @@ function CollectionDrawer({
       size="lg"
       footer={
         <>
-          <button onClick={onClose} className="h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium hover:bg-muted/40">Cancel</button>
-          <button onClick={submit} disabled={busy} className="h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60">
+          <button onClick={onClose} className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/40">Cancel</button>
+          <button onClick={submit} disabled={busy} className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60">
             {busy ? "Saving…" : mode === "edit" ? "Save" : "Create"}
           </button>
         </>
@@ -289,17 +289,17 @@ function CollectionDrawer({
     >
       <div className="space-y-4">
         <Field label="Name" required>
-          <input value={form.name} onChange={(e) => set("name", e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+          <input value={form.name} onChange={(e) => set("name", e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
         </Field>
         <Field label="Subtitle">
-          <input value={form.subtitle} onChange={(e) => set("subtitle", e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+          <input value={form.subtitle} onChange={(e) => set("subtitle", e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
         </Field>
         <Field label="Description">
-          <textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={3} className="w-full rounded-md border border-border/80 bg-background px-3 py-2 text-sm" />
+          <textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={3} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Type">
-            <select value={form.type} onChange={(e) => set("type", e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm">
+            <select value={form.type} onChange={(e) => set("type", e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm">
               <option value="theme">theme</option>
               <option value="seasonal">seasonal</option>
               <option value="category">category</option>
@@ -307,29 +307,29 @@ function CollectionDrawer({
             </select>
           </Field>
           <Field label="Sort order">
-            <input type="number" value={form.sort_order} onChange={(e) => set("sort_order", e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+            <input type="number" value={form.sort_order} onChange={(e) => set("sort_order", e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Badge label">
-            <input value={form.badge_label} onChange={(e) => set("badge_label", e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+            <input value={form.badge_label} onChange={(e) => set("badge_label", e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
           </Field>
           <Field label="Badge color">
-            <input value={form.badge_color} onChange={(e) => set("badge_color", e.target.value)} placeholder="#10b981 or bg-emerald-500" className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+            <input value={form.badge_color} onChange={(e) => set("badge_color", e.target.value)} placeholder="#10b981 or bg-emerald-500" className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
           </Field>
         </div>
         <Field label="Cover image URL">
-          <input value={form.cover_image_url} onChange={(e) => set("cover_image_url", e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+          <input value={form.cover_image_url} onChange={(e) => set("cover_image_url", e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
         </Field>
         <Field label="Icon emoji">
-          <input value={form.icon_emoji} onChange={(e) => set("icon_emoji", e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+          <input value={form.icon_emoji} onChange={(e) => set("icon_emoji", e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Target count">
-            <input type="number" value={form.target_count} onChange={(e) => set("target_count", e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+            <input type="number" value={form.target_count} onChange={(e) => set("target_count", e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
           </Field>
           <Field label="Suggested qty / item">
-            <input type="number" value={form.suggested_qty_per_item} onChange={(e) => set("suggested_qty_per_item", e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+            <input type="number" value={form.suggested_qty_per_item} onChange={(e) => set("suggested_qty_per_item", e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
           </Field>
         </div>
         <div className="flex gap-4">

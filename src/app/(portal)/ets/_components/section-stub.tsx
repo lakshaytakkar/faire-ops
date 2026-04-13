@@ -28,17 +28,12 @@ export function EtsSectionStub({
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
       <div>
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold">{title}</h1>
-          <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-700 ring-1 ring-inset ring-emerald-200">
-            Ets
-          </span>
-        </div>
+        <h1 className="font-heading text-2xl font-semibold">{title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       </div>
 
-      <div className="rounded-lg border border-dashed border-border bg-muted/30 p-8 md:p-12 flex flex-col items-center justify-center text-center gap-4">
-        <span className="inline-flex size-12 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-700">
+      <div className="rounded-lg border border-dashed bg-muted/20 p-8 md:p-12 flex flex-col items-center justify-center text-center gap-4">
+        <span className="inline-flex size-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">
           <Icon className="size-6" />
         </span>
         <div>
@@ -50,7 +45,7 @@ export function EtsSectionStub({
         {tableHint && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Clock className="size-3.5" />
-            Data source: <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-[11px]">{tableHint}</code>
+            Data source: <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs">{tableHint}</code>
           </div>
         )}
       </div>

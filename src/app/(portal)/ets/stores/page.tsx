@@ -110,7 +110,7 @@ export default function EtsStoresPage() {
       action={
         <button
           onClick={() => setCreating(true)}
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
         >
           <Plus className="size-4" /> New store
         </button>
@@ -124,13 +124,13 @@ export default function EtsStoresPage() {
               placeholder="Search name, city, type…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 pl-10 pr-3 rounded-md border border-border/80 bg-card text-sm"
+              className="w-full h-10 pl-10 pr-3 rounded-md border border-border bg-card text-sm"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+            className="h-10 px-3 rounded-md border border-border bg-card text-sm"
           >
             <option value="all">All statuses</option>
             {STATUS_OPTIONS.map((s) => (
@@ -163,7 +163,7 @@ export default function EtsStoresPage() {
           <tbody>
             {loading
               ? Array.from({ length: 4 }).map((_, i) => (
-                  <tr key={i} className="border-b border-border/60">
+                  <tr key={i} className="border-b border-border">
                     {Array.from({ length: 8 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full animate-pulse rounded bg-muted" />
@@ -176,7 +176,7 @@ export default function EtsStoresPage() {
                     <EtsTD>
                       <div className="font-semibold text-sm">{s.name}</div>
                       {s.address && (
-                        <div className="text-[10px] text-muted-foreground mt-0.5 truncate max-w-[260px]">
+                        <div className="text-xs text-muted-foreground mt-0.5 truncate max-w-[260px]">
                           {s.address}
                         </div>
                       )}
@@ -299,14 +299,14 @@ function NewStoreDrawer({
         <>
           <button
             onClick={onClose}
-            className="h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium hover:bg-muted/40"
+            className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/40"
           >
             Cancel
           </button>
           <button
             onClick={submit}
             disabled={busy}
-            className="h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60"
+            className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
           >
             {busy ? "Creating…" : "Create"}
           </button>
@@ -318,7 +318,7 @@ function NewStoreDrawer({
           <select
             value={form.client_id}
             onChange={(e) => set("client_id", e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
           >
             <option value="">— Unassigned —</option>
             {clients.map((c) => (
@@ -332,7 +332,7 @@ function NewStoreDrawer({
           <input
             value={form.name}
             onChange={(e) => set("name", e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
           />
         </DrawerField>
         <div className="grid grid-cols-2 gap-3">
@@ -340,14 +340,14 @@ function NewStoreDrawer({
             <input
               value={form.city}
               onChange={(e) => set("city", e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </DrawerField>
           <DrawerField label="State">
             <input
               value={form.state}
               onChange={(e) => set("state", e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </DrawerField>
         </div>
@@ -355,7 +355,7 @@ function NewStoreDrawer({
           <input
             value={form.address}
             onChange={(e) => set("address", e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
           />
         </DrawerField>
         <div className="grid grid-cols-2 gap-3">
@@ -363,7 +363,7 @@ function NewStoreDrawer({
             <input
               value={form.pincode}
               onChange={(e) => set("pincode", e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </DrawerField>
           <DrawerField label="Size (sqft)">
@@ -371,7 +371,7 @@ function NewStoreDrawer({
               type="number"
               value={form.store_size_sqft}
               onChange={(e) => set("store_size_sqft", e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </DrawerField>
         </div>
@@ -380,7 +380,7 @@ function NewStoreDrawer({
             <input
               value={form.floor_type}
               onChange={(e) => set("floor_type", e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
               placeholder="e.g. tile, vinyl"
             />
           </DrawerField>
@@ -389,7 +389,7 @@ function NewStoreDrawer({
               type="date"
               value={form.launch_date}
               onChange={(e) => set("launch_date", e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </DrawerField>
         </div>
@@ -398,7 +398,7 @@ function NewStoreDrawer({
             <select
               value={form.status}
               onChange={(e) => set("status", e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             >
               {STATUS_OPTIONS.map((s) => (
                 <option key={s} value={s}>
@@ -411,7 +411,7 @@ function NewStoreDrawer({
             <select
               value={form.store_type}
               onChange={(e) => set("store_type", e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             >
               <option value="standard">standard</option>
               <option value="mini">mini</option>
@@ -423,7 +423,7 @@ function NewStoreDrawer({
           <input
             value={form.package_tier}
             onChange={(e) => set("package_tier", e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             placeholder="e.g. silver / gold / platinum"
           />
         </DrawerField>

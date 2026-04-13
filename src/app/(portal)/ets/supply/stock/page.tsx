@@ -94,13 +94,13 @@ export default function EtsStockPage() {
               placeholder="Search product / batch…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 pl-10 pr-3 rounded-md border border-border/80 bg-card text-sm"
+              className="w-full h-10 pl-10 pr-3 rounded-md border border-border bg-card text-sm"
             />
           </div>
           <select
             value={batchFilter}
             onChange={(e) => setBatchFilter(e.target.value)}
-            className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+            className="h-10 px-3 rounded-md border border-border bg-card text-sm"
           >
             <option value="all">All batches</option>
             {batches.map((b) => (

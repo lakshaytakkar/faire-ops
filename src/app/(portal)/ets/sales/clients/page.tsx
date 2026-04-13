@@ -92,13 +92,13 @@ export default function EtsClientsPage() {
         <div className="flex items-center gap-2">
           <Link
             href="/ets/sales/pipeline"
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium hover:bg-muted/40"
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/40"
           >
             Pipeline view
           </Link>
           <button
             onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
           >
             <Plus className="size-4" /> New client
           </button>
@@ -113,13 +113,13 @@ export default function EtsClientsPage() {
               placeholder="Search name, email, phone, city, manager…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 pl-10 pr-3 rounded-md border border-border/80 bg-card text-sm"
+              className="w-full h-10 pl-10 pr-3 rounded-md border border-border bg-card text-sm"
             />
           </div>
           <select
             value={stageFilter}
             onChange={(e) => setStageFilter(e.target.value)}
-            className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+            className="h-10 px-3 rounded-md border border-border bg-card text-sm"
           >
             <option value="all">All stages</option>
             {stages.map((s) => (
@@ -152,7 +152,7 @@ export default function EtsClientsPage() {
           <tbody>
             {loading
               ? Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i} className="border-b border-border/60">
+                  <tr key={i} className="border-b border-border">
                     {Array.from({ length: 8 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full animate-pulse rounded bg-muted" />
@@ -165,11 +165,11 @@ export default function EtsClientsPage() {
                     <EtsTD>
                       <Link
                         href={`/ets/sales/clients/${c.id}`}
-                        className="block hover:text-emerald-700"
+                        className="block hover:text-primary"
                       >
                         <div className="font-semibold text-sm">{c.name}</div>
                         {c.package_tier && (
-                          <div className="text-[10px] text-muted-foreground mt-0.5">
+                          <div className="text-xs text-muted-foreground mt-0.5">
                             {c.package_tier}
                           </div>
                         )}
@@ -300,14 +300,14 @@ function NewClientDrawer({
         <>
           <button
             onClick={onClose}
-            className="h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium hover:bg-muted/40"
+            className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/40"
           >
             Cancel
           </button>
           <button
             onClick={submit}
             disabled={busy}
-            className="h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60"
+            className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
           >
             {busy ? "Creating…" : "Create"}
           </button>
@@ -319,7 +319,7 @@ function NewClientDrawer({
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             placeholder="E.g. Ankur Khurana"
           />
         </Field>
@@ -328,7 +328,7 @@ function NewClientDrawer({
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             placeholder="you@example.com"
           />
         </Field>
@@ -336,7 +336,7 @@ function NewClientDrawer({
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             placeholder="+91-…"
           />
         </Field>
@@ -345,14 +345,14 @@ function NewClientDrawer({
             <input
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
           <Field label="State">
             <input
               value={state}
               onChange={(e) => setState(e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
         </div>
@@ -360,7 +360,7 @@ function NewClientDrawer({
           <select
             value={stage}
             onChange={(e) => setStage(e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
           >
             <option value="new-lead">New lead</option>
             <option value="qualified">Qualified</option>

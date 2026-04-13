@@ -207,7 +207,7 @@ export default function EtsFinanceAnalyticsPage() {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border/60 text-[10px] uppercase text-muted-foreground tracking-wider">
+                <tr className="border-b border-border text-xs uppercase text-muted-foreground tracking-wider">
                   <th className="py-2 text-left">Method</th>
                   <th className="py-2 text-right">Count</th>
                   <th className="py-2 text-right">Total</th>
@@ -215,7 +215,7 @@ export default function EtsFinanceAnalyticsPage() {
               </thead>
               <tbody>
                 {byMethod.map((m) => (
-                  <tr key={m.method} className="border-b border-border/60 last:border-0">
+                  <tr key={m.method} className="border-b border-border last:border-0">
                     <td className="py-2 capitalize">{m.method}</td>
                     <td className="py-2 text-right font-mono text-xs">{m.count}</td>
                     <td className="py-2 text-right font-mono text-xs">
@@ -234,7 +234,7 @@ export default function EtsFinanceAnalyticsPage() {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border/60 text-[10px] uppercase text-muted-foreground tracking-wider">
+                <tr className="border-b border-border text-xs uppercase text-muted-foreground tracking-wider">
                   <th className="py-2 text-left">Type</th>
                   <th className="py-2 text-right">Count</th>
                   <th className="py-2 text-right">Total</th>
@@ -242,7 +242,7 @@ export default function EtsFinanceAnalyticsPage() {
               </thead>
               <tbody>
                 {byType.map((t) => (
-                  <tr key={t.type} className="border-b border-border/60 last:border-0">
+                  <tr key={t.type} className="border-b border-border last:border-0">
                     <td className="py-2 capitalize">{t.type}</td>
                     <td className="py-2 text-right font-mono text-xs">{t.count}</td>
                     <td className="py-2 text-right font-mono text-xs">
@@ -303,13 +303,13 @@ function Kpi({
           ? "text-rose-700"
           : "text-foreground"
   return (
-    <div className="rounded-lg border border-border/80 bg-card shadow-sm px-4 py-3">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="rounded-lg border border-border bg-card shadow-sm px-4 py-3">
+      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </div>
       <div className={`mt-1 text-lg font-bold font-mono ${toneClass}`}>{value}</div>
       {hint && (
-        <div className="mt-0.5 text-[11px] text-muted-foreground">{hint}</div>
+        <div className="mt-0.5 text-xs text-muted-foreground">{hint}</div>
       )}
     </div>
   )
@@ -323,7 +323,7 @@ function Card({
   children: React.ReactNode
 }) {
   return (
-    <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4">
+    <div className="rounded-lg border border-border bg-card shadow-sm p-4">
       <h3 className="text-sm font-semibold mb-3">{title}</h3>
       {children}
     </div>

@@ -151,7 +151,7 @@ export default function StoreDetailPage() {
       backLabel="All stores"
       avatar={
         <div
-          className="size-14 rounded-full bg-emerald-500/10 text-emerald-700 flex items-center justify-center font-bold text-base shrink-0 ring-1 ring-emerald-200"
+          className="size-14 rounded-full bg-muted text-foreground flex items-center justify-center font-bold text-base shrink-0 ring-1 ring-border"
           aria-hidden
         >
           {formatInitials(store.name)}
@@ -172,7 +172,7 @@ export default function StoreDetailPage() {
           value={store.status ?? ""}
           onChange={(e) => patch({ status: e.target.value })}
           disabled={busy}
-          className="h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium"
+          className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium"
         >
           {STATUS_OPTIONS.map((s) => (
             <option key={s} value={s}>
@@ -277,8 +277,8 @@ function RightRail({
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-border/80 bg-card shadow-sm">
-      <div className="px-4 py-3 border-b border-border/60">
+    <div className="rounded-lg border border-border bg-card shadow-sm">
+      <div className="px-4 py-3 border-b border-border">
         <h3 className="text-sm font-semibold">{title}</h3>
       </div>
       <div className="p-4 space-y-3">{children}</div>
@@ -304,7 +304,7 @@ function EditableField({
   useEffect(() => setDraft(value?.toString() ?? ""), [value])
   return (
     <div>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">
+      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">
         {label}
       </div>
       {editing ? (
@@ -313,7 +313,7 @@ function EditableField({
             type={type}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            className="flex-1 h-8 px-2 rounded-md border border-border/80 bg-background text-sm"
+            className="flex-1 h-8 px-2 rounded-md border border-border bg-background text-sm"
             autoFocus
           />
           <button
@@ -321,7 +321,7 @@ function EditableField({
               onSave(draft.trim())
               setEditing(false)
             }}
-            className="size-7 rounded hover:bg-emerald-50 text-emerald-700 flex items-center justify-center"
+            className="size-7 rounded hover:bg-muted text-foreground flex items-center justify-center"
             disabled={busy}
           >
             <Check className="size-3.5" />
@@ -339,7 +339,7 @@ function EditableField({
       ) : (
         <button
           onClick={() => setEditing(true)}
-          className="w-full flex items-center justify-between gap-2 text-sm font-medium hover:text-emerald-700 text-left"
+          className="w-full flex items-center justify-between gap-2 text-sm font-medium hover:text-primary text-left"
         >
           <span className="truncate">
             {value != null && value !== "" ? (
@@ -696,8 +696,8 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <div className="rounded-lg border border-border/80 bg-card">
-      <div className="px-4 py-2.5 border-b border-border/60 flex items-center gap-2">
+    <div className="rounded-lg border border-border bg-card">
+      <div className="px-4 py-2.5 border-b border-border flex items-center gap-2">
         <Icon className="size-4 text-emerald-700" />
         <h3 className="text-sm font-semibold">{title}</h3>
       </div>
@@ -717,7 +717,7 @@ function Field({
 }) {
   return (
     <div>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </div>
       <div className="mt-0.5 text-sm">{children}</div>

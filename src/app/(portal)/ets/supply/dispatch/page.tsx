@@ -114,7 +114,7 @@ export default function EtsDispatchPage() {
       action={
         <button
           onClick={() => setDrawer({ open: true, row: null })}
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
         >
           <Plus className="size-4" /> New dispatch
         </button>
@@ -128,13 +128,13 @@ export default function EtsDispatchPage() {
               placeholder="Search order #, source, assignee…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 pl-10 pr-3 rounded-md border border-border/80 bg-card text-sm"
+              className="w-full h-10 pl-10 pr-3 rounded-md border border-border bg-card text-sm"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+            className="h-10 px-3 rounded-md border border-border bg-card text-sm"
           >
             <option value="all">All statuses</option>
             {STATUSES.map((s) => (
@@ -193,7 +193,7 @@ export default function EtsDispatchPage() {
                           e.stopPropagation()
                           markShipped(r.id)
                         }}
-                        className="h-8 px-2 rounded-md border border-border/80 bg-card text-xs font-medium hover:bg-muted/40"
+                        className="h-8 px-2 rounded-md border border-border bg-card text-xs font-medium hover:bg-muted/40"
                       >
                         Mark shipped
                       </button>
@@ -293,14 +293,14 @@ function DispatchDrawer({
         <>
           <button
             onClick={onClose}
-            className="h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium hover:bg-muted/40"
+            className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/40"
           >
             Cancel
           </button>
           <button
             onClick={save}
             disabled={busy}
-            className="h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60"
+            className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
           >
             {busy ? "Saving…" : "Save"}
           </button>
@@ -312,7 +312,7 @@ function DispatchDrawer({
           <select
             value={orderId}
             onChange={(e) => setOrderId(e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
           >
             <option value="">— select —</option>
             {orders.map((o) => (
@@ -327,7 +327,7 @@ function DispatchDrawer({
             <select
               value={priority}
               onChange={(e) => setPriority(parseInt(e.target.value, 10))}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             >
               {[1, 2, 3, 4, 5].map((n) => (
                 <option key={n} value={n}>
@@ -340,7 +340,7 @@ function DispatchDrawer({
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             >
               {STATUSES.map((s) => (
                 <option key={s} value={s}>
@@ -354,7 +354,7 @@ function DispatchDrawer({
           <input
             value={source}
             onChange={(e) => setSource(e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             placeholder="faire / shopify / manual"
           />
         </Field>
@@ -362,7 +362,7 @@ function DispatchDrawer({
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full min-h-[88px] rounded-md border border-border/80 bg-background px-3 py-2 text-sm"
+            className="w-full min-h-[88px] rounded-md border border-border bg-background px-3 py-2 text-sm"
           />
         </Field>
         {err && (

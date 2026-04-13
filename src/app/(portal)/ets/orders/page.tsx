@@ -108,7 +108,7 @@ export default function EtsOrdersPage() {
       action={
         <button
           onClick={() => setCreating(true)}
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
         >
           <Plus className="size-4" /> New order
         </button>
@@ -122,13 +122,13 @@ export default function EtsOrdersPage() {
               placeholder="Search order number…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 pl-10 pr-3 rounded-md border border-border/80 bg-card text-sm"
+              className="w-full h-10 pl-10 pr-3 rounded-md border border-border bg-card text-sm"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+            className="h-10 px-3 rounded-md border border-border bg-card text-sm"
           >
             <option value="all">All statuses</option>
             {STATUS_OPTIONS.map((s) => (
@@ -138,7 +138,7 @@ export default function EtsOrdersPage() {
           <select
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value)}
-            className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+            className="h-10 px-3 rounded-md border border-border bg-card text-sm"
           >
             <option value="all">All payments</option>
             {PAYMENT_OPTIONS.map((s) => (
@@ -148,7 +148,7 @@ export default function EtsOrdersPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+            className="h-10 px-3 rounded-md border border-border bg-card text-sm"
           >
             <option value="all">All types</option>
             {TYPE_OPTIONS.map((s) => (
@@ -180,7 +180,7 @@ export default function EtsOrdersPage() {
           <tbody>
             {loading
               ? Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i} className="border-b border-border/60">
+                  <tr key={i} className="border-b border-border">
                     {Array.from({ length: 9 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full animate-pulse rounded bg-muted" />
@@ -191,7 +191,7 @@ export default function EtsOrdersPage() {
               : filtered.map((o) => (
                   <EtsTR key={o.id}>
                     <EtsTD>
-                      <Link href={`/ets/orders/${o.id}`} className="font-semibold text-sm hover:text-emerald-700">
+                      <Link href={`/ets/orders/${o.id}`} className="font-semibold text-sm hover:text-primary">
                         {o.order_number ?? o.id.slice(0, 8)}
                       </Link>
                     </EtsTD>
@@ -286,10 +286,10 @@ function NewOrderDrawer({
       subtitle="Create a new client order."
       footer={
         <>
-          <button onClick={onClose} className="h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium hover:bg-muted/40">
+          <button onClick={onClose} className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/40">
             Cancel
           </button>
-          <button onClick={submit} disabled={busy} className="h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60">
+          <button onClick={submit} disabled={busy} className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60">
             {busy ? "Creating…" : "Create"}
           </button>
         </>
@@ -297,7 +297,7 @@ function NewOrderDrawer({
     >
       <div className="space-y-4">
         <Field label="Client" required>
-          <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm">
+          <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm">
             <option value="">— Select client —</option>
             {clients.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
@@ -305,30 +305,30 @@ function NewOrderDrawer({
           </select>
         </Field>
         <Field label="Order type">
-          <select value={orderType} onChange={(e) => setOrderType(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm">
+          <select value={orderType} onChange={(e) => setOrderType(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm">
             {TYPE_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </Field>
         <Field label="Source">
-          <input value={source} onChange={(e) => setSource(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" placeholder="E.g. POS, app, manual" />
+          <input value={source} onChange={(e) => setSource(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" placeholder="E.g. POS, app, manual" />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Status">
-            <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm">
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm">
               {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </Field>
           <Field label="Payment status">
-            <select value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm">
+            <select value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm">
               {PAYMENT_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </Field>
         </div>
         <Field label="Total amount (₹)">
-          <input type="number" value={totalAmount} onChange={(e) => setTotalAmount(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+          <input type="number" value={totalAmount} onChange={(e) => setTotalAmount(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
         </Field>
         <Field label="Notes">
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full rounded-md border border-border/80 bg-background px-3 py-2 text-sm" />
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
         </Field>
         {err && (
           <div className="rounded-md bg-rose-50 text-rose-700 px-3 py-2 text-xs">{err}</div>

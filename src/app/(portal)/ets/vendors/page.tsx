@@ -63,7 +63,7 @@ export default function EtsVendorsPage() {
           ))}
         </div>
       ) : rows.length === 0 ? (
-        <div className="rounded-lg border border-border/80 bg-card p-8 text-center">
+        <div className="rounded-lg border border-border bg-card p-8 text-center">
           <Truck className="size-8 mx-auto text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground">No vendors yet.</p>
         </div>
@@ -72,7 +72,7 @@ export default function EtsVendorsPage() {
           {rows.map((v) => (
             <div
               key={v.id}
-              className={`rounded-lg border border-border/80 bg-card shadow-sm p-5 ${v.is_active ? "" : "opacity-60"}`}
+              className={`rounded-lg border border-border bg-card shadow-sm p-5 ${v.is_active ? "" : "opacity-60"}`}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -84,7 +84,7 @@ export default function EtsVendorsPage() {
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <span
-                    className={`inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ring-1 ring-inset ${
+                    className={`inline-flex items-center text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ring-1 ring-inset ${
                       v.type === "china"
                         ? "bg-red-50 text-red-700 ring-red-200"
                         : "bg-blue-50 text-blue-700 ring-blue-200"
@@ -94,7 +94,7 @@ export default function EtsVendorsPage() {
                   </span>
                   {v.kyc_status && (
                     <span
-                      className={`inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                      className={`inline-flex items-center text-xs font-medium px-1.5 py-0.5 rounded ${
                         v.kyc_status === "verified"
                           ? "bg-emerald-50 text-emerald-700"
                           : v.kyc_status === "pending"
@@ -136,7 +136,7 @@ export default function EtsVendorsPage() {
                 <Field label="Terms" value={v.payment_terms ?? "—"} />
               </div>
 
-              <div className="mt-3 pt-3 border-t border-border/60 flex items-center gap-3 text-xs">
+              <div className="mt-3 pt-3 border-t border-border flex items-center gap-3 text-xs">
                 {v.phone && (
                   <a href={`tel:${v.phone}`} className="flex items-center gap-1 hover:underline">
                     <Phone className="size-3" /> {v.phone}
@@ -172,7 +172,7 @@ export default function EtsVendorsPage() {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+      <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
         {label}
       </div>
       <div className="text-xs mt-0.5 truncate">{value}</div>

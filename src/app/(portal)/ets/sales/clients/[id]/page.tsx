@@ -174,7 +174,7 @@ export default function ClientDetailPage() {
       backLabel="All clients"
       avatar={
         <div
-          className="size-14 rounded-full bg-emerald-500/10 text-emerald-700 flex items-center justify-center font-bold text-base shrink-0 ring-1 ring-emerald-200 overflow-hidden"
+          className="size-14 rounded-full bg-muted text-foreground flex items-center justify-center font-bold text-base shrink-0 ring-1 ring-border overflow-hidden"
           aria-hidden
         >
           {client.avatar_url ? (
@@ -201,7 +201,7 @@ export default function ClientDetailPage() {
           )}
           {client.is_lost && <EtsStatusBadge value="lost" />}
           {client.client_health && (
-            <span className="inline-flex text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">
+            <span className="inline-flex text-xs font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">
               {client.client_health}
             </span>
           )}
@@ -283,7 +283,7 @@ function StageSelector({
       value={stage ?? ""}
       onChange={(e) => onChange(e.target.value)}
       disabled={busy}
-      className="h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium"
+      className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium"
     >
       {STAGE_OPTIONS.map((s) => (
         <option key={s} value={s}>
@@ -380,8 +380,8 @@ function RightRail({
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-border/80 bg-card shadow-sm">
-      <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
+    <div className="rounded-lg border border-border bg-card shadow-sm">
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <h3 className="text-sm font-semibold">{title}</h3>
       </div>
       <div className="p-4 space-y-3">{children}</div>
@@ -407,7 +407,7 @@ function EditableField({
   useEffect(() => setDraft(value?.toString() ?? ""), [value])
   return (
     <div>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">
+      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">
         {label}
       </div>
       {editing ? (
@@ -416,7 +416,7 @@ function EditableField({
             type={type}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            className="flex-1 h-8 px-2 rounded-md border border-border/80 bg-background text-sm"
+            className="flex-1 h-8 px-2 rounded-md border border-border bg-background text-sm"
             autoFocus
           />
           <button
@@ -424,7 +424,7 @@ function EditableField({
               onSave(draft.trim())
               setEditing(false)
             }}
-            className="size-7 rounded hover:bg-emerald-50 text-emerald-700 flex items-center justify-center"
+            className="size-7 rounded hover:bg-muted text-foreground flex items-center justify-center"
             disabled={busy}
           >
             <Check className="size-3.5" />
@@ -442,7 +442,7 @@ function EditableField({
       ) : (
         <button
           onClick={() => setEditing(true)}
-          className="w-full flex items-center justify-between gap-2 text-sm font-medium hover:text-emerald-700 text-left"
+          className="w-full flex items-center justify-between gap-2 text-sm font-medium hover:text-primary text-left"
         >
           <span className="truncate">
             {value != null && value !== ""
@@ -483,7 +483,7 @@ function NotesField({
         }}
         rows={4}
         placeholder="Add a note…"
-        className="w-full rounded-md border border-border/80 bg-background px-3 py-2 text-sm"
+        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
       />
       {dirty && (
         <div className="flex items-center justify-end gap-2 mt-2">
@@ -492,7 +492,7 @@ function NotesField({
               setDraft(value ?? "")
               setDirty(false)
             }}
-            className="h-7 px-2.5 text-xs rounded-md border border-border/80 bg-card hover:bg-muted/40"
+            className="h-7 px-2.5 text-xs rounded-md border border-border bg-card hover:bg-muted/40"
           >
             Cancel
           </button>
@@ -502,7 +502,7 @@ function NotesField({
               setDirty(false)
             }}
             disabled={busy}
-            className="h-7 px-2.5 text-xs rounded-md bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+            className="h-7 px-2.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
           >
             Save
           </button>
@@ -638,12 +638,12 @@ function ActivitiesTab({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border border-border/80 bg-muted/20 p-3 space-y-2">
+      <div className="rounded-md border border-border bg-muted/20 p-3 space-y-2">
         <div className="flex gap-2">
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="h-9 px-2 rounded-md border border-border/80 bg-background text-sm"
+            className="h-9 px-2 rounded-md border border-border bg-background text-sm"
           >
             <option value="call">Call</option>
             <option value="email">Email</option>
@@ -655,12 +655,12 @@ function ActivitiesTab({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Log an activity…"
-            className="flex-1 h-9 px-3 rounded-md border border-border/80 bg-background text-sm"
+            className="flex-1 h-9 px-3 rounded-md border border-border bg-background text-sm"
           />
           <button
             onClick={add}
             disabled={busy || !notes.trim()}
-            className="h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60"
+            className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
           >
             Log
           </button>
@@ -680,7 +680,7 @@ function ActivitiesTab({
           {rows.map((r) => (
             <div
               key={r.id}
-              className="rounded-md border border-border/80 bg-card p-3 text-sm"
+              className="rounded-md border border-border bg-card p-3 text-sm"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -692,7 +692,7 @@ function ActivitiesTab({
                     </span>
                   )}
                 </div>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   {formatDate(r.created_at)}
                 </span>
               </div>
@@ -952,7 +952,7 @@ function StoreTab({ clientId }: { clientId: string }) {
         <Link
           key={s.id}
           href={`/ets/stores/${s.id}`}
-          className="block rounded-lg border border-border/80 bg-card hover:bg-muted/30 p-4 transition-colors"
+          className="block rounded-lg border border-border bg-card hover:bg-muted/30 p-4 transition-colors"
         >
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -1044,8 +1044,8 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <div className="rounded-lg border border-border/80 bg-card">
-      <div className="px-4 py-2.5 border-b border-border/60 flex items-center gap-2">
+    <div className="rounded-lg border border-border bg-card">
+      <div className="px-4 py-2.5 border-b border-border flex items-center gap-2">
         <Icon className="size-4 text-emerald-700" />
         <h3 className="text-sm font-semibold">{title}</h3>
       </div>
@@ -1065,7 +1065,7 @@ function Field({
 }) {
   return (
     <div>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </div>
       <div className="mt-0.5 text-sm">{children}</div>

@@ -115,13 +115,13 @@ export default function EtsFinanceInvoicesPage() {
               placeholder="Search invoice number or client…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 pl-10 pr-3 rounded-md border border-border/80 bg-card text-sm"
+              className="w-full h-10 pl-10 pr-3 rounded-md border border-border bg-card text-sm"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+            className="h-10 px-3 rounded-md border border-border bg-card text-sm"
           >
             <option value="all">All statuses</option>
             {statuses.map((s) => (
@@ -154,7 +154,7 @@ export default function EtsFinanceInvoicesPage() {
           <tbody>
             {loading
               ? Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i} className="border-b border-border/60">
+                  <tr key={i} className="border-b border-border">
                     {Array.from({ length: 8 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full animate-pulse rounded bg-muted" />
@@ -171,7 +171,7 @@ export default function EtsFinanceInvoicesPage() {
                       {o.client_id ? (
                         <Link
                           href={`/ets/sales/clients/${o.client_id}`}
-                          className="font-medium hover:text-emerald-700"
+                          className="font-medium hover:text-primary"
                         >
                           {clients.get(o.client_id) ?? "—"}
                         </Link>

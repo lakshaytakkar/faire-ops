@@ -95,7 +95,7 @@ export default function EtsChinaBatchesPage() {
       action={
         <button
           onClick={() => setDrawer({ open: true, row: null })}
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
         >
           <Plus className="size-4" /> New batch
         </button>
@@ -109,13 +109,13 @@ export default function EtsChinaBatchesPage() {
               placeholder="Search batch, vessel, BL, forwarder…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 pl-10 pr-3 rounded-md border border-border/80 bg-card text-sm"
+              className="w-full h-10 pl-10 pr-3 rounded-md border border-border bg-card text-sm"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+            className="h-10 px-3 rounded-md border border-border bg-card text-sm"
           >
             <option value="all">All statuses</option>
             {STATUSES.map((s) => (
@@ -277,14 +277,14 @@ function BatchDrawer({
         <>
           <button
             onClick={onClose}
-            className="h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium hover:bg-muted/40"
+            className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/40"
           >
             Cancel
           </button>
           <button
             onClick={save}
             disabled={busy}
-            className="h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60"
+            className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
           >
             {busy ? "Saving…" : "Save"}
           </button>
@@ -296,7 +296,7 @@ function BatchDrawer({
           <input
             value={form.batch_name ?? ""}
             onChange={(e) => set("batch_name", e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">
@@ -305,7 +305,7 @@ function BatchDrawer({
               type="date"
               value={form.etd ?? ""}
               onChange={(e) => set("etd", e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
           <Field label="ETA">
@@ -313,7 +313,7 @@ function BatchDrawer({
               type="date"
               value={form.eta ?? ""}
               onChange={(e) => set("eta", e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
         </div>
@@ -322,14 +322,14 @@ function BatchDrawer({
             <input
               value={form.vessel_name ?? ""}
               onChange={(e) => set("vessel_name", e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
           <Field label="BL number">
             <input
               value={form.bl_number ?? ""}
               onChange={(e) => set("bl_number", e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
         </div>
@@ -338,7 +338,7 @@ function BatchDrawer({
             <input
               value={form.route ?? ""}
               onChange={(e) => set("route", e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
               placeholder="Yantian → Nhava Sheva"
             />
           </Field>
@@ -346,7 +346,7 @@ function BatchDrawer({
             <input
               value={form.forwarder ?? ""}
               onChange={(e) => set("forwarder", e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
         </div>
@@ -354,7 +354,7 @@ function BatchDrawer({
           <select
             value={form.status ?? "draft"}
             onChange={(e) => set("status", e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
           >
             {STATUSES.map((s) => (
               <option key={s} value={s}>
@@ -375,7 +375,7 @@ function BatchDrawer({
                 step="0.01"
                 value={form.total_cbm ?? ""}
                 onChange={(e) => set("total_cbm", num(e.target.value))}
-                className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+                className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
               />
             </Field>
             <Field label="Total weight (kg)">
@@ -384,7 +384,7 @@ function BatchDrawer({
                 step="0.01"
                 value={form.total_weight_kg ?? ""}
                 onChange={(e) => set("total_weight_kg", num(e.target.value))}
-                className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+                className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
               />
             </Field>
             <Field label="Total cartons">
@@ -397,7 +397,7 @@ function BatchDrawer({
                     e.target.value ? parseInt(e.target.value, 10) : null,
                   )
                 }
-                className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+                className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
               />
             </Field>
           </div>
@@ -414,7 +414,7 @@ function BatchDrawer({
                 step="0.01"
                 value={form.freight_cost_usd ?? ""}
                 onChange={(e) => set("freight_cost_usd", num(e.target.value))}
-                className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+                className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
               />
             </Field>
             <Field label="Insurance (USD)">
@@ -423,7 +423,7 @@ function BatchDrawer({
                 step="0.01"
                 value={form.insurance_usd ?? ""}
                 onChange={(e) => set("insurance_usd", num(e.target.value))}
-                className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+                className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
               />
             </Field>
             <Field label="CHA charges (INR)">
@@ -432,7 +432,7 @@ function BatchDrawer({
                 step="0.01"
                 value={form.cha_charges_inr ?? ""}
                 onChange={(e) => set("cha_charges_inr", num(e.target.value))}
-                className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+                className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
               />
             </Field>
             <Field label="Customs duty (INR)">
@@ -441,7 +441,7 @@ function BatchDrawer({
                 step="0.01"
                 value={form.customs_duty_inr ?? ""}
                 onChange={(e) => set("customs_duty_inr", num(e.target.value))}
-                className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+                className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
               />
             </Field>
             <Field label="IGST (INR)">
@@ -450,7 +450,7 @@ function BatchDrawer({
                 step="0.01"
                 value={form.igst_inr ?? ""}
                 onChange={(e) => set("igst_inr", num(e.target.value))}
-                className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+                className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
               />
             </Field>
             <Field label="Total India cost (INR)">
@@ -461,7 +461,7 @@ function BatchDrawer({
                 onChange={(e) =>
                   set("total_india_cost_inr", num(e.target.value))
                 }
-                className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+                className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
               />
             </Field>
           </div>

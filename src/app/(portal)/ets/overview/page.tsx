@@ -111,7 +111,7 @@ export default function EtsDashboard() {
       </div>
 
       {/* Quick links */}
-      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+      <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
         <div className="px-5 py-3.5 border-b text-[0.9375rem] font-semibold tracking-tight">
           Quick access
         </div>
@@ -144,7 +144,7 @@ function StatCard({
   loading: boolean
 }) {
   return (
-    <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5">
+    <div className="rounded-lg border border-border bg-card shadow-sm p-5">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           {label}
@@ -176,7 +176,7 @@ function QuickLink({
   return (
     <Link
       href={href}
-      className="group rounded-md border border-border/80 p-3 hover:bg-muted/40 transition-colors"
+      className="group rounded-md border border-border p-3 hover:bg-muted/40 transition-colors"
     >
       <div className="text-sm font-semibold">{label}</div>
       <div className="text-xs text-muted-foreground mt-0.5">{sub}</div>

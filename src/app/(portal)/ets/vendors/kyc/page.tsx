@@ -109,13 +109,13 @@ export default function EtsVendorsKycPage() {
               placeholder="Search name, GST, PAN, account…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 pl-10 pr-3 rounded-md border border-border/80 bg-card text-sm"
+              className="w-full h-10 pl-10 pr-3 rounded-md border border-border bg-card text-sm"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+            className="h-10 px-3 rounded-md border border-border bg-card text-sm"
           >
             <option value="all">All statuses</option>
             <option value="verified">Verified</option>
@@ -147,7 +147,7 @@ export default function EtsVendorsKycPage() {
           <tbody>
             {loading
               ? Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b border-border/60">
+                  <tr key={i} className="border-b border-border">
                     {Array.from({ length: 8 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full animate-pulse rounded bg-muted" />
@@ -160,7 +160,7 @@ export default function EtsVendorsKycPage() {
                     <EtsTD>
                       <Link
                         href={`/ets/vendors/${v.id}`}
-                        className="text-sm font-semibold hover:text-emerald-700"
+                        className="text-sm font-semibold hover:text-primary"
                       >
                         {v.name}
                       </Link>
@@ -178,7 +178,7 @@ export default function EtsVendorsKycPage() {
                     <EtsTD className="text-xs">
                       {v.bank_name ?? "—"}
                       {v.bank_ifsc && (
-                        <div className="text-[10px] font-mono text-muted-foreground">
+                        <div className="text-xs font-mono text-muted-foreground">
                           {v.bank_ifsc}
                         </div>
                       )}
@@ -191,7 +191,7 @@ export default function EtsVendorsKycPage() {
                     <EtsTD className="text-xs">
                       {v.contact_name ?? "—"}
                       {v.phone && (
-                        <div className="text-[10px] text-muted-foreground">
+                        <div className="text-xs text-muted-foreground">
                           {v.phone}
                         </div>
                       )}

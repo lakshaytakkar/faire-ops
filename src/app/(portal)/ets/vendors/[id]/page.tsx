@@ -138,7 +138,7 @@ export default function VendorDetailPage() {
           cta={
             <Link
               href="/ets/vendors"
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
             >
               Back to vendors
             </Link>
@@ -153,7 +153,7 @@ export default function VendorDetailPage() {
       backHref="/ets/vendors"
       backLabel="All vendors"
       avatar={
-        <div className="size-12 rounded-lg bg-emerald-500/10 text-emerald-700 flex items-center justify-center text-lg font-bold shrink-0">
+        <div className="size-12 rounded-lg bg-muted text-foreground flex items-center justify-center text-lg font-bold shrink-0">
           <Truck className="size-6" />
         </div>
       }
@@ -166,7 +166,7 @@ export default function VendorDetailPage() {
       badges={
         <>
           <span
-            className={`inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ring-1 ring-inset ${
+            className={`inline-flex items-center text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ring-1 ring-inset ${
               vendor.type === "china"
                 ? "bg-red-50 text-red-700 ring-red-200"
                 : "bg-blue-50 text-blue-700 ring-blue-200"
@@ -185,7 +185,7 @@ export default function VendorDetailPage() {
           {vendor.phone && (
             <a
               href={`tel:${vendor.phone}`}
-              className="inline-flex items-center gap-1 h-8 px-3 rounded-md border border-border/80 bg-card hover:bg-muted/40"
+              className="inline-flex items-center gap-1 h-8 px-3 rounded-md border border-border bg-card hover:bg-muted/40"
             >
               <Phone className="size-3" /> {vendor.phone}
             </a>
@@ -193,7 +193,7 @@ export default function VendorDetailPage() {
           {vendor.email && (
             <a
               href={`mailto:${vendor.email}`}
-              className="inline-flex items-center gap-1 h-8 px-3 rounded-md border border-border/80 bg-card hover:bg-muted/40"
+              className="inline-flex items-center gap-1 h-8 px-3 rounded-md border border-border bg-card hover:bg-muted/40"
             >
               <Mail className="size-3" /> email
             </a>
@@ -203,7 +203,7 @@ export default function VendorDetailPage() {
               href={vendor.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 h-8 px-3 rounded-md border border-border/80 bg-card hover:bg-muted/40"
+              className="inline-flex items-center gap-1 h-8 px-3 rounded-md border border-border bg-card hover:bg-muted/40"
             >
               <ExternalLink className="size-3" /> site
             </a>
@@ -362,7 +362,7 @@ function ProductsTab({ vendorId }: { vendorId: string }) {
             <EtsTD>
               <EtsStatusBadge value={p.listing_status as string | null} />
               {!(p.is_active as boolean) && (
-                <div className="text-[10px] text-muted-foreground mt-0.5">
+                <div className="text-xs text-muted-foreground mt-0.5">
                   inactive
                 </div>
               )}
@@ -551,10 +551,10 @@ function Section({
 }) {
   return (
     <div>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
         {title}
       </div>
-      <div className="rounded-lg border border-border/80 bg-card shadow-sm divide-y divide-border/60">
+      <div className="rounded-lg border border-border bg-card shadow-sm divide-y divide-border/60">
         {children}
       </div>
     </div>

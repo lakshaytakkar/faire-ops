@@ -119,13 +119,13 @@ export default function EtsVendorProductsPage() {
               placeholder="Search name, SKU, brand, HSN…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 pl-10 pr-3 rounded-md border border-border/80 bg-card text-sm"
+              className="w-full h-10 pl-10 pr-3 rounded-md border border-border bg-card text-sm"
             />
           </div>
           <select
             value={vendorFilter}
             onChange={(e) => setVendorFilter(e.target.value)}
-            className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+            className="h-10 px-3 rounded-md border border-border bg-card text-sm"
           >
             <option value="all">All vendors</option>
             {vendorList.map(([id, name]) => (
@@ -137,7 +137,7 @@ export default function EtsVendorProductsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+            className="h-10 px-3 rounded-md border border-border bg-card text-sm"
           >
             <option value="all">All statuses</option>
             {statuses.map((s) => (
@@ -171,7 +171,7 @@ export default function EtsVendorProductsPage() {
           <tbody>
             {loading
               ? Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i} className="border-b border-border/60">
+                  <tr key={i} className="border-b border-border">
                     {Array.from({ length: 9 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full animate-pulse rounded bg-muted" />
@@ -184,7 +184,7 @@ export default function EtsVendorProductsPage() {
                     <EtsTD>
                       <div className="text-sm font-semibold">{p.name ?? "—"}</div>
                       {p.brand && (
-                        <div className="text-[10px] text-muted-foreground mt-0.5">
+                        <div className="text-xs text-muted-foreground mt-0.5">
                           {p.brand} {p.material ? `· ${p.material}` : ""}
                         </div>
                       )}
@@ -193,7 +193,7 @@ export default function EtsVendorProductsPage() {
                       {p.vendor_id ? (
                         <Link
                           href={`/ets/vendors/${p.vendor_id}`}
-                          className="hover:text-emerald-700"
+                          className="hover:text-primary"
                         >
                           {vendors.get(p.vendor_id) ?? "—"}
                         </Link>
@@ -220,7 +220,7 @@ export default function EtsVendorProductsPage() {
                     <EtsTD>
                       <EtsStatusBadge value={p.listing_status} />
                       {!p.is_active && (
-                        <div className="text-[10px] text-muted-foreground mt-0.5">
+                        <div className="text-xs text-muted-foreground mt-0.5">
                           inactive
                         </div>
                       )}

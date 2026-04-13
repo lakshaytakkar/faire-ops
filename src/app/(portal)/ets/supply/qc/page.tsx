@@ -111,7 +111,7 @@ export default function EtsQcPage() {
       action={
         <button
           onClick={() => setDrawer({ open: true, row: null })}
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
         >
           <Plus className="size-4" /> New QC record
         </button>
@@ -125,13 +125,13 @@ export default function EtsQcPage() {
               placeholder="Search notes, resolution, order…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 pl-10 pr-3 rounded-md border border-border/80 bg-card text-sm"
+              className="w-full h-10 pl-10 pr-3 rounded-md border border-border bg-card text-sm"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+            className="h-10 px-3 rounded-md border border-border bg-card text-sm"
           >
             <option value="all">All statuses</option>
             {STATUSES.map((s) => (
@@ -296,14 +296,14 @@ function QcDrawer({
         <>
           <button
             onClick={onClose}
-            className="h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium hover:bg-muted/40"
+            className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/40"
           >
             Cancel
           </button>
           <button
             onClick={save}
             disabled={busy}
-            className="h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60"
+            className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
           >
             {busy ? "Saving…" : "Save"}
           </button>
@@ -315,7 +315,7 @@ function QcDrawer({
           <select
             value={orderId}
             onChange={(e) => setOrderId(e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
           >
             <option value="">— select —</option>
             {orders.map((o) => (
@@ -329,7 +329,7 @@ function QcDrawer({
           <select
             value={storeId}
             onChange={(e) => setStoreId(e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
           >
             <option value="">— select —</option>
             {stores.map((s) => (
@@ -345,7 +345,7 @@ function QcDrawer({
               type="number"
               value={total}
               onChange={(e) => setTotal(e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
           <Field label="Passed">
@@ -353,7 +353,7 @@ function QcDrawer({
               type="number"
               value={passed}
               onChange={(e) => setPassed(e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
           <Field label="Failed">
@@ -361,7 +361,7 @@ function QcDrawer({
               type="number"
               value={failed}
               onChange={(e) => setFailed(e.target.value)}
-              className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             />
           </Field>
         </div>
@@ -369,7 +369,7 @@ function QcDrawer({
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
           >
             {STATUSES.map((s) => (
               <option key={s} value={s}>
@@ -382,7 +382,7 @@ function QcDrawer({
           <input
             value={resolution}
             onChange={(e) => setResolution(e.target.value)}
-            className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm"
+            className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm"
             placeholder="Returned to vendor / accepted / replaced"
           />
         </Field>
@@ -390,7 +390,7 @@ function QcDrawer({
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full min-h-[88px] rounded-md border border-border/80 bg-background px-3 py-2 text-sm"
+            className="w-full min-h-[88px] rounded-md border border-border bg-background px-3 py-2 text-sm"
           />
         </Field>
         {err && (

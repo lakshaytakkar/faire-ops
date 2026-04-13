@@ -97,7 +97,7 @@ export default function EtsVendorsOrdersPage() {
       action={
         <button
           onClick={() => setCreating(true)}
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
         >
           <Plus className="size-4" /> New vendor order
         </button>
@@ -111,14 +111,14 @@ export default function EtsVendorsOrdersPage() {
               placeholder="Search PO number…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 pl-10 pr-3 rounded-md border border-border/80 bg-card text-sm"
+              className="w-full h-10 pl-10 pr-3 rounded-md border border-border bg-card text-sm"
             />
           </div>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm">
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 px-3 rounded-md border border-border bg-card text-sm">
             <option value="all">All statuses</option>
             {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
-          <select value={vendorFilter} onChange={(e) => setVendorFilter(e.target.value)} className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm">
+          <select value={vendorFilter} onChange={(e) => setVendorFilter(e.target.value)} className="h-10 px-3 rounded-md border border-border bg-card text-sm">
             <option value="all">All vendors</option>
             {vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
           </select>
@@ -141,7 +141,7 @@ export default function EtsVendorsOrdersPage() {
           <tbody>
             {loading
               ? Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i} className="border-b border-border/60">
+                  <tr key={i} className="border-b border-border">
                     {Array.from({ length: 7 }).map((_, j) => (
                       <td key={j} className="px-4 py-3"><div className="h-4 w-full animate-pulse rounded bg-muted" /></td>
                     ))}
@@ -261,8 +261,8 @@ function VendorOrderDrawer({
               Delete
             </button>
           )}
-          <button onClick={onClose} className="h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium hover:bg-muted/40">Cancel</button>
-          <button onClick={submit} disabled={busy} className="h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60">
+          <button onClick={onClose} className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/40">Cancel</button>
+          <button onClick={submit} disabled={busy} className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60">
             {busy ? "Saving…" : existing ? "Save" : "Create"}
           </button>
         </>
@@ -270,29 +270,29 @@ function VendorOrderDrawer({
     >
       <div className="space-y-4">
         <Field label="Vendor" required>
-          <select value={vendorId} onChange={(e) => setVendorId(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm">
+          <select value={vendorId} onChange={(e) => setVendorId(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm">
             <option value="">— Select vendor —</option>
             {vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
           </select>
         </Field>
         <Field label="PO number">
-          <input value={poNumber} onChange={(e) => setPoNumber(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" placeholder="PO-…" />
+          <input value={poNumber} onChange={(e) => setPoNumber(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" placeholder="PO-…" />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Status">
-            <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm">
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm">
               {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </Field>
           <Field label="Total (INR)">
-            <input type="number" value={totalInr} onChange={(e) => setTotalInr(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+            <input type="number" value={totalInr} onChange={(e) => setTotalInr(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
           </Field>
         </div>
         <Field label="Expected delivery">
-          <input type="date" value={expected} onChange={(e) => setExpected(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+          <input type="date" value={expected} onChange={(e) => setExpected(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
         </Field>
         <Field label="Notes">
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full rounded-md border border-border/80 bg-background px-3 py-2 text-sm" />
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
         </Field>
         {err && <div className="rounded-md bg-rose-50 text-rose-700 px-3 py-2 text-xs">{err}</div>}
       </div>

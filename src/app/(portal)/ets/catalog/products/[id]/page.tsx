@@ -41,11 +41,11 @@ export default function EtsProductDetail() {
       {loading ? (
         <div className="h-40 w-full animate-pulse rounded bg-muted" />
       ) : !row ? (
-        <div className="rounded-lg border border-border/80 bg-card p-8 text-center">
+        <div className="rounded-lg border border-border bg-card p-8 text-center">
           <p className="text-sm text-muted-foreground">Product not found.</p>
         </div>
       ) : (
-        <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+        <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b flex items-start gap-4">
             {(row.image_url as string | null) ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -78,7 +78,7 @@ export default function EtsProductDetail() {
               .filter(([k]) => k !== "image_url")
               .map(([k, v]) => (
                 <div key={k}>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     {k}
                   </div>
                   <div className="text-sm mt-0.5 break-words">

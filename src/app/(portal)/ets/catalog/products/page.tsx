@@ -116,7 +116,7 @@ export default function EtsProductsPage() {
         </div>
         <button
           onClick={() => setCreating(true)}
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
         >
           <Plus className="size-4" /> New Product
         </button>
@@ -134,7 +134,7 @@ export default function EtsProductsPage() {
               setSearch(e.target.value)
               setPage(0)
             }}
-            className="w-full h-10 pl-10 pr-3 rounded-md border border-border/80 bg-card text-sm"
+            className="w-full h-10 pl-10 pr-3 rounded-md border border-border bg-card text-sm"
           />
         </div>
         <select
@@ -143,7 +143,7 @@ export default function EtsProductsPage() {
             setCategory(e.target.value)
             setPage(0)
           }}
-          className="h-10 px-3 rounded-md border border-border/80 bg-card text-sm"
+          className="h-10 px-3 rounded-md border border-border bg-card text-sm"
         >
           <option value="all">All categories</option>
           {categories.map((c) => (
@@ -155,11 +155,11 @@ export default function EtsProductsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
+      <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/60 bg-muted/30">
+              <tr className="border-b border-border bg-muted/30">
                 <Th>Image</Th>
                 <Th>Name</Th>
                 <Th>Code</Th>
@@ -175,7 +175,7 @@ export default function EtsProductsPage() {
             <tbody>
               {loading ? (
                 Array.from({ length: 8 }).map((_, i) => (
-                  <tr key={i} className="border-b border-border/60">
+                  <tr key={i} className="border-b border-border">
                     {Array.from({ length: 10 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 w-full animate-pulse rounded bg-muted" />
@@ -194,7 +194,7 @@ export default function EtsProductsPage() {
                   <tr
                     key={p.id}
                     onClick={() => setEditing(p)}
-                    className="border-b border-border/60 last:border-0 hover:bg-muted/40 cursor-pointer"
+                    className="border-b border-border last:border-0 hover:bg-muted/40 cursor-pointer"
                   >
                     <td className="px-4 py-2">
                       {p.image_url ? (
@@ -234,12 +234,12 @@ export default function EtsProductsPage() {
                     <td className="px-4 py-2">
                       <div className="flex flex-col gap-0.5">
                         {p.is_published && (
-                          <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 w-fit">
+                          <span className="inline-flex items-center text-xs font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 w-fit">
                             Published
                           </span>
                         )}
                         {!p.is_active && (
-                          <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 w-fit">
+                          <span className="inline-flex items-center text-xs font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 w-fit">
                             Inactive
                           </span>
                         )}
@@ -284,7 +284,7 @@ export default function EtsProductsPage() {
               type="button"
               disabled={page === 0}
               onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className="h-8 px-3 rounded-md border border-border/80 bg-card text-sm disabled:opacity-50"
+              className="h-8 px-3 rounded-md border border-border bg-card text-sm disabled:opacity-50"
             >
               Previous
             </button>
@@ -292,7 +292,7 @@ export default function EtsProductsPage() {
               type="button"
               disabled={page + 1 >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="h-8 px-3 rounded-md border border-border/80 bg-card text-sm disabled:opacity-50"
+              className="h-8 px-3 rounded-md border border-border bg-card text-sm disabled:opacity-50"
             >
               Next
             </button>
@@ -421,14 +421,14 @@ function ProductDrawer({
         <>
           <button
             onClick={onClose}
-            className="h-9 px-3 rounded-md border border-border/80 bg-card text-sm font-medium hover:bg-muted/40"
+            className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted/40"
           >
             Cancel
           </button>
           <button
             onClick={submit}
             disabled={busy}
-            className="h-9 px-3 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60"
+            className="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
           >
             {busy ? "Saving…" : mode === "edit" ? "Save" : "Create"}
           </button>
@@ -437,27 +437,27 @@ function ProductDrawer({
     >
       <div className="space-y-4">
         <Field label="Name (CN)" required>
-          <input value={name} onChange={(e) => setName(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+          <input value={name} onChange={(e) => setName(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
         </Field>
         <Field label="Name (EN)">
-          <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+          <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Category">
-            <input value={category} onChange={(e) => setCategory(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+            <input value={category} onChange={(e) => setCategory(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
           </Field>
           <Field label="Unit price">
-            <input type="number" step="0.01" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+            <input type="number" step="0.01" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
           </Field>
         </div>
         <Field label="Barcode">
-          <input value={barcode} onChange={(e) => setBarcode(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+          <input value={barcode} onChange={(e) => setBarcode(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
         </Field>
         <Field label="Image URL">
-          <input value={image} onChange={(e) => setImage(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+          <input value={image} onChange={(e) => setImage(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
         </Field>
         <Field label="Material">
-          <input value={material} onChange={(e) => setMaterial(e.target.value)} className="w-full h-9 rounded-md border border-border/80 bg-background px-3 text-sm" />
+          <input value={material} onChange={(e) => setMaterial(e.target.value)} className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm" />
         </Field>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
