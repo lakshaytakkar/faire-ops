@@ -1,485 +1,549 @@
 import Link from "next/link"
 import {
-  Building2,
+  Wallet,
   Users,
   Briefcase,
-  Scale,
+  Ticket,
+  CheckSquare,
+  AlertTriangle,
   Plane,
-  Package,
-  ShoppingBag,
-  Layers,
+  Share2,
+  Globe,
+  TrendingUp,
+  Landmark,
   ArrowRight,
-  ArrowUpRight,
-  Wallet,
-  Target,
-  BookOpen,
-  ShieldCheck,
-  LineChart,
-  FolderKanban,
 } from "lucide-react"
-import { supabase, supabaseB2B } from "@/lib/supabase"
-import { listSpaces, type Space } from "@/lib/spaces"
-import {
-  listProjects,
-  listChecklistFor,
-  summarizeChecklist,
-} from "@/lib/projects"
+import { PageHeader } from "@/components/shared/page-header"
+import { KPIGrid } from "@/components/shared/kpi-grid"
+import { MetricCard } from "@/components/shared/metric-card"
+import { DetailCard, InfoRow } from "@/components/shared/detail-views"
+import { StatusBadge, toneForStatus } from "@/components/shared/status-badge"
+import { EmptyState } from "@/components/shared/empty-state"
+import { supabase, supabaseHq, supabaseGoyo } from "@/lib/supabase"
+import { formatCurrency, formatDate, formatNumber } from "@/lib/format"
 
 export const dynamic = "force-dynamic"
 
 export const metadata = {
-  title: "Suprans HQ — Overview",
-  description:
-    "Company-tier command center. All-hands, ventures portfolio, people, finance, projects, compliance.",
+  title: "Suprans HQ — Command Dashboard",
+  description: "Company-wide pulse across every vertical — the top of the hierarchy.",
 }
 
-/**
- * Suprans HQ / Overview — the company-tier landing page.
- *
- * This is explicitly distinct from /overview (which is scoped to the B2B
- * Ecommerce venture). HQ is the top-of-hierarchy workspace per the locked
- * architecture in docs/ARCHITECTURE.md and memory/project_architecture_suprans.md:
- *
- *   - kind=company (only one). Houses cross-venture views only.
- *   - Shows team totals, portfolio progress, combined revenue, active projects.
- *   - Sub-sections (People, Finance, Projects, Compliance) live at /hq/*.
- *
- * Coming-soon items render as subtle dashed tiles so the landing never looks
- * half-empty as the HQ space is filled out.
- */
+/* ------------------------------------------------------------------ */
+/*  Vertical → display label. Keeps row labels consistent across the   */
+/*  overview + P&L pages without hard-coding a new primitive.          */
+/* ------------------------------------------------------------------ */
 
-const SPACE_ICON: Record<string, typeof ShoppingBag> = {
-  "b2b-ecommerce": ShoppingBag,
-  "hq": Building2,
-  "legal": Scale,
-  "goyo": Plane,
-  "usdrop": Package,
-  "eazysell": Layers,
-  "toysinbulk": Layers,
-  "suprans-app": Briefcase,
+const VERTICAL_LABEL: Record<string, string> = {
+  "b2b-ecommerce": "B2B Ecommerce",
+  "ets": "EazyToSell",
+  "legal": "LegalNations",
+  "goyo": "GoyoTours",
+  "usdrop": "USDrop AI",
+  "toysinbulk": "Toys in Bulk",
+  "hq": "HQ / Corporate",
 }
 
-interface VentureCard {
-  space: Space
-  projectProgress: number | null
-  projectCount: number
+function labelForVertical(slug: string): string {
+  return VERTICAL_LABEL[slug] ?? slug
 }
 
-async function fetchTeamMemberCount(): Promise<number> {
-  try {
-    const { count } = await supabase
-      .from("team_members")
-      .select("*", { count: "exact", head: true })
-    return count ?? 0
-  } catch {
+/* ------------------------------------------------------------------ */
+/*  Data loaders                                                        */
+/* ------------------------------------------------------------------ */
+
+async function fetchRevenueMtd(): Promise<{ total: number; byVertical: { vertical: string; amount: number }[] }> {
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    .toISOString()
+    .slice(0, 10)
+  const { data, error } = await supabaseHq
+    .from("revenue")
+    .select("vertical, amount")
+    .gte("booked_at", startOfMonth)
+  if (error) {
+    console.error("fetchRevenueMtd error:", error)
+    return { total: 0, byVertical: [] }
+  }
+  const bucket = new Map<string, number>()
+  for (const row of data ?? []) {
+    const v = (row as { vertical: string; amount: number }).vertical
+    const amt = Number((row as { amount: number | string }).amount ?? 0)
+    bucket.set(v, (bucket.get(v) ?? 0) + amt)
+  }
+  const byVertical = Array.from(bucket.entries())
+    .map(([vertical, amount]) => ({ vertical, amount }))
+    .sort((a, b) => b.amount - a.amount)
+  const total = byVertical.reduce((s, r) => s + r.amount, 0)
+  return { total, byVertical }
+}
+
+interface HeadcountRow {
+  department: string
+  vertical: string
+  active: number
+  probation: number
+  on_leave: number
+  terminated: number
+  total: number
+}
+
+async function fetchHeadcount(): Promise<{
+  activeTotal: number
+  byDepartment: { department: string; active: number }[]
+}> {
+  const { data, error } = await supabaseHq
+    .from("v_headcount_by_dept_vertical")
+    .select("department, vertical, active, probation, on_leave, terminated, total")
+  if (error) {
+    console.error("fetchHeadcount error:", error)
+    return { activeTotal: 0, byDepartment: [] }
+  }
+  const bucket = new Map<string, number>()
+  let activeTotal = 0
+  for (const row of (data ?? []) as HeadcountRow[]) {
+    const dept = row.department ?? "Unassigned"
+    bucket.set(dept, (bucket.get(dept) ?? 0) + (row.active ?? 0))
+    activeTotal += row.active ?? 0
+  }
+  const byDepartment = Array.from(bucket.entries())
+    .map(([department, active]) => ({ department, active }))
+    .sort((a, b) => b.active - a.active)
+  return { activeTotal, byDepartment }
+}
+
+async function fetchActiveProjects(): Promise<number> {
+  const { count, error } = await supabase
+    .from("projects")
+    .select("*", { count: "exact", head: true })
+    .not("status", "in", "(complete,archived)")
+  if (error) {
+    console.error("fetchActiveProjects error:", error)
     return 0
   }
+  return count ?? 0
 }
 
-async function fetchCompanyRevenueCents(): Promise<number> {
-  try {
-    // faire_store_revenue(p_start=null) returns revenue per store across all
-    // orders. Summed across stores = cross-venture revenue for B2B today.
-    const { data } = await supabaseB2B.rpc("faire_store_revenue", {
-      p_start: null,
+async function fetchOpenTicketsByPriority(): Promise<{
+  total: number
+  buckets: { priority: string; count: number }[]
+}> {
+  const { data, error } = await supabase
+    .from("tickets")
+    .select("priority, status")
+    .not("status", "in", "(resolved,closed)")
+  if (error) {
+    console.error("fetchOpenTicketsByPriority error:", error)
+    return { total: 0, buckets: [] }
+  }
+  const order = ["critical", "high", "medium", "low"]
+  const bucket = new Map<string, number>()
+  for (const row of data ?? []) {
+    const p = ((row as { priority: string | null }).priority ?? "unassigned").toLowerCase()
+    bucket.set(p, (bucket.get(p) ?? 0) + 1)
+  }
+  const buckets = Array.from(bucket.entries())
+    .map(([priority, count]) => ({ priority, count }))
+    .sort((a, b) => {
+      const ai = order.indexOf(a.priority)
+      const bi = order.indexOf(b.priority)
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
     })
-    if (!data) return 0
-    let total = 0
-    for (const row of data as Array<{ revenue_cents: number | string }>) {
-      total += Number(row.revenue_cents ?? 0)
-    }
-    return total
-  } catch {
+  const total = buckets.reduce((s, r) => s + r.count, 0)
+  return { total, buckets }
+}
+
+async function fetchPendingApprovals(): Promise<number> {
+  const { count, error } = await supabaseHq
+    .from("expenses")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "pending_approval")
+  if (error) {
+    console.error("fetchPendingApprovals error:", error)
     return 0
   }
+  return count ?? 0
 }
 
-function formatMoney(cents: number): string {
-  if (cents === 0) return "—"
-  const dollars = cents / 100
-  if (dollars >= 1_000_000) return `$${(dollars / 1_000_000).toFixed(1)}M`
-  if (dollars >= 1_000) return `$${(dollars / 1_000).toFixed(1)}K`
-  return `$${dollars.toFixed(0)}`
+interface AlertRow {
+  id: string
+  alert_type: string
+  subject: string | null
+  description: string
+  severity: string
+  due_date: string | null
 }
 
-function KpiCard({
-  label,
-  value,
-  sublabel,
-  icon: Icon,
-  tint,
-}: {
-  label: string
-  value: string | number
-  sublabel?: string
-  icon: typeof Users
-  tint: string
-}) {
-  return (
-    <div className="rounded-lg border border-border/80 bg-card shadow-sm px-5 py-4">
-      <div className="flex items-center justify-between">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-          {label}
-        </p>
-        <div
-          className="h-8 w-8 rounded-md flex items-center justify-center ring-1 ring-black/[0.04]"
-          style={{
-            background: `linear-gradient(135deg, ${tint}26, ${tint}10)`,
-          }}
-        >
-          <Icon className="h-4 w-4" style={{ color: tint }} />
-        </div>
-      </div>
-      <p className="mt-2 text-2xl font-bold font-heading text-foreground tabular-nums">
-        {value}
-      </p>
-      {sublabel && (
-        <p className="mt-0.5 text-xs text-muted-foreground">{sublabel}</p>
-      )}
-    </div>
-  )
+async function fetchOpenAlerts(): Promise<AlertRow[]> {
+  const { data, error } = await supabaseHq
+    .from("alerts")
+    .select("id, alert_type, subject, description, severity, due_date")
+    .is("resolved_at", null)
+    .order("due_date", { ascending: true })
+    .limit(5)
+  if (error) {
+    console.error("fetchOpenAlerts error:", error)
+    return []
+  }
+  return (data ?? []) as AlertRow[]
 }
 
-export default async function HqOverviewPage() {
-  const [spaces, teamCount, revenueCents, projects] = await Promise.all([
-    listSpaces(),
-    fetchTeamMemberCount(),
-    fetchCompanyRevenueCents(),
-    listProjects(),
+async function fetchGoyoDeparturesNext7Days(): Promise<number> {
+  const today = new Date().toISOString().slice(0, 10)
+  const in7 = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10)
+  const { count, error } = await supabaseGoyo
+    .from("bookings")
+    .select("*", { count: "exact", head: true })
+    .gte("departure_date", today)
+    .lte("departure_date", in7)
+  if (error) {
+    console.error("fetchGoyoDeparturesNext7Days error:", error)
+    return 0
+  }
+  return count ?? 0
+}
+
+interface BankAccountRow {
+  name: string
+  currency: string
+  balance_cents: number
+}
+
+async function fetchCashSnapshot(): Promise<{
+  hasData: boolean
+  total: BankAccountRow[]
+}> {
+  const { data, error } = await supabase
+    .from("bank_accounts")
+    .select("name, currency, balance_cents")
+  if (error) {
+    return { hasData: false, total: [] }
+  }
+  return { hasData: (data ?? []).length > 0, total: (data ?? []) as BankAccountRow[] }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Page                                                                */
+/* ------------------------------------------------------------------ */
+
+export default async function HqCommandDashboardPage() {
+  const [
+    revenue,
+    headcount,
+    activeProjects,
+    tickets,
+    pendingApprovals,
+    alerts,
+    goyoDepartures,
+    cash,
+  ] = await Promise.all([
+    fetchRevenueMtd(),
+    fetchHeadcount(),
+    fetchActiveProjects(),
+    fetchOpenTicketsByPriority(),
+    fetchPendingApprovals(),
+    fetchOpenAlerts(),
+    fetchGoyoDeparturesNext7Days(),
+    fetchCashSnapshot(),
   ])
 
-  // Group projects by brand so each venture can show its portfolio progress
-  const checklists = await listChecklistFor(projects.map((p) => p.id))
-  const progressByBrand = new Map<string, { items: number; done: number; count: number }>()
-  for (const p of projects) {
-    const s = summarizeChecklist(checklists.get(p.id) ?? [])
-    const entry = progressByBrand.get(p.brand) ?? { items: 0, done: 0, count: 0 }
-    entry.items += s.total - s.notApplicable
-    entry.done += s.done
-    entry.count += 1
-    progressByBrand.set(p.brand, entry)
-  }
-
-  const ventureSpaces = spaces.filter(
-    (s) => s.kind !== "company" && s.slug !== "hq",
-  )
-
-  const ventureCards: VentureCard[] = ventureSpaces.map((space) => {
-    const brandKey = space.slug === "b2b-ecommerce" ? "suprans" : space.slug
-    const p =
-      progressByBrand.get(brandKey) ??
-      progressByBrand.get(space.slug) ??
-      null
-    return {
-      space,
-      projectProgress:
-        p && p.items > 0 ? Math.round((p.done / p.items) * 100) : null,
-      projectCount: p?.count ?? 0,
-    }
-  })
-
-  const activeVentureCount = ventureSpaces.filter((s) => s.is_active).length
-  const totalProjects = projects.length
-  const totalItems = Array.from(progressByBrand.values()).reduce(
-    (a, b) => a + b.items,
-    0,
-  )
-  const totalDone = Array.from(progressByBrand.values()).reduce(
-    (a, b) => a + b.done,
-    0,
-  )
-  const portfolioProgress =
-    totalItems > 0 ? Math.round((totalDone / totalItems) * 100) : 0
-
   return (
-    <div className="space-y-6 max-w-[1440px] mx-auto w-full">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-            Suprans HQ
-          </p>
-          <h1 className="mt-0.5 text-2xl md:text-3xl font-bold font-heading text-foreground">
-            Company Overview
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Everything across every venture — the top of the hierarchy.
-          </p>
-        </div>
-        <Link
-          href="/projects"
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border/80 bg-card text-xs font-medium text-foreground hover:bg-muted/40 transition-colors"
-        >
-          <FolderKanban className="h-3.5 w-3.5" />
-          All projects
-        </Link>
-      </div>
+    <div className="max-w-[1440px] mx-auto w-full space-y-5">
+      <PageHeader
+        title="Command Dashboard"
+        subtitle="Company-wide pulse across all verticals."
+      />
 
-      {/* KPI row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiCard
-          label="People"
-          value={teamCount}
-          sublabel={teamCount === 1 ? "team member" : "team members"}
-          icon={Users}
-          tint="#3b82f6"
-        />
-        <KpiCard
-          label="Active ventures"
-          value={activeVentureCount}
-          sublabel={`of ${ventureSpaces.length} tracked`}
-          icon={Briefcase}
-          tint="#8b5cf6"
-        />
-        <KpiCard
-          label="Portfolio progress"
-          value={`${portfolioProgress}%`}
-          sublabel={`${totalDone} / ${totalItems} items`}
-          icon={Target}
-          tint="#10b981"
-        />
-        <KpiCard
-          label="Company revenue"
-          value={formatMoney(revenueCents)}
-          sublabel="all ventures, all-time"
+      {/* Top KPI strip — the four headline numbers */}
+      <KPIGrid>
+        <MetricCard
+          label="Revenue MTD"
+          value={formatCurrency(revenue.total, "₹")}
           icon={Wallet}
-          tint="#f59e0b"
+          iconTone="emerald"
+          hint="all verticals, this month"
         />
-      </div>
+        <MetricCard
+          label="Active projects"
+          value={formatNumber(activeProjects)}
+          icon={Briefcase}
+          iconTone="blue"
+          href="/projects"
+        />
+        <MetricCard
+          label="Pending approvals"
+          value={formatNumber(pendingApprovals)}
+          icon={CheckSquare}
+          iconTone={pendingApprovals > 0 ? "amber" : "slate"}
+          hint="expense approvals"
+        />
+        <MetricCard
+          label="Open tickets"
+          value={formatNumber(tickets.total)}
+          icon={Ticket}
+          iconTone={tickets.total > 0 ? "amber" : "slate"}
+          hint="unresolved"
+        />
+      </KPIGrid>
 
-      {/* Ventures grid */}
-      <section>
-        <div className="flex items-baseline justify-between mb-3">
-          <div>
-            <h2 className="text-base font-bold font-heading text-foreground">
-              Ventures
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Each venture owns its own space with its own admin, team and data.
-            </p>
-          </div>
-          <Link
-            href="/"
-            className="text-xs font-medium text-primary hover:underline"
-          >
-            All apps →
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {ventureCards.map(({ space, projectProgress, projectCount }) => {
-            const Icon = SPACE_ICON[space.slug] ?? Layers
-            const color = space.color || "#6366f1"
-            const isExternal = /^https?:\/\//i.test(space.entry_url)
-            const inner = (
-              <div
-                className={`group flex items-start gap-3 rounded-lg border bg-card shadow-sm p-4 transition-all ${
-                  space.is_active
-                    ? "border-border/80 hover:border-foreground/20 hover:shadow-md"
-                    : "border-dashed border-border/60 opacity-70 cursor-not-allowed"
-                }`}
+      {/* Secondary KPI strip — per-vertical flavour items */}
+      <KPIGrid>
+        <MetricCard
+          label="Active headcount"
+          value={formatNumber(headcount.activeTotal)}
+          icon={Users}
+          iconTone="blue"
+          hint={`${headcount.byDepartment.length} departments`}
+        />
+        <MetricCard
+          label="Cash position"
+          value={cash.hasData ? `${cash.total.length} accounts` : "—"}
+          icon={Landmark}
+          iconTone="slate"
+          hint={
+            cash.hasData
+              ? "multi-currency — see Finance"
+              : "No bank accounts linked yet"
+          }
+        />
+        <MetricCard
+          label="Goyo departures (7d)"
+          value={formatNumber(goyoDepartures)}
+          icon={Plane}
+          iconTone="violet"
+          hint="next 7 days"
+        />
+        <MetricCard
+          label="Compliance alerts"
+          value={formatNumber(alerts.length)}
+          icon={AlertTriangle}
+          iconTone={alerts.length > 0 ? "red" : "slate"}
+          hint="open, by due date"
+        />
+      </KPIGrid>
+
+      {/* Tertiary strip — placeholders for integrations not yet online */}
+      <KPIGrid>
+        <MetricCard
+          label="Social performance"
+          value={0}
+          icon={Share2}
+          iconTone="slate"
+          hint="No social accounts connected yet"
+        />
+        <MetricCard
+          label="Website leads today"
+          value={0}
+          icon={Globe}
+          iconTone="slate"
+          hint="No sites tracked yet"
+        />
+        <MetricCard
+          label="Revenue streams"
+          value={formatNumber(revenue.byVertical.length)}
+          icon={TrendingUp}
+          iconTone="emerald"
+          hint="verticals booking revenue MTD"
+        />
+        <MetricCard
+          label="P&L summary"
+          value="View"
+          icon={ArrowRight}
+          iconTone="blue"
+          href="/hq/overview/p-and-l"
+        />
+      </KPIGrid>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Primary column — revenue + headcount breakdowns */}
+        <div className="lg:col-span-2 space-y-5">
+          <DetailCard
+            title="Revenue by vertical (MTD)"
+            actions={
+              <Link
+                href="/hq/overview/p-and-l"
+                className="text-xs font-medium text-primary hover:underline"
               >
-                <div
-                  className="h-10 w-10 rounded-md flex items-center justify-center shrink-0 ring-1 ring-black/[0.04]"
-                  style={{
-                    background: `linear-gradient(135deg, ${color}33, ${color}14)`,
-                  }}
-                >
-                  <Icon className="h-5 w-5" style={{ color }} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold font-heading text-foreground leading-tight truncate">
-                      {space.name}
-                    </h3>
-                    {!space.is_active && (
-                      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-muted/60 text-muted-foreground ring-1 ring-inset ring-border/60">
-                        Coming soon
-                      </span>
-                    )}
-                  </div>
-                  {space.tagline && (
-                    <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
-                      {space.tagline}
-                    </p>
-                  )}
-                  {projectProgress !== null && (
-                    <div className="mt-2">
-                      <div className="flex items-center justify-between text-[10px] font-medium text-muted-foreground mb-1">
-                        <span>
-                          {projectCount} project{projectCount === 1 ? "" : "s"}
-                        </span>
-                        <span className="tabular-nums font-bold text-foreground">
-                          {projectProgress}%
-                        </span>
+                Full P&L →
+              </Link>
+            }
+          >
+            {revenue.byVertical.length === 0 ? (
+              <EmptyState
+                icon={Wallet}
+                title="No revenue this month"
+                description="Nothing has been booked against any vertical since the start of the month."
+              />
+            ) : (
+              <div className="divide-y divide-border/60">
+                {revenue.byVertical.map((row) => {
+                  const share =
+                    revenue.total > 0 ? (row.amount / revenue.total) * 100 : 0
+                  return (
+                    <div
+                      key={row.vertical}
+                      className="flex items-center justify-between py-2.5"
+                    >
+                      <div className="min-w-0 flex-1 pr-4">
+                        <div className="text-sm font-medium text-foreground">
+                          {labelForVertical(row.vertical)}
+                        </div>
+                        <div className="mt-1 h-1 rounded-full bg-muted overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-emerald-500"
+                            style={{ width: `${share.toFixed(1)}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="h-1 rounded-full bg-muted/60 overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{
-                            width: `${projectProgress}%`,
-                            backgroundColor: color,
-                          }}
-                        />
+                      <div className="text-right tabular-nums shrink-0">
+                        <div className="text-sm font-semibold text-foreground">
+                          {formatCurrency(
+                            row.amount,
+                            row.vertical === "legal" ? "$" : "₹",
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {share.toFixed(1)}%
+                        </div>
                       </div>
                     </div>
-                  )}
-                </div>
-                {space.is_active && (
-                  isExternal ? (
-                    <ArrowUpRight className="h-4 w-4 text-muted-foreground shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                  ) : (
-                    <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0 transition-transform group-hover:translate-x-0.5" />
                   )
-                )}
+                })}
+                <div className="flex items-center justify-between pt-3">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Total
+                  </span>
+                  <span className="text-sm font-bold text-foreground tabular-nums">
+                    {formatCurrency(revenue.total, "₹")}
+                  </span>
+                </div>
               </div>
-            )
-            if (!space.is_active) {
-              return <div key={space.id}>{inner}</div>
-            }
-            if (isExternal) {
-              return (
-                <a
-                  key={space.id}
-                  href={space.entry_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block"
-                >
-                  {inner}
-                </a>
-              )
-            }
-            return (
-              <Link key={space.id} href={space.entry_url} className="block">
-                {inner}
+            )}
+          </DetailCard>
+
+          <DetailCard
+            title="Headcount by department"
+            actions={
+              <Link
+                href="/hq/overview/headcount"
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Full breakdown →
               </Link>
-            )
-          })}
+            }
+          >
+            {headcount.byDepartment.length === 0 ? (
+              <EmptyState
+                icon={Users}
+                title="No team members yet"
+                description="Once employees are added to departments they'll roll up here."
+              />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
+                {headcount.byDepartment.map((row) => (
+                  <InfoRow
+                    key={row.department}
+                    label={row.department}
+                    value={`${row.active} active`}
+                  />
+                ))}
+              </div>
+            )}
+          </DetailCard>
         </div>
-      </section>
 
-      {/* HQ sub-sections — quick tiles */}
-      <section>
-        <div className="flex items-baseline justify-between mb-3">
-          <div>
-            <h2 className="text-base font-bold font-heading text-foreground">
-              Company sections
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Deep-links into the HQ workspace — people, finance, projects,
-              compliance.
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <SectionTile
-            href="/hq/people"
-            label="People"
-            description="Team directory, org chart, HR"
-            icon={Users}
-            tint="#3b82f6"
-            comingSoon
-          />
-          <SectionTile
-            href="/hq/finance"
-            label="Finance"
-            description="Cross-venture P&L and cashflow"
-            icon={LineChart}
-            tint="#f59e0b"
-            comingSoon
-          />
-          <SectionTile
-            href="/projects"
-            label="Projects"
-            description="Delivery portfolio across all ventures"
-            icon={FolderKanban}
-            tint="#10b981"
-          />
-          <SectionTile
-            href="/hq/compliance"
-            label="Compliance"
-            description="Policies, legal, audits"
-            icon={ShieldCheck}
-            tint="#ef4444"
-            comingSoon
-          />
-        </div>
-      </section>
+        {/* Sidebar column — alerts, tickets, approvals */}
+        <div className="space-y-5">
+          <DetailCard
+            title="Compliance alerts"
+            actions={
+              <Link
+                href="/hq/overview/alerts"
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                All →
+              </Link>
+            }
+          >
+            {alerts.length === 0 ? (
+              <EmptyState
+                icon={AlertTriangle}
+                title="All clear"
+                description="No open compliance alerts."
+              />
+            ) : (
+              <ul className="space-y-3">
+                {alerts.map((alert) => (
+                  <li
+                    key={alert.id}
+                    className="flex items-start justify-between gap-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-foreground leading-snug">
+                        {alert.description}
+                      </div>
+                      <div className="mt-0.5 text-xs text-muted-foreground">
+                        {alert.subject ?? alert.alert_type.replace(/_/g, " ")}
+                        {alert.due_date && ` · due ${formatDate(alert.due_date)}`}
+                      </div>
+                    </div>
+                    <StatusBadge tone={toneForStatus(alert.severity)}>
+                      {alert.severity}
+                    </StatusBadge>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </DetailCard>
 
-      {/* Architecture link — so contributors find the locked vocabulary */}
-      <section className="rounded-lg border border-border/80 bg-muted/30 px-5 py-4 flex items-start gap-3">
-        <BookOpen className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-foreground">
-            Architecture & vocabulary
-          </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Suprans is the legal entity. TeamSync AI is this app. Ventures are
-            top-level business lines (B2B, Legal, Goyo, …). Each venture has its
-            own space with its own admin, team and data. HQ is the only
-            company-tier space. See{" "}
-            <code className="font-mono text-[11px] bg-background border border-border/80 px-1 py-0.5 rounded">
-              docs/ARCHITECTURE.md
-            </code>{" "}
-            for the full locked reference.
-          </p>
-        </div>
-      </section>
-    </div>
-  )
-}
+          <DetailCard title="Tickets by priority">
+            {tickets.buckets.length === 0 ? (
+              <EmptyState
+                icon={Ticket}
+                title="Inbox zero"
+                description="No unresolved tickets."
+              />
+            ) : (
+              <div className="divide-y divide-border/60">
+                {tickets.buckets.map((row) => (
+                  <div
+                    key={row.priority}
+                    className="flex items-center justify-between py-2"
+                  >
+                    <StatusBadge tone={toneForStatus(row.priority)}>
+                      {row.priority}
+                    </StatusBadge>
+                    <span className="text-sm font-semibold tabular-nums text-foreground">
+                      {row.count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </DetailCard>
 
-function SectionTile({
-  href,
-  label,
-  description,
-  icon: Icon,
-  tint,
-  comingSoon,
-}: {
-  href: string
-  label: string
-  description: string
-  icon: typeof Users
-  tint: string
-  comingSoon?: boolean
-}) {
-  const inner = (
-    <div
-      className={`group flex flex-col gap-2 rounded-lg border bg-card shadow-sm p-4 h-full transition-all ${
-        comingSoon
-          ? "border-dashed border-border/60 opacity-75"
-          : "border-border/80 hover:border-foreground/20 hover:shadow-md"
-      }`}
-    >
-      <div className="flex items-center justify-between">
-        <div
-          className="h-8 w-8 rounded-md flex items-center justify-center ring-1 ring-black/[0.04]"
-          style={{
-            background: `linear-gradient(135deg, ${tint}26, ${tint}10)`,
-          }}
-        >
-          <Icon className="h-4 w-4" style={{ color: tint }} />
+          <DetailCard title="Pending approvals">
+            {pendingApprovals === 0 ? (
+              <EmptyState
+                icon={CheckSquare}
+                title="Nothing waiting"
+                description="No expense approvals pending."
+              />
+            ) : (
+              <div className="flex items-center justify-between py-1">
+                <span className="text-sm text-muted-foreground">
+                  Expense approvals
+                </span>
+                <span className="text-sm font-semibold text-foreground tabular-nums">
+                  {pendingApprovals}
+                </span>
+              </div>
+            )}
+          </DetailCard>
         </div>
-        {comingSoon && (
-          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-muted/60 text-muted-foreground ring-1 ring-inset ring-border/60">
-            Soon
-          </span>
-        )}
-      </div>
-      <div>
-        <p className="text-sm font-semibold font-heading text-foreground">
-          {label}
-        </p>
-        <p className="mt-0.5 text-[11px] text-muted-foreground leading-snug">
-          {description}
-        </p>
       </div>
     </div>
-  )
-  return (
-    <Link href={href} className="block">
-      {inner}
-    </Link>
   )
 }

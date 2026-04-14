@@ -24,6 +24,22 @@ export const supabaseEts = createClient(supabaseUrl, supabaseAnonKey, {
   db: { schema: "ets" },
 })
 
+// USDrop AI admin (usdrop.*)
+export const supabaseUsdrop = createClient(supabaseUrl, supabaseAnonKey, {
+  db: { schema: "usdrop" },
+})
+
+// Suprans HQ cross-vertical data (hq.entities, hq.revenue, hq.expenses,
+// hq.alerts, hq.v_headcount_by_dept_vertical, ...). See SPACE_PATTERN.md.
+export const supabaseHq = createClient(supabaseUrl, supabaseAnonKey, {
+  db: { schema: "hq" },
+})
+
+// GoyoTours vertical (goyo.bookings, goyo.clients, goyo.tours, goyo.visas, ...)
+export const supabaseGoyo = createClient(supabaseUrl, supabaseAnonKey, {
+  db: { schema: "goyo" },
+})
+
 /* ------------------------------------------------------------------ */
 /*  Store types                                                        */
 /* ------------------------------------------------------------------ */

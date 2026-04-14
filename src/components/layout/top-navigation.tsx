@@ -20,6 +20,15 @@ import {
   ListTodo,
   Rocket,
   Map as MapIcon,
+  Megaphone,
+  Globe,
+  Briefcase,
+  Plane,
+  Hotel,
+  Compass,
+  FileText,
+  CreditCard,
+  UserCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useBrandFilter } from "@/lib/brand-filter-context"
@@ -49,29 +58,40 @@ interface NavItem {
 // with a small placeholder nav until they are built out.
 // ============================================================================
 
+// HQ top nav — 8 sections per suprans-hq-full-spec.md. Calls QA is
+// served from the right-dock (`calls-qa` plugin) so it's no longer in
+// the top menu. See SPACE_PATTERN.md §6.
 const PLACEHOLDER_HQ: NavItem[] = [
   { title: "Overview", url: "/hq/overview", icon: LayoutDashboard },
   { title: "People", url: "/hq/people", icon: Users },
   { title: "Finance", url: "/hq/finance", icon: Wallet },
   { title: "Projects", url: "/hq/projects", icon: Blocks },
+  { title: "Assets", url: "/hq/assets", icon: Briefcase },
+  { title: "Social", url: "/hq/social", icon: Megaphone },
+  { title: "Sites", url: "/hq/sites", icon: Globe },
   { title: "Compliance", url: "/hq/compliance", icon: Target },
-  { title: "Calls", url: "/hq/calls/dashboard", icon: ShieldCheck },
 ]
 
 const PLACEHOLDER_LEGAL: NavItem[] = [
-  { title: "Clients", url: "/legal/clients", icon: Users },
+  { title: "Dashboard", url: "/legal/dashboard", icon: LayoutDashboard },
+  { title: "Clients", url: "/legal/clients", icon: UserCircle },
   { title: "Cases", url: "/legal/cases", icon: Blocks },
-  { title: "Documents", url: "/legal/documents", icon: Package },
-  { title: "Payments", url: "/legal/payments", icon: Wallet },
+  { title: "Documents", url: "/legal/documents", icon: FileText },
+  { title: "Payments", url: "/legal/payments", icon: CreditCard },
   { title: "Compliance", url: "/legal/compliance", icon: Target },
 ]
 
 const PLACEHOLDER_GOYO: NavItem[] = [
+  { title: "Dashboard", url: "/goyo/dashboard", icon: LayoutDashboard },
   { title: "Bookings", url: "/goyo/bookings", icon: ShoppingCart },
-  { title: "Tours", url: "/goyo/tours", icon: Package },
+  { title: "Clients", url: "/goyo/clients", icon: UserCircle },
+  { title: "Tours", url: "/goyo/tours", icon: Compass },
+  { title: "Visas", url: "/goyo/visas", icon: ShieldCheck },
+  { title: "Flights", url: "/goyo/travel/flights", icon: Plane },
+  { title: "Hotels", url: "/goyo/travel/hotels", icon: Hotel },
+  { title: "Itineraries", url: "/goyo/itineraries", icon: MapIcon },
   { title: "Guides", url: "/goyo/guides", icon: Users },
-  { title: "Payments", url: "/goyo/payments", icon: Wallet },
-  { title: "Analytics", url: "/goyo/analytics", icon: LayoutDashboard },
+  { title: "Finance", url: "/goyo/finance", icon: Wallet },
 ]
 
 const PLACEHOLDER_USDROP: NavItem[] = [
@@ -166,6 +186,7 @@ const PLACEHOLDER_ETS: NavItem[] = [
     icon: Package,
     subItems: [
       { title: "Products", url: "/ets/catalog/products" },
+      { title: "Studio", url: "/ets/catalog/studio" },
       { title: "Categories", url: "/ets/catalog/categories" },
       { title: "Collections", url: "/ets/catalog/collections" },
       { title: "Pricing", url: "/ets/catalog/pricing" },

@@ -26,6 +26,7 @@ import {
   LifeBuoy,
   ShieldCheck,
   Megaphone,
+  Phone,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
@@ -59,7 +60,9 @@ const SPACE_MODULE_OVERRIDES: Record<string, Partial<Record<string, string>>> = 
     // ETS deep nav lives in TopNavigation; surface module overrides here as added
   },
   hq: {
-    // HQ overrides go here as they ship
+    // Calls QA lives at /hq/calls/* natively; the dock links straight
+    // there rather than the generic /workspace/qa/calls path.
+    "calls-qa": "/hq/calls/dashboard",
   },
 }
 
@@ -68,6 +71,7 @@ const WORKSPACE_ITEMS = [
   { module: "tasks",       legacyHref: "/operations/tasks",           icon: ClipboardList,  label: "Tasks" },
   { module: "team",        legacyHref: "/workspace/team",             icon: Users,          label: "Team" },
   { module: "chat",        legacyHref: "/workspace/chat",             icon: MessageCircle,  label: "Chat" },
+  { module: "calls-qa",    legacyHref: "/workspace/qa/calls",         icon: Phone,          label: "Calls QA" },
   { module: "emails",      legacyHref: "/workspace/emails/dashboard", icon: Megaphone,      label: "Comms" },
   { module: "tickets",     legacyHref: "/workspace/tickets",          icon: LifeBuoy,       label: "Tickets" },
   { module: "inbox",       legacyHref: "/workspace/inbox",            icon: Bell,           label: "Inbox" },
