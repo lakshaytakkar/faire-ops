@@ -36,7 +36,20 @@ interface ClientOption {
   name: string
 }
 
-const STATUS_OPTIONS = ["draft", "confirmed", "processing", "shipped", "delivered", "cancelled"]
+const STATUS_OPTIONS = [
+  "draft",
+  // Two-step approval flow
+  "submitted",
+  "packing_list_ready",
+  "approved",
+  "paid_advance",
+  // Legacy / downstream states
+  "confirmed",
+  "processing",
+  "shipped",
+  "delivered",
+  "cancelled",
+]
 const PAYMENT_OPTIONS = ["unpaid", "partial", "paid", "refunded"]
 const TYPE_OPTIONS = ["initial", "replenishment", "custom"]
 
