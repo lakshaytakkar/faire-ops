@@ -5,11 +5,11 @@ import { createPortal } from "react-dom"
 import {
   Hash, Send, Users, Building2, Paperclip, X, FileText, Download,
   Image as ImageIcon, Reply, Smile, Pencil, Trash2, Check, Plus,
-  ChevronDown, MessageSquare, Search, WifiOff, RotateCcw, AlertTriangle,
-  Copy, CornerDownLeft,
+  ChevronDown, ChevronRight, MessageSquare, Search, WifiOff, RotateCcw, AlertTriangle,
+  Copy, CornerDownLeft, Briefcase, Lock,
 } from "lucide-react"
 import { toast } from "sonner"
-import { supabase, supabaseB2B } from "@/lib/supabase"
+import { supabase, supabaseB2B, supabaseEts } from "@/lib/supabase"
 import { RichTextEditor, RichTextRenderer, richTextToPlain } from "@/components/shared/rich-text-editor"
 import { CreateChannelModal, type CreateChannelPayload } from "@/components/chat/create-channel-modal"
 import { MentionChip } from "@/components/chat/mention-chip"
@@ -43,6 +43,17 @@ interface Channel {
   created_at: string
   is_private?: boolean
   last_message_at?: string | null
+  /** Optional — set when the channel is scoped to a project (e.g. project-general,
+   * project-brand-kit, project-layout). */
+  channel_kind?: string | null
+  /** ets.clients.id when this channel belongs to a client project, else null. */
+  project_id?: string | null
+}
+
+interface ClientRecord {
+  id: string
+  name: string
+  email: string | null
 }
 
 type SendStatus = "sent" | "pending" | "failed"
@@ -367,8 +378,20 @@ function ChatPageInner() {
   const [channels, setChannels] = useState<Channel[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [vendors, setVendors] = useState<VendorContact[]>([])
+  const [clients, setClients] = useState<ClientRecord[]>([])
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [messagesLoading, setMessagesLoading] = useState(false)
+
+  // ---- sidebar UX state (tabs, search, collapsed groups) ----
+  // Two-tab split: "clients" lists project-scoped channels grouped by client,
+  // "team" lists everything else (team-internal channels, members, vendors).
+  const [sidebarTab, setSidebarTab] = useState<"clients" | "team">("clients")
+  const [sidebarSearchInput, setSidebarSearchInput] = useState("")
+  // Debounced search query — updated 150ms after user stops typing so big
+  // client lists don't re-filter on every keystroke.
+  const [sidebarSearchQuery, setSidebarSearchQuery] = useState("")
+  // Per-client collapse state. Default = expanded (entry absent or true).
+  const [collapsedClients, setCollapsedClients] = useState<Record<string, boolean>>({})
 
   // ---- selection state ----
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null)
@@ -494,6 +517,133 @@ function ChatPageInner() {
     return set
   }, [channels, lastRead])
 
+  // ---- sidebar derivations: client/team split + filtering ----
+  // A channel is a "client channel" when it carries a project_id OR its
+  // channel_kind is namespaced under "project-" (project-general,
+  // project-brand-kit, project-layout — see scripts/seed-project-channels.mjs).
+  function isClientChannel(ch: Channel): boolean {
+    if (ch.project_id) return true
+    if (ch.channel_kind && ch.channel_kind.startsWith("project-")) return true
+    return false
+  }
+
+  const clientById = useMemo(() => {
+    const map = new Map<string, ClientRecord>()
+    for (const c of clients) map.set(c.id, c)
+    return map
+  }, [clients])
+
+  // Group client channels by project_id (== client id). Returns an ordered
+  // list so render is stable: each group has the resolved client name +
+  // channels sorted by channel_kind label / name.
+  const clientGroups = useMemo(() => {
+    type Group = {
+      clientId: string
+      clientName: string
+      channels: Channel[]
+      hasUnread: boolean
+      lastActivity: number
+    }
+    const buckets = new Map<string, Group>()
+    for (const ch of channels) {
+      if (!isClientChannel(ch)) continue
+      const cid = ch.project_id ?? "__unassigned__"
+      const client = cid !== "__unassigned__" ? clientById.get(cid) : undefined
+      const name = client?.name ?? (cid === "__unassigned__" ? "Unassigned" : "Unknown client")
+      const existing = buckets.get(cid)
+      const lastTs = ch.last_message_at ? new Date(ch.last_message_at).getTime() : 0
+      const unread = unreadChannels.has(ch.id)
+      if (existing) {
+        existing.channels.push(ch)
+        if (unread) existing.hasUnread = true
+        if (lastTs > existing.lastActivity) existing.lastActivity = lastTs
+      } else {
+        buckets.set(cid, {
+          clientId: cid,
+          clientName: name,
+          channels: [ch],
+          hasUnread: unread,
+          lastActivity: lastTs,
+        })
+      }
+    }
+    // Sort: most recently active first; within group, channels sorted by name
+    const groups = Array.from(buckets.values())
+    for (const g of groups) {
+      g.channels.sort((a, b) => a.name.localeCompare(b.name))
+    }
+    groups.sort((a, b) => {
+      if (a.lastActivity !== b.lastActivity) return b.lastActivity - a.lastActivity
+      return a.clientName.localeCompare(b.clientName)
+    })
+    return groups
+  }, [channels, clientById, unreadChannels])
+
+  // Team-tab channels = everything that isn't a client channel.
+  // Sorted by last_message_at desc (fallback to created_at).
+  const teamChannels = useMemo(() => {
+    const list = channels.filter((ch) => !isClientChannel(ch))
+    list.sort((a, b) => {
+      const av = a.last_message_at ?? a.created_at
+      const bv = b.last_message_at ?? b.created_at
+      return new Date(bv).getTime() - new Date(av).getTime()
+    })
+    return list
+  }, [channels])
+
+  // Filtered groups for Clients tab — searches BOTH channel name and client name.
+  const filteredClientGroups = useMemo(() => {
+    const q = sidebarSearchQuery
+    if (!q) return clientGroups
+    return clientGroups
+      .map((g) => {
+        const clientMatch = g.clientName.toLowerCase().includes(q)
+        // If the client name matches, keep all its channels; otherwise filter by channel name.
+        const filteredChannels = clientMatch
+          ? g.channels
+          : g.channels.filter((ch) => ch.name.toLowerCase().includes(q))
+        if (filteredChannels.length === 0) return null
+        return { ...g, channels: filteredChannels }
+      })
+      .filter((g): g is (typeof clientGroups)[number] => g !== null)
+  }, [clientGroups, sidebarSearchQuery])
+
+  // Filtered team channels — searches channel name only.
+  const filteredTeamChannels = useMemo(() => {
+    const q = sidebarSearchQuery
+    if (!q) return teamChannels
+    return teamChannels.filter((ch) => ch.name.toLowerCase().includes(q))
+  }, [teamChannels, sidebarSearchQuery])
+
+  // Filtered team members + vendors for the Team tab.
+  const filteredTeamMembers = useMemo(() => {
+    const q = sidebarSearchQuery
+    if (!q) return teamMembers
+    return teamMembers.filter(
+      (m) => m.name.toLowerCase().includes(q) || m.role.toLowerCase().includes(q),
+    )
+  }, [teamMembers, sidebarSearchQuery])
+
+  const filteredVendors = useMemo(() => {
+    const q = sidebarSearchQuery
+    if (!q) return vendors
+    return vendors.filter(
+      (v) =>
+        v.name.toLowerCase().includes(q) ||
+        (v.contact_name ?? "").toLowerCase().includes(q),
+    )
+  }, [vendors, sidebarSearchQuery])
+
+  // Tab badge counts — number of distinct clients / channels with unread.
+  const clientsTabUnread = useMemo(
+    () => clientGroups.reduce((acc, g) => acc + (g.hasUnread ? 1 : 0), 0),
+    [clientGroups],
+  )
+  const teamTabUnread = useMemo(
+    () => teamChannels.reduce((acc, ch) => acc + (unreadChannels.has(ch.id) ? 1 : 0), 0),
+    [teamChannels, unreadChannels],
+  )
+
   // ---- load last-read state from DB on mount ----
   useEffect(() => {
     async function loadReadState() {
@@ -537,24 +687,44 @@ function ChatPageInner() {
     [],
   )
 
-  // ---- fetch channels + team + vendors on mount ----
+  // ---- fetch channels + team + vendors + clients on mount ----
   useEffect(() => {
     async function load() {
-      const [chRes, tmRes, vRes] = await Promise.all([
+      const [chRes, tmRes, vRes, clRes] = await Promise.all([
         supabase.from("chat_channels").select("*").eq("space_slug", activeSpace).order("created_at", { ascending: true }),
         supabase.from("team_members").select("id, name, role, status, avatar_url").eq("space_slug", activeSpace).order("name"),
         supabaseB2B.from("faire_vendors").select("id, name, contact_name").order("name"),
+        // Clients live in the ets schema; needed to label the "Clients" tab
+        // groups by display name. RLS / permission errors degrade silently —
+        // groups will fall back to an "Unknown client" header.
+        supabaseEts.from("clients").select("id, name, email").order("name"),
       ])
       const chs = (chRes.data ?? []) as Channel[]
       setChannels(chs)
       setTeamMembers((tmRes.data ?? []) as TeamMember[])
       setVendors((vRes.data ?? []) as VendorContact[])
+      setClients((clRes.data ?? []) as ClientRecord[])
       if (chs.length > 0) {
         setSelectedChannelId(chs[0].id)
+        // Sync the visible tab with the auto-selected channel so the user
+        // doesn't land on an empty Clients tab while a Team channel is open.
+        const first = chs[0]
+        const firstIsClient =
+          !!first.project_id ||
+          (!!first.channel_kind && first.channel_kind.startsWith("project-"))
+        setSidebarTab(firstIsClient ? "clients" : "team")
       }
     }
     load()
   }, [activeSpace])
+
+  // ---- debounce sidebar search input -> sidebarSearchQuery ----
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setSidebarSearchQuery(sidebarSearchInput.trim().toLowerCase())
+    }, 150)
+    return () => clearTimeout(handle)
+  }, [sidebarSearchInput])
 
   // ---- fetch messages when selection changes ----
   const fetchMessages = useCallback(
@@ -732,6 +902,9 @@ function ChatPageInner() {
     setEditingId(null)
     setNewMessagesCount(0)
     isAtBottomRef.current = true
+    // Keep the sidebar tab in sync with the current selection so the
+    // active row is always visible in the rendered list.
+    setSidebarTab(isClientChannel(ch) ? "clients" : "team")
   }
 
   async function selectMember(member: TeamMember) {
@@ -742,6 +915,7 @@ function ChatPageInner() {
     setEditingId(null)
     setNewMessagesCount(0)
     isAtBottomRef.current = true
+    setSidebarTab("team")
     const dmId = await getOrCreateDmChannel(member.name)
     setDmChannelId(dmId)
   }
@@ -754,8 +928,13 @@ function ChatPageInner() {
     setEditingId(null)
     setNewMessagesCount(0)
     isAtBottomRef.current = true
+    setSidebarTab("team")
     const dmId = await getOrCreateDmChannel(vendor.name)
     setDmChannelId(dmId)
+  }
+
+  function toggleClientGroup(clientId: string) {
+    setCollapsedClients((prev) => ({ ...prev, [clientId]: !prev[clientId] }))
   }
 
   // ---- file handling ----
@@ -1375,28 +1554,100 @@ function ChatPageInner() {
       <div className="h-[calc(100vh-120px)] flex rounded-lg border bg-card overflow-hidden">
         {/* ======== Left Sidebar ======== */}
         <div className="w-72 border-r flex flex-col bg-card">
-          {/* Channels Header */}
-          <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-            <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Hash className="w-3.5 h-3.5" aria-hidden="true" />
-              Channels
-            </h3>
+          {/* Tabs + new-channel action */}
+          <div className="px-3 pt-3 pb-2 flex items-center gap-2">
+            <div
+              role="tablist"
+              aria-label="Channel groups"
+              className="flex-1 inline-flex items-center gap-1 rounded-md bg-muted/50 p-0.5"
+            >
+              {(
+                [
+                  { id: "clients" as const, label: "Clients", icon: Briefcase, unread: clientsTabUnread },
+                  { id: "team" as const, label: "Team", icon: Users, unread: teamTabUnread },
+                ]
+              ).map((t) => {
+                const active = sidebarTab === t.id
+                const Icon = t.icon
+                return (
+                  <button
+                    key={t.id}
+                    role="tab"
+                    type="button"
+                    aria-selected={active}
+                    onClick={() => setSidebarTab(t.id)}
+                    className={`flex-1 inline-flex items-center justify-center gap-1.5 h-7 px-2 text-xs font-medium rounded transition-colors cursor-pointer ${
+                      active
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>{t.label}</span>
+                    {t.unread > 0 && (
+                      <span
+                        className={`inline-flex min-w-4 h-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold ${
+                          active
+                            ? "bg-primary/15 text-primary"
+                            : "bg-muted-foreground/15 text-foreground"
+                        }`}
+                        aria-label={`${t.unread} unread`}
+                      >
+                        {t.unread}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
             <button
               onClick={() => setShowCreateChannel(true)}
-              className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95"
+              className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer active:scale-95 shrink-0"
               aria-label="Create channel"
               title="Create channel"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Channel List */}
-          <div className="px-2 space-y-0.5">
+          {/* Search input */}
+          <div className="px-3 pb-2">
+            <div className="relative">
+              <Search
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none"
+                aria-hidden="true"
+              />
+              <input
+                type="search"
+                value={sidebarSearchInput}
+                onChange={(e) => setSidebarSearchInput(e.target.value)}
+                placeholder={
+                  sidebarTab === "clients"
+                    ? "Search clients or channels…"
+                    : "Search channels or people…"
+                }
+                aria-label="Filter sidebar"
+                className="w-full h-8 pl-8 pr-7 text-xs rounded-md border border-input bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              {sidebarSearchInput && (
+                <button
+                  type="button"
+                  onClick={() => setSidebarSearchInput("")}
+                  aria-label="Clear search"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 inline-flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Sidebar body — scrollable list area */}
+          <div className="flex-1 overflow-y-auto px-2 pb-3">
+            {/* Initial-load skeleton */}
             {channels.length === 0 && teamMembers.length === 0 && (
-              /* Sidebar skeleton — renders while initial fetch is in flight */
               <div className="space-y-1 py-1" aria-hidden="true">
-                {[0, 1, 2].map((i) => (
+                {[0, 1, 2, 3].map((i) => (
                   <div key={i} className="flex items-center gap-2 px-3 py-2 animate-pulse">
                     <div className="w-3 h-3 rounded bg-muted" />
                     <div className="h-3 flex-1 rounded bg-muted/80" />
@@ -1404,110 +1655,230 @@ function ChatPageInner() {
                 ))}
               </div>
             )}
-            {channels.map((ch) => {
-              const isActive = selectedChannelId === ch.id && !selectedMember && !selectedVendor
-              const hasUnread = unreadChannels.has(ch.id) && !isActive
-              return (
-                <button
-                  key={ch.id}
-                  onClick={() => selectChannel(ch)}
-                  aria-label={`Channel ${ch.name}${hasUnread ? ", unread" : ""}`}
-                  aria-current={isActive ? "page" : undefined}
-                  className={`flex items-center gap-2 w-full px-3 py-2 text-left text-sm rounded-md transition-colors cursor-pointer ${
-                    isActive
-                      ? "bg-primary/10 text-primary font-semibold"
-                      : "text-foreground hover:bg-muted/50"
-                  } ${hasUnread ? "font-semibold" : ""}`}
-                >
-                  <span className="text-muted-foreground">#</span>
-                  <span className="flex-1 truncate">{ch.name}</span>
-                  {hasUnread && (
-                    <span className="w-2 h-2 rounded-full bg-primary shrink-0" aria-hidden="true" />
-                  )}
-                </button>
-              )
-            })}
-          </div>
 
-          {/* Team */}
-          <div className="px-4 pt-5 pb-2">
-            <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5" aria-hidden="true" />
-              Team
-            </h3>
-          </div>
-          <div className="overflow-y-auto px-2 space-y-0.5 pb-2">
-            {teamMembers.map((member) => {
-              const isActive = selectedMember?.id === member.id
-              return (
-                <button
-                  key={member.id}
-                  onClick={() => selectMember(member)}
-                  aria-label={`Direct message ${member.name}, status ${member.status}`}
-                  aria-current={isActive ? "page" : undefined}
-                  className={`flex items-center gap-2.5 w-full px-3 py-2 text-left text-sm rounded-md transition-colors cursor-pointer ${
-                    isActive
-                      ? "bg-primary/10 text-primary font-semibold"
-                      : "text-foreground hover:bg-muted/50"
-                  }`}
-                >
-                  <div className="relative shrink-0">
-                    {member.avatar_url ? (
-                      <img src={member.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
-                        {getInitials(member.name)}
-                      </div>
-                    )}
-                    <span
-                      className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card ${STATUS_DOT[member.status] ?? STATUS_DOT.offline}`}
-                      aria-hidden="true"
-                    />
-                  </div>
-                  <span className="truncate">{member.name}</span>
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Vendors */}
-          <div className="px-4 pt-3 pb-2">
-            <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5" aria-hidden="true" />
-              Vendors
-            </h3>
-          </div>
-          <div className="flex-1 overflow-y-auto px-2 space-y-0.5 pb-4">
-            {vendors.map((vendor) => {
-              const isActive = selectedVendor?.id === vendor.id
-              return (
-                <button
-                  key={vendor.id}
-                  onClick={() => selectVendor(vendor)}
-                  aria-label={`Direct message vendor ${vendor.name}`}
-                  aria-current={isActive ? "page" : undefined}
-                  className={`flex items-center gap-2.5 w-full px-3 py-2 text-left text-sm rounded-md transition-colors cursor-pointer ${
-                    isActive
-                      ? "bg-primary/10 text-primary font-semibold"
-                      : "text-foreground hover:bg-muted/50"
-                  }`}
-                >
-                  <div className="shrink-0">
-                    <div className="w-7 h-7 rounded-full bg-warning/15 flex items-center justify-center text-[10px] font-bold text-warning">
-                      {getInitials(vendor.name)}
+            {/* ===== Clients tab ===== */}
+            {sidebarTab === "clients" && (
+              <div className="space-y-1" role="tabpanel" aria-label="Client channels">
+                {filteredClientGroups.length === 0 && channels.length > 0 && (
+                  <p className="px-3 py-6 text-xs text-muted-foreground text-center">
+                    {sidebarSearchQuery
+                      ? "No clients or channels match."
+                      : "No client channels yet."}
+                  </p>
+                )}
+                {filteredClientGroups.map((group) => {
+                  // While searching, force-expand groups so matches are visible.
+                  const collapsed = sidebarSearchQuery
+                    ? false
+                    : !!collapsedClients[group.clientId]
+                  const groupHasUnread = group.channels.some((ch) => unreadChannels.has(ch.id))
+                  return (
+                    <div key={group.clientId} className="space-y-0.5">
+                      <button
+                        type="button"
+                        onClick={() => toggleClientGroup(group.clientId)}
+                        aria-expanded={!collapsed}
+                        aria-label={`${group.clientName}, ${group.channels.length} channel${group.channels.length === 1 ? "" : "s"}${groupHasUnread ? ", unread" : ""}`}
+                        className="flex items-center gap-2 w-full px-2 py-1.5 text-left rounded-md hover:bg-muted/50 transition-colors cursor-pointer group"
+                      >
+                        {collapsed ? (
+                          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+                        ) : (
+                          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+                        )}
+                        <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+                          {getInitials(group.clientName)}
+                        </div>
+                        <span className="flex-1 text-sm font-semibold truncate">{group.clientName}</span>
+                        {groupHasUnread && (
+                          <span className="w-2 h-2 rounded-full bg-primary shrink-0" aria-hidden="true" />
+                        )}
+                      </button>
+                      {!collapsed && (
+                        <div className="ml-5 pl-2 border-l border-border/60 space-y-0.5">
+                          {group.channels.map((ch) => {
+                            const isActive =
+                              selectedChannelId === ch.id && !selectedMember && !selectedVendor
+                            const hasUnread = unreadChannels.has(ch.id) && !isActive
+                            return (
+                              <button
+                                key={ch.id}
+                                onClick={() => selectChannel(ch)}
+                                aria-label={`Channel ${ch.name}${hasUnread ? ", unread" : ""}`}
+                                aria-current={isActive ? "page" : undefined}
+                                className={`flex items-center gap-2 w-full px-2 py-1.5 text-left text-sm rounded-md transition-colors cursor-pointer ${
+                                  isActive
+                                    ? "bg-primary/10 text-primary font-semibold"
+                                    : "text-foreground hover:bg-muted/50"
+                                } ${hasUnread ? "font-semibold" : ""}`}
+                              >
+                                {ch.is_private ? (
+                                  <Lock className="w-3 h-3 text-muted-foreground shrink-0" aria-hidden="true" />
+                                ) : (
+                                  <span className="text-muted-foreground" aria-hidden="true">#</span>
+                                )}
+                                <span className="flex-1 truncate">{ch.name}</span>
+                                {hasUnread && (
+                                  <span className="w-2 h-2 rounded-full bg-primary shrink-0" aria-hidden="true" />
+                                )}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* ===== Team tab ===== */}
+            {sidebarTab === "team" && (
+              <div className="space-y-3" role="tabpanel" aria-label="Team channels and people">
+                {/* Channels */}
+                <div>
+                  <div className="px-2 pt-1 pb-1.5">
+                    <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <Hash className="w-3.5 h-3.5" aria-hidden="true" />
+                      Channels
+                    </h3>
                   </div>
-                  <div className="min-w-0">
-                    <span className="block truncate">{vendor.name}</span>
-                    {vendor.contact_name && (
-                      <span className="block text-[11px] text-muted-foreground truncate">
-                        {vendor.contact_name}
-                      </span>
-                    )}
+                  {filteredTeamChannels.length === 0 ? (
+                    <p className="px-3 py-2 text-xs text-muted-foreground">
+                      {sidebarSearchQuery ? "No channels match." : "No team channels yet."}
+                    </p>
+                  ) : (
+                    <div className="space-y-0.5">
+                      {filteredTeamChannels.map((ch) => {
+                        const isActive =
+                          selectedChannelId === ch.id && !selectedMember && !selectedVendor
+                        const hasUnread = unreadChannels.has(ch.id) && !isActive
+                        return (
+                          <button
+                            key={ch.id}
+                            onClick={() => selectChannel(ch)}
+                            aria-label={`Channel ${ch.name}${hasUnread ? ", unread" : ""}`}
+                            aria-current={isActive ? "page" : undefined}
+                            className={`flex items-center gap-2 w-full px-3 py-2 text-left text-sm rounded-md transition-colors cursor-pointer ${
+                              isActive
+                                ? "bg-primary/10 text-primary font-semibold"
+                                : "text-foreground hover:bg-muted/50"
+                            } ${hasUnread ? "font-semibold" : ""}`}
+                          >
+                            {ch.is_private ? (
+                              <Lock className="w-3 h-3 text-muted-foreground shrink-0" aria-hidden="true" />
+                            ) : (
+                              <span className="text-muted-foreground" aria-hidden="true">#</span>
+                            )}
+                            <span className="flex-1 truncate">{ch.name}</span>
+                            {hasUnread && (
+                              <span className="w-2 h-2 rounded-full bg-primary shrink-0" aria-hidden="true" />
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Direct messages — team members */}
+                <div>
+                  <div className="px-2 pt-1 pb-1.5">
+                    <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5" aria-hidden="true" />
+                      Direct messages
+                    </h3>
                   </div>
-                </button>
-              )
-            })}
+                  {filteredTeamMembers.length === 0 ? (
+                    <p className="px-3 py-2 text-xs text-muted-foreground">
+                      {sidebarSearchQuery ? "No people match." : "No teammates."}
+                    </p>
+                  ) : (
+                    <div className="space-y-0.5">
+                      {filteredTeamMembers.map((member) => {
+                        const isActive = selectedMember?.id === member.id
+                        return (
+                          <button
+                            key={member.id}
+                            onClick={() => selectMember(member)}
+                            aria-label={`Direct message ${member.name}, status ${member.status}`}
+                            aria-current={isActive ? "page" : undefined}
+                            className={`flex items-center gap-2.5 w-full px-3 py-2 text-left text-sm rounded-md transition-colors cursor-pointer ${
+                              isActive
+                                ? "bg-primary/10 text-primary font-semibold"
+                                : "text-foreground hover:bg-muted/50"
+                            }`}
+                          >
+                            <div className="relative shrink-0">
+                              {member.avatar_url ? (
+                                <img src={member.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover" />
+                              ) : (
+                                <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
+                                  {getInitials(member.name)}
+                                </div>
+                              )}
+                              <span
+                                className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card ${STATUS_DOT[member.status] ?? STATUS_DOT.offline}`}
+                                aria-hidden="true"
+                              />
+                            </div>
+                            <span className="truncate">{member.name}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Vendors */}
+                <div>
+                  <div className="px-2 pt-1 pb-1.5">
+                    <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5" aria-hidden="true" />
+                      Vendors
+                    </h3>
+                  </div>
+                  {filteredVendors.length === 0 ? (
+                    <p className="px-3 py-2 text-xs text-muted-foreground">
+                      {sidebarSearchQuery ? "No vendors match." : "No vendors."}
+                    </p>
+                  ) : (
+                    <div className="space-y-0.5">
+                      {filteredVendors.map((vendor) => {
+                        const isActive = selectedVendor?.id === vendor.id
+                        return (
+                          <button
+                            key={vendor.id}
+                            onClick={() => selectVendor(vendor)}
+                            aria-label={`Direct message vendor ${vendor.name}`}
+                            aria-current={isActive ? "page" : undefined}
+                            className={`flex items-center gap-2.5 w-full px-3 py-2 text-left text-sm rounded-md transition-colors cursor-pointer ${
+                              isActive
+                                ? "bg-primary/10 text-primary font-semibold"
+                                : "text-foreground hover:bg-muted/50"
+                            }`}
+                          >
+                            <div className="shrink-0">
+                              <div className="w-7 h-7 rounded-full bg-warning/15 flex items-center justify-center text-[10px] font-bold text-warning">
+                                {getInitials(vendor.name)}
+                              </div>
+                            </div>
+                            <div className="min-w-0">
+                              <span className="block truncate">{vendor.name}</span>
+                              {vendor.contact_name && (
+                                <span className="block text-[11px] text-muted-foreground truncate">
+                                  {vendor.contact_name}
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
