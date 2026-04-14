@@ -1,150 +1,70 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useState } from "react"
 import { useParams } from "next/navigation"
-import { Send, MessageSquare } from "lucide-react"
-import { supabaseEts } from "@/lib/supabase"
-import { EtsEmptyState, formatDate } from "@/app/(portal)/ets/_components/ets-ui"
+import { Hash } from "lucide-react"
+import { ChannelEmbed } from "@/components/chat/channel-embed"
 
-interface ChatMessage {
-  id: string
-  thread: string
-  author_side: "admin" | "client"
-  author_name: string | null
-  body: string | null
-  created_at: string
-}
-
+// Project-scoped channel kinds. The same values are seeded per-client
+// by the DB trigger, and read by the client portal's ChannelEmbed.
 const THREADS = [
-  { id: "general", label: "General" },
-  { id: "brand-kit", label: "Brand kit" },
-  { id: "layout-guide", label: "Layout" },
-]
+  { id: "project-general", label: "General" },
+  { id: "project-brand-kit", label: "Brand kit" },
+  { id: "project-layout", label: "Layout" },
+] as const
 
 export default function ProjectChatPage() {
   const params = useParams<{ id: string }>()
-  const clientId = params?.id as string
-  const [thread, setThread] = useState("general")
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [loading, setLoading] = useState(true)
-  const [draft, setDraft] = useState("")
+  const clientId = (params?.id as string) ?? null
+  const [kind, setKind] = useState<string>("project-general")
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    const { data } = await supabaseEts
-      .from("project_chat_messages")
-      .select("id, thread, author_side, author_name, body, created_at")
-      .eq("client_id", clientId)
-      .eq("thread", thread)
-      .order("created_at", { ascending: true })
-    setMessages((data ?? []) as ChatMessage[])
-    setLoading(false)
-  }, [clientId, thread])
-
-  useEffect(() => {
-    if (clientId) load()
-  }, [clientId, thread, load])
-
-  async function sendMessage() {
-    const body = draft.trim()
-    if (!body) return
-    setDraft("")
-    const { data } = await supabaseEts
-      .from("project_chat_messages")
-      .insert({
-        client_id: clientId,
-        thread,
-        author_side: "admin",
-        author_name: "Admin",
-        body,
-      })
-      .select("id, thread, author_side, author_name, body, created_at")
-      .single()
-    if (data) setMessages((ms) => [...ms, data as ChatMessage])
+  if (!clientId) {
+    return (
+      <div className="rounded-lg border bg-card shadow-sm p-6">
+        <p className="text-sm text-muted-foreground">Loading client…</p>
+      </div>
+    )
   }
 
   return (
-    <div className="rounded-lg border bg-card shadow-sm flex flex-col h-[640px]">
-      <div className="border-b">
-        <div className="px-4 py-3">
-          <h2 className="text-sm font-semibold">Chat with client</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Switch threads to read or post in a specific topic.
-          </p>
+    <div className="flex h-[calc(100vh-180px)] min-h-[560px] gap-3">
+      <aside className="w-48 shrink-0 rounded-lg border bg-card shadow-sm overflow-hidden flex flex-col">
+        <div className="px-3 py-2.5 border-b">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Channels
+          </h2>
         </div>
-        <div className="flex items-center gap-0 px-2 overflow-x-auto">
+        <ul className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
           {THREADS.map((t) => {
-            const isActive = thread === t.id
+            const isActive = kind === t.id
             return (
-              <button
-                key={t.id}
-                onClick={() => setThread(t.id)}
-                className={`relative px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors ${
-                  isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {t.label}
-                {isActive && (
-                  <span className="absolute bottom-0 left-1 right-1 h-[2px] rounded-full bg-primary" />
-                )}
-              </button>
+              <li key={t.id}>
+                <button
+                  onClick={() => setKind(t.id)}
+                  className={`w-full text-left px-2 py-1.5 rounded text-sm flex items-center gap-2 transition-colors ${
+                    isActive
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "hover:bg-muted text-foreground"
+                  }`}
+                >
+                  <Hash className="size-3.5 shrink-0" />
+                  <span className="truncate">{t.label}</span>
+                </button>
+              </li>
             )
           })}
-        </div>
-      </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {loading ? (
-          <div className="h-32 rounded bg-muted animate-pulse" />
-        ) : messages.length === 0 ? (
-          <EtsEmptyState
-            icon={MessageSquare}
-            title="No messages yet"
-            description={`No messages in the "${THREADS.find((t) => t.id === thread)?.label}" thread.`}
-          />
-        ) : (
-          messages.map((m) => (
-            <div
-              key={m.id}
-              className={`flex ${m.author_side === "admin" ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-[70%] rounded-lg px-3 py-2 text-sm ${
-                  m.author_side === "admin"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-foreground"
-                }`}
-              >
-                {m.author_name && (
-                  <div className="text-xs font-semibold mb-0.5 opacity-70">{m.author_name}</div>
-                )}
-                <div className="whitespace-pre-wrap">{m.body}</div>
-                <div className="text-xs opacity-60 mt-1">{formatDate(m.created_at)}</div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-      <div className="border-t p-3 flex items-center gap-2">
-        <input
-          type="text"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault()
-              sendMessage()
-            }
-          }}
-          placeholder={`Message in ${THREADS.find((t) => t.id === thread)?.label}…`}
-          className="flex-1 h-9 rounded-md border bg-background px-3 text-sm"
+        </ul>
+      </aside>
+      <div className="flex-1 min-w-0">
+        <ChannelEmbed
+          key={`${clientId}-${kind}`}
+          projectId={clientId}
+          channelKind={kind}
+          senderName="Admin"
+          height="100%"
+          showHeader
+          emptyHint="Say hi — this message will also appear in the client's chat."
         />
-        <button
-          onClick={sendMessage}
-          disabled={!draft.trim()}
-          className="inline-flex items-center gap-1 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
-        >
-          <Send className="size-3.5" /> Send
-        </button>
       </div>
     </div>
   )
