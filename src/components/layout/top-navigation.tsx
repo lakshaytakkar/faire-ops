@@ -62,14 +62,93 @@ interface NavItem {
 // served from the right-dock (`calls-qa` plugin) so it's no longer in
 // the top menu. See SPACE_PATTERN.md §6.
 const PLACEHOLDER_HQ: NavItem[] = [
-  { title: "Overview", url: "/hq/overview", icon: LayoutDashboard },
-  { title: "People", url: "/hq/people", icon: Users },
-  { title: "Finance", url: "/hq/finance", icon: Wallet },
-  { title: "Projects", url: "/hq/projects", icon: Blocks },
-  { title: "Assets", url: "/hq/assets", icon: Briefcase },
-  { title: "Social", url: "/hq/social", icon: Megaphone },
-  { title: "Sites", url: "/hq/sites", icon: Globe },
-  { title: "Compliance", url: "/hq/compliance", icon: Target },
+  {
+    title: "Overview", url: "/hq/overview", icon: LayoutDashboard,
+    subItems: [
+      { title: "Command", url: "/hq/overview" },
+      { title: "P&L Summary", url: "/hq/overview/p-and-l" },
+      { title: "Headcount", url: "/hq/overview/headcount" },
+      { title: "Alerts", url: "/hq/overview/alerts" },
+    ],
+  },
+  {
+    title: "People", url: "/hq/people/directory", icon: Users,
+    subItems: [
+      { title: "Directory", url: "/hq/people/directory" },
+      { title: "Attendance", url: "/hq/people/attendance" },
+      { title: "Leave", url: "/hq/people/leave" },
+      { title: "Payroll", url: "/hq/people/payroll" },
+      { title: "Performance", url: "/hq/people/performance" },
+      { title: "Org Chart", url: "/hq/people/org-chart" },
+      { title: "Departments", url: "/hq/people/departments" },
+      { title: "Policies", url: "/hq/people/policies" },
+      { title: "ATS · Dashboard", url: "/hq/people/ats" },
+      { title: "ATS · Roles", url: "/hq/people/ats/roles" },
+      { title: "ATS · Candidates", url: "/hq/people/ats/candidates" },
+      { title: "ATS · Pipeline", url: "/hq/people/ats/pipeline" },
+      { title: "ATS · Interviews", url: "/hq/people/ats/interviews" },
+      { title: "ATS · Offers", url: "/hq/people/ats/offers" },
+    ],
+  },
+  {
+    title: "Finance", url: "/hq/finance/revenue", icon: Wallet,
+    subItems: [
+      { title: "Revenue", url: "/hq/finance/revenue" },
+      { title: "Expenses", url: "/hq/finance/expenses" },
+      { title: "Entities", url: "/hq/finance/entities" },
+      { title: "Transactions", url: "/hq/finance/transactions" },
+      { title: "Reconciliation", url: "/hq/finance/reconciliation" },
+    ],
+  },
+  {
+    title: "Projects", url: "/hq/projects/overview", icon: Blocks,
+    subItems: [
+      { title: "Active Projects", url: "/hq/projects/overview" },
+      { title: "OKRs", url: "/hq/projects/okrs" },
+      { title: "Roadmap", url: "/hq/projects/roadmap" },
+    ],
+  },
+  {
+    title: "Assets", url: "/hq/assets/devices", icon: Briefcase,
+    subItems: [
+      { title: "Devices", url: "/hq/assets/devices" },
+      { title: "Licenses", url: "/hq/assets/licenses" },
+      { title: "Vendor Contracts", url: "/hq/assets/contracts" },
+      { title: "Office Inventory", url: "/hq/assets/inventory" },
+    ],
+  },
+  {
+    title: "Social", url: "/hq/social/overview", icon: Megaphone,
+    subItems: [
+      { title: "Dashboard", url: "/hq/social/overview" },
+      { title: "Connected Accounts", url: "/hq/social/accounts" },
+      { title: "Content Calendar", url: "/hq/social/calendar" },
+      { title: "Posts", url: "/hq/social/posts" },
+      { title: "Approval Queue", url: "/hq/social/approvals" },
+      { title: "Analytics", url: "/hq/social/analytics" },
+    ],
+  },
+  {
+    title: "Sites", url: "/hq/sites/overview", icon: Globe,
+    subItems: [
+      { title: "Sites Overview", url: "/hq/sites/overview" },
+      { title: "Traffic Analytics", url: "/hq/sites/traffic" },
+      { title: "Leads", url: "/hq/sites/leads" },
+      { title: "SEO Monitoring", url: "/hq/sites/seo" },
+      { title: "Content", url: "/hq/sites/content" },
+      { title: "Uptime", url: "/hq/sites/uptime" },
+    ],
+  },
+  {
+    title: "Compliance", url: "/hq/compliance/overview", icon: Target,
+    subItems: [
+      { title: "Overview", url: "/hq/compliance/overview" },
+      { title: "Entity Registry", url: "/hq/compliance/entities" },
+      { title: "Filings", url: "/hq/compliance/filings" },
+      { title: "Contracts", url: "/hq/compliance/contracts" },
+      { title: "Legal Cases", url: "/hq/compliance/legal-cases" },
+    ],
+  },
 ]
 
 const PLACEHOLDER_LEGAL: NavItem[] = [
