@@ -1,179 +1,109 @@
-import Link from "next/link"
-import { GitBranch, Rocket } from "lucide-react"
-import { listProjects } from "@/lib/projects"
-import {
-  HealthDot,
-  StatusPill,
-  ventureMeta,
-  relativeTime,
-} from "@/components/development/dev-primitives"
-import {
-  EtsListShell,
-  EtsTable,
-  EtsTHead,
-  EtsTH,
-  EtsTR,
-  EtsTD,
-  EtsEmptyState,
-} from "@/app/(portal)/ets/_components/ets-ui"
-import { cn } from "@/lib/utils"
+import { Rocket, CheckCircle2, AlertTriangle, Clock } from "lucide-react"
+import { supabase } from "@/lib/supabase"
+import { listProjects, type Project } from "@/lib/projects"
+import { PageHeader } from "@/components/shared/page-header"
+import { KPIGrid } from "@/components/shared/kpi-grid"
+import { MetricCard } from "@/components/shared/metric-card"
+import { EmptyState } from "@/components/shared/empty-state"
+import { DeploymentsClient, type DeploymentRow } from "./deployments-client"
 
 export const dynamic = "force-dynamic"
 
 export const metadata = { title: "Deployments — Development | Suprans" }
 
 export default async function DeploymentsPage() {
-  const projects = await listProjects()
+  const [{ data: rawEvents }, projects] = await Promise.all([
+    supabase
+      .from("deployment_events")
+      .select(
+        "id, vercel_deployment_id, project_id, project_slug, commit_sha, commit_message, branch, author_name, author_email, status, deployed_at, url",
+      )
+      .order("deployed_at", { ascending: false, nullsFirst: false })
+      .limit(500),
+    listProjects(),
+  ])
 
-  const events: Array<{
-    project_id: string
-    project_slug: string
-    project_name: string
-    venture: string | null
-    owner: string | null
-    status: typeof projects[number]["status"]
-    health: typeof projects[number]["health"]
-    at: Date
-    author: string
-    note: string
-  }> = []
+  const projectById = new Map<string, Project>(projects.map((p) => [p.id, p]))
+  const projectBySlug = new Map<string, Project>(projects.map((p) => [p.slug, p]))
 
-  for (const p of projects) {
-    if (!p.last_deploy_at) continue
-    const latest = new Date(p.last_deploy_at)
-    const prev = new Date(latest.getTime() - 2 * 24 * 60 * 60 * 1000)
-    events.push({
-      project_id: p.id,
-      project_slug: p.slug,
-      project_name: p.name,
-      venture: p.venture,
-      owner: p.owner_name,
-      status: p.status,
-      health: p.health,
-      at: latest,
-      author: p.owner_name ?? "Suprans bot",
-      note: deployNote(p.slug, "latest"),
-    })
-    events.push({
-      project_id: p.id,
-      project_slug: p.slug,
-      project_name: p.name,
-      venture: p.venture,
-      owner: p.owner_name,
-      status: p.status,
-      health: p.health,
-      at: prev,
-      author: p.owner_name ?? "Suprans bot",
-      note: deployNote(p.slug, "previous"),
-    })
-  }
+  const rows: DeploymentRow[] = (rawEvents ?? []).map((e) => {
+    const project =
+      (e.project_id && projectById.get(e.project_id as string)) ||
+      (e.project_slug && projectBySlug.get(e.project_slug as string)) ||
+      null
+    return {
+      id: e.id as string,
+      vercel_deployment_id: e.vercel_deployment_id as string,
+      project_id: (e.project_id as string | null) ?? null,
+      project_slug: (e.project_slug as string | null) ?? null,
+      project_name: project?.name ?? (e.project_slug as string | null) ?? null,
+      venture: project?.venture ?? null,
+      commit_sha: (e.commit_sha as string | null) ?? null,
+      commit_message: (e.commit_message as string | null) ?? null,
+      branch: (e.branch as string | null) ?? null,
+      author_name: (e.author_name as string | null) ?? null,
+      author_email: (e.author_email as string | null) ?? null,
+      status: e.status as DeploymentRow["status"],
+      deployed_at: (e.deployed_at as string | null) ?? null,
+      url: (e.url as string | null) ?? null,
+    }
+  })
 
-  events.sort((a, b) => b.at.getTime() - a.at.getTime())
+  const now = Date.now()
+  const day = 24 * 60 * 60 * 1000
+  const deploysToday = rows.filter(
+    (r) => r.deployed_at && now - new Date(r.deployed_at).getTime() < day,
+  ).length
+  const deploys7d = rows.filter(
+    (r) => r.deployed_at && now - new Date(r.deployed_at).getTime() < 7 * day,
+  ).length
+  const errors7d = rows.filter(
+    (r) =>
+      r.deployed_at &&
+      now - new Date(r.deployed_at).getTime() < 7 * day &&
+      r.status === "error",
+  ).length
+  const failedRate =
+    deploys7d > 0 ? `${Math.round((errors7d / deploys7d) * 100)}%` : "—"
+  const ventures = Array.from(
+    new Set(rows.map((r) => r.venture).filter(Boolean)),
+  ) as string[]
 
   return (
-    <EtsListShell
-      title="Deployments"
-      subtitle={`${events.length} deploys across all properties — auto-sourced from Vercel.`}
-    >
-      {events.length === 0 ? (
-        <EtsEmptyState
+    <div className="max-w-[1440px] mx-auto w-full space-y-5">
+      <PageHeader
+        title="Deployments"
+        subtitle={`${rows.length} deploy events — ingested from Vercel webhook + daily backfill.`}
+      />
+
+      <KPIGrid>
+        <MetricCard label="Deploys today" value={deploysToday} icon={Rocket} iconTone="blue" hint="last 24h" />
+        <MetricCard label="Deploys this week" value={deploys7d} icon={Clock} iconTone="violet" hint="last 7d" />
+        <MetricCard
+          label="Failed rate"
+          value={failedRate}
+          icon={AlertTriangle}
+          iconTone={errors7d > 0 ? "red" : "emerald"}
+          hint={`${errors7d} error${errors7d === 1 ? "" : "s"} / 7d`}
+        />
+        <MetricCard
+          label="Successful deploys"
+          value={rows.filter((r) => r.status === "ready").length}
+          icon={CheckCircle2}
+          iconTone="emerald"
+          hint="all-time"
+        />
+      </KPIGrid>
+
+      {rows.length === 0 ? (
+        <EmptyState
           icon={Rocket}
-          title="No deploys recorded"
-          description="Connect a Vercel project to start the feed."
+          title="No deployments yet"
+          description="Configure the Vercel webhook (POST /api/webhooks/vercel-deploy) and run /api/cron/vercel-backfill to populate this feed."
         />
       ) : (
-        <EtsTable>
-          <EtsTHead>
-            <EtsTH>Project</EtsTH>
-            <EtsTH>Note</EtsTH>
-            <EtsTH>Author</EtsTH>
-            <EtsTH>Status</EtsTH>
-            <EtsTH>Branch</EtsTH>
-            <EtsTH className="text-right">When</EtsTH>
-          </EtsTHead>
-          <tbody>
-            {events.map((ev, idx) => {
-              const v = ventureMeta(ev.venture)
-              return (
-                <EtsTR key={idx}>
-                  <EtsTD>
-                    <Link
-                      href={`/development/projects/${ev.project_slug}`}
-                      className="flex items-center gap-2 hover:text-primary"
-                    >
-                      <div
-                        className={cn(
-                          "size-7 rounded flex items-center justify-center shrink-0 text-white text-xs font-semibold",
-                          v.gradientClass,
-                        )}
-                        aria-hidden
-                      >
-                        {v.short}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium truncate">{ev.project_name}</div>
-                        <div className="text-xs text-muted-foreground">{v.label}</div>
-                      </div>
-                    </Link>
-                  </EtsTD>
-                  <EtsTD className="text-sm text-muted-foreground max-w-md truncate">{ev.note}</EtsTD>
-                  <EtsTD className="text-sm">{ev.author}</EtsTD>
-                  <EtsTD>
-                    <div className="flex items-center gap-2">
-                      <HealthDot health={ev.health} />
-                      <StatusPill status={ev.status} />
-                    </div>
-                  </EtsTD>
-                  <EtsTD className="text-xs text-muted-foreground">
-                    <span className="inline-flex items-center gap-1">
-                      <GitBranch className="size-3" /> main
-                    </span>
-                  </EtsTD>
-                  <EtsTD className="text-right text-xs text-muted-foreground whitespace-nowrap">
-                    {relativeTime(ev.at.toISOString())}
-                  </EtsTD>
-                </EtsTR>
-              )
-            })}
-          </tbody>
-        </EtsTable>
+        <DeploymentsClient rows={rows} ventures={ventures} />
       )}
-    </EtsListShell>
+    </div>
   )
-}
-
-function deployNote(slug: string, which: "latest" | "previous"): string {
-  const latestNotes: Record<string, string> = {
-    "suprans-landing": "feat(ecosystem): surface Mr. Suprans founder spotlight + three-flagship rework",
-    "suprans-admin": "feat(development): add Development space + project portfolio pages",
-    "ets-admin": "feat(ets): finance reconciliation + vendor KYC flow",
-    "ets-landing": "copy(ets): franchise unit-economics calculator update",
-    "ets-client": "feat(ets): first slice of client-portal shipment tracker",
-    "legal-landing": "design(legal): Delaware vs Wyoming comparison block",
-    "legal-client-portal": "feat(legal): document-vault scaffold + auth",
-    "legal-admin": "feat(legal): EIN batch-tracking queue",
-    "usdrop-landing": "copy(usdrop): 20K SKU catalog demo replace screenshot",
-    "usdrop-admin": "feat(usdrop): payout-run SQL + Razorpay webhook handler",
-    "usdrop-vendor": "fix(usdrop): 3PL inventory sync race condition",
-    "usdrop-client-app": "feat(usdrop): AI listing QC flagging UI",
-    "goyo-landing": "content(goyo): Canton Fair Oct 2026 page live",
-    "teamsync-admin": "feat(development): add Development space + project portfolio pages",
-  }
-  const prevNotes: Record<string, string> = {
-    "suprans-landing": "content(suprans): expand the China directory switcher tabs",
-    "suprans-admin": "feat(chat): channel drawer with member roster",
-    "ets-admin": "refactor(ets): align admin UI with app conventions",
-    "ets-landing": "seo(ets): metadata sweep + schema.org upgrade",
-    "ets-client": "wip(ets): scaffold client routes + auth",
-    "legal-landing": "fix(legal): contact-form validation edge cases",
-    "legal-client-portal": "wip(legal): auth provider swap",
-    "legal-admin": "feat(legal): state-filing template editor",
-    "usdrop-landing": "copy(usdrop): hero subhead rework",
-    "usdrop-admin": "feat(usdrop): catalog bulk edit",
-    "usdrop-vendor": "wip(usdrop): inventory snapshot retry logic",
-    "usdrop-client-app": "feat(usdrop): Shopify listing generator v2",
-    "goyo-landing": "fix(goyo): Razorpay key rotation",
-    "teamsync-admin": "feat(modules): filter calendar/tasks/chat by active space",
-  }
-  return (which === "latest" ? latestNotes[slug] : prevNotes[slug]) ?? "chore: routine maintenance push"
 }

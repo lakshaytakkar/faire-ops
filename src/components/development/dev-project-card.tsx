@@ -9,8 +9,8 @@ import {
   StatusPill,
   VersionPill,
   ventureMeta,
-  relativeTime,
 } from "./dev-primitives"
+import { relativeTime } from "@/lib/format"
 
 export function DevProjectCard({ project }: { project: Project }) {
   const v = ventureMeta(project.venture)
