@@ -200,47 +200,12 @@ export function EtsTabsPanel({
 }
 
 // ─── <EtsEditDrawer> ──────────────────────────────────────────────────────────
+// @deprecated — use `EditDrawer` from `@/components/shared/edit-drawer` in new
+// code. This thin re-export keeps existing ETS callers compiling. New spaces
+// must NOT import from this file (see SPACE_PATTERN.md §2).
 
-export function EtsEditDrawer({
-  open,
-  onClose,
-  title,
-  subtitle,
-  children,
-  footer,
-  size = "md",
-}: {
-  open: boolean
-  onClose: () => void
-  title: string
-  subtitle?: string
-  children: ReactNode
-  footer?: ReactNode
-  size?: "md" | "lg"
-}) {
-  return (
-    <Sheet open={open} onOpenChange={(v: boolean) => !v && onClose()}>
-      <SheetContent
-        side="right"
-        className={cn(
-          "flex flex-col gap-0 p-0",
-          size === "md" ? "sm:max-w-md" : "sm:max-w-xl",
-        )}
-      >
-        <SheetHeader className="border-b px-5 py-4">
-          <SheetTitle>{title}</SheetTitle>
-          {subtitle && <SheetDescription>{subtitle}</SheetDescription>}
-        </SheetHeader>
-        <div className="flex-1 overflow-y-auto p-5">{children}</div>
-        {footer && (
-          <SheetFooter className="flex-row items-center justify-end gap-2 border-t px-5 py-3">
-            {footer}
-          </SheetFooter>
-        )}
-      </SheetContent>
-    </Sheet>
-  )
-}
+import { EditDrawer as SharedEditDrawer } from "@/components/shared/edit-drawer"
+export const EtsEditDrawer = SharedEditDrawer
 
 // ─── <EtsEmptyState> ──────────────────────────────────────────────────────────
 
@@ -396,25 +361,10 @@ export function EtsTD({
 
 // ─── Utility formatters ───────────────────────────────────────────────────────
 
-export function formatCurrency(n: number | null | undefined, currency = "₹") {
-  if (n === null || n === undefined) return "—"
-  const num = typeof n === "string" ? parseFloat(n) : n
-  if (isNaN(num)) return "—"
-  return `${currency}${num.toLocaleString("en-IN")}`
-}
-
-export function formatDate(d: string | null | undefined) {
-  if (!d) return "—"
-  try {
-    return new Date(d).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })
-  } catch {
-    return d
-  }
-}
+// Formatters now live in @/lib/format.ts so non-ETS spaces can import them
+// without cross-space pollution. Re-exported here for back-compat; prefer
+// importing from @/lib/format directly. See SPACE_PATTERN.md.
+export { formatCurrency, formatDate } from "@/lib/format"
 
 export function formatInitials(name: string | null | undefined) {
   if (!name) return "??"

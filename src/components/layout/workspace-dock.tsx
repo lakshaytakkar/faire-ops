@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { UserDockMenu } from "@/components/layout/user-dock-menu"
 import { useActiveSpace } from "@/lib/use-active-space"
+import { supabase } from "@/lib/supabase"
 import {
   Calendar,
   ClipboardList,
@@ -37,12 +38,36 @@ import {
  * `/<space-slug>/<module>`, so each venture has its own scoped
  * chat / calendar / tasks / etc.
  */
+/**
+ * Per-space route overrides. When a space has built its own native page for
+ * a universal module, route there directly instead of taking the user to
+ * the B2B-rooted /workspace/* page with a ?space= param. This keeps the
+ * user inside their space (left dock highlight, top nav, breadcrumbs all
+ * stay correct) and gives them a real CRUD surface against the right
+ * schema.
+ *
+ * Add new entries as spaces ship native modules. Fallback (no override) is
+ * /workspace/<module>?space=<slug>.
+ */
+const SPACE_MODULE_OVERRIDES: Record<string, Partial<Record<string, string>>> = {
+  usdrop: {
+    tickets: "/usdrop/tickets",
+    emails: "/usdrop/email",
+    // chat / calendar / etc. — add when usdrop ships native versions
+  },
+  ets: {
+    // ETS deep nav lives in TopNavigation; surface module overrides here as added
+  },
+  hq: {
+    // HQ overrides go here as they ship
+  },
+}
+
 const WORKSPACE_ITEMS = [
   { module: "calendar",    legacyHref: "/workspace/calendar",         icon: Calendar,       label: "Calendar" },
   { module: "tasks",       legacyHref: "/operations/tasks",           icon: ClipboardList,  label: "Tasks" },
   { module: "team",        legacyHref: "/workspace/team",             icon: Users,          label: "Team" },
   { module: "chat",        legacyHref: "/workspace/chat",             icon: MessageCircle,  label: "Chat" },
-  { module: "qa",          legacyHref: "/workspace/qa/dashboard",     icon: ShieldCheck,    label: "QA" },
   { module: "emails",      legacyHref: "/workspace/emails/dashboard", icon: Megaphone,      label: "Comms" },
   { module: "tickets",     legacyHref: "/workspace/tickets",          icon: LifeBuoy,       label: "Tickets" },
   { module: "inbox",       legacyHref: "/workspace/inbox",            icon: Bell,           label: "Inbox" },
@@ -62,10 +87,15 @@ const WORKSPACE_ITEMS = [
 type WorkspaceItem = (typeof WORKSPACE_ITEMS)[number]
 
 function resolveHref(item: WorkspaceItem, activeSlug: string): string {
-  // Every universal module lives at its canonical route. Non-B2B spaces
-  // carry their identity forward via a ?space= param so the shared page
-  // knows which venture it's rendering for. Zero per-venture stubs needed.
+  // 1. Active space has a native page for this module → use it directly.
+  const override = SPACE_MODULE_OVERRIDES[activeSlug]?.[item.module]
+  if (override) return override
+
+  // 2. B2B-ecommerce uses the legacy hrefs as-is (no ?space= needed).
   if (activeSlug === "b2b-ecommerce") return item.legacyHref
+
+  // 3. Fallback — universal /workspace/* page with ?space= param so the
+  //    shared page knows which venture's data to render.
   const base = item.legacyHref
   const sep = base.includes("?") ? "&" : "?"
   return `${base}${sep}space=${activeSlug}`
@@ -92,6 +122,10 @@ export function WorkspaceDock() {
   const { slug: activeSlug } = useActiveSpace()
   const [collapsed, setCollapsed] = useState(false)
   const [hydrated, setHydrated] = useState(false)
+  // Plugin keys enabled for the active space. Null = not yet loaded →
+  // render everything (optimistic). Empty set (after load) = no rows
+  // present → treat as enabled for all (back-compat). See SPACE_PATTERN.md §6.
+  const [enabledPlugins, setEnabledPlugins] = useState<Set<string> | null>(null)
 
   useEffect(() => {
     try {
@@ -102,6 +136,33 @@ export function WorkspaceDock() {
     }
     setHydrated(true)
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!activeSlug) return
+    supabase
+      .from("space_plugin_settings")
+      .select("plugin_key, enabled")
+      .eq("space_slug", activeSlug)
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (error || !data || data.length === 0) {
+          // No rows or error → show everything (back-compat default).
+          setEnabledPlugins(new Set(WORKSPACE_ITEMS.map((i) => i.module)))
+          return
+        }
+        setEnabledPlugins(
+          new Set(
+            (data as { plugin_key: string; enabled: boolean }[])
+              .filter((r) => r.enabled)
+              .map((r) => r.plugin_key),
+          ),
+        )
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [activeSlug])
 
   function toggle() {
     setCollapsed((c) => {
@@ -130,7 +191,9 @@ export function WorkspaceDock() {
 
       {/* Scrollable nav list fills remaining vertical space */}
       <nav className="flex-1 flex flex-col overflow-y-auto">
-        {WORKSPACE_ITEMS.map((item) => {
+        {WORKSPACE_ITEMS.filter(
+          (item) => enabledPlugins === null || enabledPlugins.has(item.module),
+        ).map((item) => {
           const href = resolveHref(item, activeSlug)
           const isActive = pathname === href || pathname.startsWith(href + "/")
           const Icon = item.icon
