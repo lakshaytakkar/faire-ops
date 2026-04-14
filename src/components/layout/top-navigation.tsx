@@ -20,7 +20,6 @@ import {
   ListTodo,
   Rocket,
   Map as MapIcon,
-  FileText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useBrandFilter } from "@/lib/brand-filter-context"
@@ -76,10 +75,56 @@ const PLACEHOLDER_GOYO: NavItem[] = [
 ]
 
 const PLACEHOLDER_USDROP: NavItem[] = [
-  { title: "Orders", url: "/usdrop/orders", icon: ShoppingCart },
-  { title: "Products", url: "/usdrop/products", icon: Package },
-  { title: "Vendors", url: "/usdrop/vendors", icon: Users },
-  { title: "Analytics", url: "/usdrop/analytics", icon: LayoutDashboard },
+  { title: "Overview", url: "/usdrop/overview", icon: LayoutDashboard },
+  {
+    title: "Catalog",
+    url: "/usdrop/products",
+    icon: Package,
+    subItems: [
+      { title: "Products", url: "/usdrop/products" },
+      { title: "Categories", url: "/usdrop/categories" },
+      { title: "Suppliers", url: "/usdrop/suppliers" },
+      { title: "AI pipeline", url: "/usdrop/pipeline" },
+    ],
+  },
+  {
+    title: "Customers",
+    url: "/usdrop/users",
+    icon: Users,
+    subItems: [
+      { title: "Users", url: "/usdrop/users" },
+      { title: "Shopify stores", url: "/usdrop/stores" },
+      { title: "Tickets", url: "/usdrop/tickets" },
+    ],
+  },
+  {
+    title: "Operations",
+    url: "/usdrop/orders",
+    icon: ShoppingCart,
+    subItems: [
+      { title: "Orders", url: "/usdrop/orders" },
+      { title: "Payouts", url: "/usdrop/payouts" },
+    ],
+  },
+  {
+    title: "Learning",
+    url: "/usdrop/courses",
+    icon: Blocks,
+    subItems: [
+      { title: "Courses", url: "/usdrop/courses" },
+      { title: "Content", url: "/usdrop/content" },
+      { title: "Roadmap", url: "/usdrop/roadmap" },
+    ],
+  },
+  {
+    title: "Comms",
+    url: "/usdrop/email",
+    icon: Target,
+    subItems: [
+      { title: "Email", url: "/usdrop/email" },
+      { title: "SMS", url: "/usdrop/sms" },
+    ],
+  },
 ]
 
 // ETS (EazyToSell) — Store Launch + Supply Partner platform. Top nav is
@@ -124,6 +169,8 @@ const PLACEHOLDER_ETS: NavItem[] = [
       { title: "Categories", url: "/ets/catalog/categories" },
       { title: "Collections", url: "/ets/catalog/collections" },
       { title: "Pricing", url: "/ets/catalog/pricing" },
+      { title: "Compliance", url: "/ets/catalog/compliance" },
+      { title: "Images", url: "/ets/catalog/images" },
       { title: "Bulk upload", url: "/ets/catalog/bulk-upload" },
       { title: "Setup kit", url: "/ets/catalog/setup-kit" },
     ],
@@ -175,12 +222,11 @@ const PLACEHOLDER_ETS: NavItem[] = [
 ]
 
 const PLACEHOLDER_DEVELOPMENT: NavItem[] = [
-  { title: "Overview", url: "/development/overview", icon: LayoutDashboard },
+  { title: "Overview", url: "/development", icon: LayoutDashboard },
   { title: "Projects", url: "/development/projects", icon: FolderKanban },
-  { title: "Sprints", url: "/development/sprints", icon: ListTodo },
   { title: "Deployments", url: "/development/deployments", icon: Rocket },
   { title: "Roadmap", url: "/development/roadmap", icon: MapIcon },
-  { title: "Changelog", url: "/development/changelog", icon: FileText },
+  { title: "Tasks", url: "/development/tasks", icon: ListTodo },
 ]
 
 const NAV_ITEMS: NavItem[] = [

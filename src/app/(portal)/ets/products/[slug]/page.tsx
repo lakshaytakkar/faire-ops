@@ -1,118 +1,223 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import {
-  ArrowLeft,
-  Package,
-  ExternalLink,
-  CheckCircle2,
-  XCircle,
+  Copy,
+  Check,
+  Trash2,
+  RotateCcw,
+  ImageOff,
+  Save,
 } from "lucide-react"
+import { Tabs } from "@base-ui/react/tabs"
+
 import { supabaseEts } from "@/lib/supabase"
+import { Button } from "@/components/ui/button"
+import { StatusBadge, toneForStatus } from "@/components/shared/status-badge"
+import { PageHeader } from "@/components/shared/page-header"
+import { EmptyState } from "@/components/shared/empty-state"
+import { cn } from "@/lib/utils"
+
+import { useAutosave } from "./_components/use-autosave"
 import {
-  EtsStatusBadge,
-  EtsEmptyState,
-  formatCurrency,
-  formatDate,
-} from "@/app/(portal)/ets/_components/ets-ui"
+  type ProductRow,
+  type VendorMini,
+} from "./_components/product-row"
+import { BasicsTab } from "./_components/basics-tab"
+import { PricingTab } from "./_components/pricing-tab"
+import { LogisticsTab } from "./_components/logistics-tab"
+import { ComplianceTab } from "./_components/compliance-tab"
+import { MediaTab, UploadButton } from "./_components/media-tab"
+import { MetaTab } from "./_components/meta-tab"
 
-interface ProductRow {
-  id: string
-  legacy_id: number | null
-  product_code: string | null
-  barcode: string | null
-  name_en: string | null
-  name_cn: string | null
-  category: string | null
-  material: string | null
-  description: string | null
-  image_url: string | null
-  cost_price: number | null
-  partner_price: number | null
-  unit_price: number | null
-  wholesale_price_inr: number | null
-  suggested_mrp: number | null
-  units_per_carton: number | null
-  moq: number | null
-  weight_kg: number | null
-  box_length_cm: number | null
-  box_width_cm: number | null
-  box_height_cm: number | null
-  hs_code: string | null
-  source: string | null
-  vendor_id: string | null
-  stock_quantity: number | null
-  is_active: boolean
-  is_published: boolean
-  is_featured: boolean | null
-  market_fit: string | null
-  market_fit_reason: string | null
-  compliance_status: string | null
-  label_status: string | null
-  bis_required: boolean | null
-  bis_status: string | null
-  sellability_score: number | null
-  tags: string[] | null
-  supply_meta: Record<string, unknown> | null
-  created_at: string | null
-  updated_at: string | null
-}
+type TabId =
+  | "basics"
+  | "pricing"
+  | "logistics"
+  | "compliance"
+  | "media"
+  | "meta"
 
-interface VendorMini {
-  id: string
-  name: string
-}
+const TABS: Array<{ id: TabId; label: string }> = [
+  { id: "basics", label: "Basics" },
+  { id: "pricing", label: "Pricing" },
+  { id: "logistics", label: "Logistics" },
+  { id: "compliance", label: "Compliance" },
+  { id: "media", label: "Media" },
+  { id: "meta", label: "Meta" },
+]
 
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string }>()
   const slug = params?.slug as string
+  const router = useRouter()
+
   const [row, setRow] = useState<ProductRow | null>(null)
   const [vendor, setVendor] = useState<VendorMini | null>(null)
   const [loading, setLoading] = useState(true)
+  const [copied, setCopied] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [duplicating, setDuplicating] = useState(false)
+  const [tab, setTab] = useState<TabId>("basics")
 
+  const autosave = useAutosave(row?.id)
+
+  // Push fresh updated_at into row state on every successful save.
   useEffect(() => {
-    let cancelled = false
-    async function load() {
-      setLoading(true)
-      // Resolve by SKU first; fall back to UUID for legacy links.
-      let { data } = await supabaseEts
+    autosave.onSaved((updatedAt) => {
+      setRow((r) => (r ? { ...r, updated_at: updatedAt } : r))
+    })
+  }, [autosave])
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    let { data } = await supabaseEts
+      .from("products")
+      .select("*")
+      .eq("product_code", slug)
+      .maybeSingle()
+    if (!data) {
+      const fallback = await supabaseEts
         .from("products")
         .select("*")
-        .eq("product_code", slug)
+        .eq("id", slug)
         .maybeSingle()
-      if (!data) {
-        const fallback = await supabaseEts
-          .from("products")
-          .select("*")
-          .eq("id", slug)
-          .maybeSingle()
-        data = fallback.data
-      }
-      if (cancelled) return
-      setRow(data as ProductRow | null)
-      if (data?.vendor_id) {
-        const { data: v } = await supabaseEts
-          .from("vendors")
-          .select("id, name")
-          .eq("id", data.vendor_id)
-          .maybeSingle()
-        if (!cancelled) setVendor(v as VendorMini | null)
-      }
-      setLoading(false)
+      data = fallback.data
     }
-    if (slug) load()
-    return () => {
-      cancelled = true
+    setRow(data as ProductRow | null)
+    if (data?.vendor_id) {
+      const { data: v } = await supabaseEts
+        .from("vendors")
+        .select("id, name")
+        .eq("id", data.vendor_id)
+        .maybeSingle()
+      setVendor(v as VendorMini | null)
+    } else {
+      setVendor(null)
     }
+    setLoading(false)
   }, [slug])
+
+  useEffect(() => {
+    if (slug) void load()
+  }, [slug, load])
+
+  const patch = useCallback((p: Partial<ProductRow>) => {
+    setRow((r) => (r ? { ...r, ...p } : r))
+  }, [])
+
+  const statusValue = useMemo(() => {
+    if (!row) return "—"
+    if (!row.is_active && !row.is_published) return "soft-deleted"
+    if (!row.is_active) return "inactive"
+    if (row.is_published) return "published"
+    return "unpublished"
+  }, [row])
+
+  async function handleCopy() {
+    if (!row?.product_code) return
+    await navigator.clipboard.writeText(row.product_code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1200)
+  }
+
+  async function handleDuplicate() {
+    if (!row || duplicating) return
+    setDuplicating(true)
+    try {
+      const now = new Date().toISOString()
+      const newCode = `${row.product_code ?? "SKU"}-COPY-${Date.now().toString(36).toUpperCase()}`
+      const {
+        id: _id,
+        legacy_id: _legacy,
+        created_at: _ca,
+        updated_at: _ua,
+        product_code: _pc,
+        name_en,
+        name_cn,
+        ...rest
+      } = row
+      void _id
+      void _legacy
+      void _ca
+      void _ua
+      void _pc
+      const { data, error } = await supabaseEts
+        .from("products")
+        .insert({
+          ...rest,
+          product_code: newCode,
+          name_en: name_en ? `${name_en}_copy` : null,
+          name_cn: name_cn ? `${name_cn}_copy` : null,
+          is_published: false,
+          created_at: now,
+          updated_at: now,
+        })
+        .select("product_code")
+        .single()
+      if (error) throw error
+      if (data?.product_code) {
+        router.push(`/ets/products/${data.product_code}`)
+      }
+    } catch (e) {
+      alert(e instanceof Error ? e.message : String(e))
+    } finally {
+      setDuplicating(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!row || deleting) return
+    const ok = window.confirm(
+      "Soft-delete this product? It will be hidden from the client portal.",
+    )
+    if (!ok) return
+    setDeleting(true)
+    await autosave.flush()
+    const { error } = await supabaseEts
+      .from("products")
+      .update({
+        is_active: false,
+        is_published: false,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", row.id)
+    setDeleting(false)
+    if (error) {
+      alert(error.message)
+      return
+    }
+    patch({ is_active: false, is_published: false })
+  }
+
+  async function handleRestore() {
+    if (!row) return
+    const { error } = await supabaseEts
+      .from("products")
+      .update({ is_active: true, updated_at: new Date().toISOString() })
+      .eq("id", row.id)
+    if (error) {
+      alert(error.message)
+      return
+    }
+    patch({ is_active: true })
+  }
+
+  async function togglePublished() {
+    if (!row) return
+    const next = !row.is_published
+    patch({ is_published: next })
+    autosave.save("is_published", next)
+  }
 
   if (loading) {
     return (
       <div className="max-w-[1440px] mx-auto w-full space-y-5">
-        <div className="h-5 w-32 rounded bg-muted animate-pulse" />
-        <div className="h-64 rounded-lg bg-muted animate-pulse" />
+        <div className="h-5 w-64 rounded bg-muted animate-pulse" />
+        <div className="h-32 rounded-lg bg-muted animate-pulse" />
+        <div className="h-96 rounded-lg bg-muted animate-pulse" />
       </div>
     )
   }
@@ -120,20 +225,21 @@ export default function ProductDetailPage() {
   if (!row) {
     return (
       <div className="max-w-[1440px] mx-auto w-full space-y-5">
-        <Link
-          href="/ets/catalog/products"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" /> All products
-        </Link>
-        <EtsEmptyState
-          icon={Package}
+        <PageHeader
           title="Product not found"
-          description={`No product with SKU "${slug}".`}
-          cta={
+          breadcrumbs={[
+            { label: "Catalog", href: "/ets/catalog/products" },
+            { label: "Products", href: "/ets/catalog/products" },
+            { label: slug },
+          ]}
+        />
+        <EmptyState
+          title="No product with that SKU"
+          description={`We couldn't find a product with code "${slug}".`}
+          action={
             <Link
               href="/ets/catalog/products"
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
+              className="text-sm font-medium text-primary hover:underline"
             >
               Back to products
             </Link>
@@ -144,248 +250,224 @@ export default function ProductDetailPage() {
   }
 
   const title = row.name_en || row.name_cn || "Untitled product"
-  const dimensions =
-    row.box_length_cm && row.box_width_cm && row.box_height_cm
-      ? `${row.box_length_cm} × ${row.box_width_cm} × ${row.box_height_cm} cm`
-      : null
+  const softDeleted = !row.is_active && !row.is_published
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
-      <Link
-        href="/ets/catalog/products"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" /> All products
-      </Link>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-1">
-          <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
-            {row.image_url ? (
-              <a
-                href={row.image_url}
-                target="_blank"
-                rel="noreferrer"
-                className="block aspect-square bg-muted"
+      <PageHeader
+        title={title}
+        breadcrumbs={[
+          { label: "Catalog", href: "/ets/catalog/products" },
+          { label: "Products", href: "/ets/catalog/products" },
+          { label: row.product_code ?? slug },
+        ]}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void autosave.flush()}
+              disabled={!autosave.hasPending}
+              title={
+                autosave.hasPending
+                  ? "Flush pending autosaves"
+                  : "All changes saved"
+              }
+            >
+              <Save /> Save all
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleDuplicate}
+              disabled={duplicating}
+            >
+              <Copy />
+              {duplicating ? "Duplicating…" : "Duplicate"}
+            </Button>
+            {softDeleted ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleRestore}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={row.image_url}
-                  alt={title}
-                  className="size-full object-cover"
-                />
-              </a>
+                <RotateCcw /> Restore
+              </Button>
             ) : (
-              <div className="aspect-square bg-muted flex items-center justify-center">
-                <Package className="size-12 text-muted-foreground" />
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="lg:col-span-2 space-y-5">
-          <div className="rounded-lg border bg-card shadow-sm p-5 space-y-3">
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div className="min-w-0">
-                <h1 className="font-heading text-2xl font-semibold leading-tight">
-                  {title}
-                </h1>
-                {row.name_cn && row.name_en && row.name_cn !== row.name_en && (
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {row.name_cn}
-                  </p>
-                )}
-                <p className="text-sm text-muted-foreground mt-1">
-                  SKU&nbsp;
-                  <span className="text-foreground">{row.product_code ?? "—"}</span>
-                  {row.category && (
-                    <>
-                      <span className="mx-1">·</span>
-                      {row.category}
-                    </>
-                  )}
-                  {row.material && (
-                    <>
-                      <span className="mx-1">·</span>
-                      {row.material}
-                    </>
-                  )}
-                </p>
-              </div>
-              <div className="flex flex-col items-end gap-1.5">
-                {row.is_active ? (
-                  <EtsStatusBadge value="Active" />
-                ) : (
-                  <EtsStatusBadge value="Inactive" />
-                )}
-                {row.is_published && <EtsStatusBadge value="Published" />}
-                {row.is_featured && <EtsStatusBadge value="Featured" />}
-              </div>
-            </div>
-            {row.description && (
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                {row.description}
-              </p>
-            )}
-            {row.tags && row.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {row.tags.map((t) => (
-                  <EtsStatusBadge key={t} value={t} />
-                ))}
-              </div>
-            )}
-          </div>
-
-          <Card title="Pricing">
-            <Row label="Partner price" value={formatCurrency(row.partner_price)} />
-            <Row label="Cost price" value={formatCurrency(row.cost_price)} />
-            <Row
-              label="Wholesale (INR)"
-              value={formatCurrency(row.wholesale_price_inr)}
-            />
-            <Row label="Suggested MRP" value={formatCurrency(row.suggested_mrp)} />
-          </Card>
-
-          <Card title="Stock & logistics">
-            <Row label="Stock" value={(row.stock_quantity ?? 0).toLocaleString()} />
-            <Row label="MOQ" value={row.moq ? row.moq.toLocaleString() : "—"} />
-            <Row
-              label="Units / carton"
-              value={row.units_per_carton?.toString() ?? "—"}
-            />
-            <Row label="Weight" value={row.weight_kg ? `${row.weight_kg} kg` : "—"} />
-            <Row label="Box dims" value={dimensions ?? "—"} />
-            <Row label="HS code" value={row.hs_code ?? "—"} />
-          </Card>
-
-          <Card title="Source & compliance">
-            <Row label="Source" value={row.source ?? "—"} />
-            <Row
-              label="Vendor"
-              value={
-                vendor ? (
-                  <Link
-                    href={`/ets/vendors/${vendor.id}`}
-                    className="hover:text-primary"
-                  >
-                    {vendor.name}
-                  </Link>
-                ) : (
-                  "—"
-                )
-              }
-            />
-            <Row label="Barcode" value={row.barcode ?? "—"} />
-            <Row label="Compliance" value={row.compliance_status ?? "—"} />
-            <Row label="Label" value={row.label_status ?? "—"} />
-            <Row
-              label="BIS"
-              value={
-                row.bis_required ? (
-                  <span className="inline-flex items-center gap-1">
-                    {row.bis_status === "ok" ? (
-                      <CheckCircle2 className="size-3.5 text-emerald-600" />
-                    ) : (
-                      <XCircle className="size-3.5 text-rose-600" />
-                    )}
-                    {row.bis_status ?? "required"}
-                  </span>
-                ) : (
-                  "Not required"
-                )
-              }
-            />
-          </Card>
-
-          {row.market_fit && (
-            <Card title="Market fit">
-              <Row label="Fit" value={row.market_fit} />
-              {row.market_fit_reason && (
-                <Row label="Reason" value={row.market_fit_reason} />
-              )}
-              {row.sellability_score != null && (
-                <Row
-                  label="Sellability score"
-                  value={`${row.sellability_score}/100`}
-                />
-              )}
-            </Card>
-          )}
-
-          {row.supply_meta && Object.keys(row.supply_meta).length > 0 && (
-            <Card title="Supply chain (admin only)">
-              <div className="text-sm text-muted-foreground">
-                Cost-breakdown imported from legacy. Internal use only — never
-                exposed to client portal.
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                {Object.entries(row.supply_meta)
-                  .filter(([, v]) => v !== null && v !== 0 && v !== "")
-                  .map(([k, v]) => (
-                    <div
-                      key={k}
-                      className="flex items-center justify-between gap-3 px-3 py-1.5 rounded border bg-background text-sm"
-                    >
-                      <span className="text-muted-foreground">
-                        {k.replace(/_/g, " ")}
-                      </span>
-                      <span>{String(v)}</span>
-                    </div>
-                  ))}
-              </div>
-            </Card>
-          )}
-
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>
-              Created {formatDate(row.created_at)} · Updated{" "}
-              {formatDate(row.updated_at)}
-            </span>
-            {row.image_url && (
-              <a
-                href={row.image_url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 hover:text-foreground"
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={handleDelete}
+                disabled={deleting}
               >
-                <ExternalLink className="size-3.5" /> Open image
-              </a>
+                <Trash2 />
+                {deleting ? "Deleting…" : "Delete"}
+              </Button>
             )}
+          </div>
+        }
+      />
+
+      {/* Identity strip: image + sku + badges + publish toggle */}
+      <div className="rounded-lg border bg-card shadow-sm p-5 flex items-start gap-5">
+        <div className="shrink-0">
+          {row.image_url ? (
+            <a
+              href={row.image_url}
+              target="_blank"
+              rel="noreferrer"
+              className="block size-[200px] rounded-lg border bg-muted overflow-hidden"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={row.image_url}
+                alt={title}
+                className="size-full object-cover"
+              />
+            </a>
+          ) : (
+            <div className="size-[200px] rounded-lg border bg-muted flex items-center justify-center">
+              <ImageOff className="size-8 text-muted-foreground" />
+            </div>
+          )}
+          <div className="mt-2">
+            <UploadButton
+              productId={row.id}
+              onUploaded={(url) => {
+                patch({ image_url: url })
+                autosave.save("image_url", url)
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-medium text-muted-foreground">SKU</span>
+            <span className="font-mono text-sm">
+              {row.product_code ?? "—"}
+            </span>
+            {row.product_code && (
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                aria-label="Copy SKU"
+              >
+                {copied ? (
+                  <>
+                    <Check className="size-3 text-emerald-600" /> Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="size-3" /> Copy
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <StatusBadge tone={toneForStatus(statusValue)}>
+              {statusValue.replace("-", " ")}
+            </StatusBadge>
+            {row.is_featured && <StatusBadge tone="violet">Featured</StatusBadge>}
+            <button
+              type="button"
+              onClick={togglePublished}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset capitalize transition-colors",
+                row.is_published
+                  ? "bg-emerald-50 text-emerald-700 ring-emerald-200 hover:bg-emerald-100"
+                  : "bg-slate-100 text-slate-700 ring-slate-200 hover:bg-slate-200",
+              )}
+            >
+              {row.is_published ? "Unpublish" : "Publish"}
+            </button>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Updated {formatRelative(row.updated_at)}
           </div>
         </div>
       </div>
+
+      <Tabs.Root
+        value={tab}
+        onValueChange={(v: unknown) => setTab(v as TabId)}
+        className="rounded-lg border bg-card shadow-sm"
+      >
+        <Tabs.List className="flex items-center border-b overflow-x-auto">
+          {TABS.map((t) => (
+            <Tabs.Tab
+              key={t.id}
+              value={t.id}
+              className={cn(
+                "relative px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors outline-none",
+                "data-[selected]:text-foreground text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t.label}
+            </Tabs.Tab>
+          ))}
+          <Tabs.Indicator
+            className="absolute bottom-0 left-0 h-[2px] bg-primary transition-all"
+            style={{
+              width: "var(--active-tab-width)",
+              transform: "translateX(var(--active-tab-left))",
+            }}
+          />
+        </Tabs.List>
+
+        <Tabs.Panel value="basics" className="p-5 outline-none">
+          <BasicsTab row={row} patch={patch} autosave={autosave} />
+        </Tabs.Panel>
+        <Tabs.Panel value="pricing" className="p-5 outline-none">
+          <PricingTab row={row} patch={patch} autosave={autosave} />
+        </Tabs.Panel>
+        <Tabs.Panel value="logistics" className="p-5 outline-none">
+          <LogisticsTab row={row} patch={patch} autosave={autosave} />
+        </Tabs.Panel>
+        <Tabs.Panel value="compliance" className="p-5 outline-none">
+          <ComplianceTab row={row} patch={patch} autosave={autosave} />
+        </Tabs.Panel>
+        <Tabs.Panel value="media" className="p-5 outline-none">
+          <MediaTab row={row} patch={patch} autosave={autosave} />
+        </Tabs.Panel>
+        <Tabs.Panel value="meta" className="p-5 outline-none">
+          <MetaTab
+            row={row}
+            vendor={vendor}
+            patch={patch}
+            autosave={autosave}
+            onVendorChange={setVendor}
+          />
+        </Tabs.Panel>
+      </Tabs.Root>
     </div>
   )
 }
 
-function Card({
-  title,
-  children,
-}: {
-  title: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
-      <div className="px-4 py-3 border-b">
-        <h3 className="text-sm font-semibold">{title}</h3>
-      </div>
-      <div className="divide-y">{children}</div>
-    </div>
-  )
-}
-
-function Row({
-  label,
-  value,
-}: {
-  label: string
-  value: React.ReactNode
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3 px-4 py-2.5">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-sm">{value ?? "—"}</span>
-    </div>
-  )
+function formatRelative(iso: string | null | undefined): string {
+  if (!iso) return "—"
+  const then = new Date(iso).getTime()
+  if (isNaN(then)) return "—"
+  const diff = Date.now() - then
+  if (diff < 0) return "just now"
+  const sec = Math.floor(diff / 1000)
+  if (sec < 5) return "just now"
+  if (sec < 60) return `${sec}s ago`
+  const min = Math.floor(sec / 60)
+  if (min < 60) return `${min}m ago`
+  const hr = Math.floor(min / 60)
+  if (hr < 24) return `${hr}h ago`
+  const day = Math.floor(hr / 24)
+  if (day < 30) return `${day}d ago`
+  return new Date(iso).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
 }
