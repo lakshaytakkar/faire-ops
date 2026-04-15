@@ -23,12 +23,14 @@ import {
   Megaphone,
   Globe,
   Briefcase,
+  UserPlus,
   Plane,
   Hotel,
   Compass,
   FileText,
   CreditCard,
   UserCircle,
+  LayoutGrid,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useBrandFilter } from "@/lib/brand-filter-context"
@@ -82,12 +84,20 @@ const PLACEHOLDER_HQ: NavItem[] = [
       { title: "Org Chart", url: "/hq/people/org-chart" },
       { title: "Departments", url: "/hq/people/departments" },
       { title: "Policies", url: "/hq/people/policies" },
-      { title: "ATS · Dashboard", url: "/hq/people/ats" },
-      { title: "ATS · Roles", url: "/hq/people/ats/roles" },
-      { title: "ATS · Candidates", url: "/hq/people/ats/candidates" },
-      { title: "ATS · Pipeline", url: "/hq/people/ats/pipeline" },
-      { title: "ATS · Interviews", url: "/hq/people/ats/interviews" },
-      { title: "ATS · Offers", url: "/hq/people/ats/offers" },
+    ],
+  },
+  {
+    title: "Hiring", url: "/hq/hiring", icon: UserPlus,
+    subItems: [
+      { title: "Dashboard", url: "/hq/hiring" },
+      { title: "Roles", url: "/hq/hiring/roles" },
+      { title: "Candidates", url: "/hq/hiring/candidates" },
+      { title: "Pipeline", url: "/hq/hiring/pipeline" },
+      { title: "Interviews", url: "/hq/hiring/interviews" },
+      { title: "Offers", url: "/hq/hiring/offers" },
+      { title: "Platforms", url: "/hq/hiring/platforms" },
+      { title: "Job posts", url: "/hq/hiring/posts" },
+      { title: "Daily reports", url: "/hq/hiring/daily" },
     ],
   },
   {
@@ -226,6 +236,100 @@ const PLACEHOLDER_USDROP: NavItem[] = [
   },
 ]
 
+// Life AI — Mr. Suprans's personal operating system. 8 top items with deep
+// subItems covering the 37 Supabase tables in life.*. Order mirrors the user's
+// daily flow (Today → Goals → Journal → reflective/operational domains).
+const PLACEHOLDER_LIFE: NavItem[] = [
+  { title: "Today", url: "/life", icon: LayoutDashboard },
+  {
+    title: "Goals", url: "/life/goals", icon: Target,
+    subItems: [
+      { title: "Active goals", url: "/life/goals" },
+      { title: "Vision", url: "/life/goals/vision" },
+      { title: "Issues", url: "/life/issues" },
+    ],
+  },
+  {
+    title: "Journal", url: "/life/journal", icon: FileText,
+    subItems: [
+      { title: "Daily", url: "/life/journal" },
+      { title: "Thoughts", url: "/life/journal/thoughts" },
+      { title: "Decisions", url: "/life/journal/decisions" },
+      { title: "Wins", url: "/life/journal/wins" },
+      { title: "Letters", url: "/life/journal/letters" },
+    ],
+  },
+  {
+    title: "Finance", url: "/life/finance", icon: Wallet,
+    subItems: [
+      { title: "Net worth", url: "/life/finance/net-worth" },
+      { title: "Transactions", url: "/life/finance/transactions" },
+      { title: "Investments", url: "/life/finance/investments" },
+      { title: "Insurance", url: "/life/finance/insurance" },
+      { title: "Blocked money", url: "/life/finance/blocked" },
+      { title: "EMIs", url: "/life/finance/emis" },
+      { title: "Debtors", url: "/life/finance/debtors" },
+      { title: "Creditors", url: "/life/finance/creditors" },
+      { title: "Budgets", url: "/life/finance/budgets" },
+    ],
+  },
+  {
+    title: "Health", url: "/life/health", icon: ShieldCheck,
+    subItems: [
+      { title: "Fitness", url: "/life/health/fitness" },
+      { title: "Sleep", url: "/life/health/sleep" },
+      { title: "Medical", url: "/life/health/medical" },
+      { title: "Supplements", url: "/life/health/supplements" },
+      { title: "Doctors", url: "/life/health/doctors" },
+      { title: "Mood", url: "/life/health/mood" },
+      { title: "Meditation", url: "/life/health/meditation" },
+      { title: "Gratitude", url: "/life/health/gratitude" },
+    ],
+  },
+  {
+    title: "Stack", url: "/life/stack", icon: LayoutGrid,
+    subItems: [
+      { title: "All apps",      url: "/life/stack" },
+      { title: "Favorites",     url: "/life/stack/favorites" },
+      { title: "Subscriptions", url: "/life/stack/subscriptions" },
+      { title: "Credentials",   url: "/life/stack/credentials" },
+      { title: "By category",   url: "/life/stack/categories" },
+    ],
+  },
+  {
+    title: "Growth", url: "/life/growth", icon: Layers,
+    subItems: [
+      { title: "Books", url: "/life/growth/books" },
+      { title: "Skills", url: "/life/growth/skills" },
+      { title: "Captures", url: "/life/growth/captures" },
+      { title: "Queue", url: "/life/growth/queue" },
+      { title: "Courses", url: "/life/growth/courses" },
+    ],
+  },
+  {
+    title: "People", url: "/life/people", icon: Users,
+    subItems: [
+      { title: "Contacts", url: "/life/people" },
+      { title: "Interactions", url: "/life/people/interactions" },
+      { title: "Events", url: "/life/people/events" },
+      { title: "Network", url: "/life/people/network" },
+    ],
+  },
+  {
+    title: "Plans", url: "/life/plans", icon: MapIcon,
+    subItems: [
+      { title: "Habits", url: "/life/plans/habits" },
+      { title: "Routines", url: "/life/plans/routines" },
+      { title: "Trips", url: "/life/plans/trips" },
+      { title: "Projects", url: "/life/plans/projects" },
+      { title: "Bucket list", url: "/life/plans/bucket-list" },
+      { title: "Vehicles", url: "/life/plans/vehicles" },
+      { title: "Documents", url: "/life/plans/documents" },
+      { title: "Physical assets", url: "/life/plans/assets" },
+    ],
+  },
+]
+
 // ETS (EazyToSell) — Store Launch + Supply Partner platform. Top nav is
 // organised around the superadmin's workflow: pre-deal (Sales) → goods we
 // sell partners (Catalog) → getting goods there (Supply) → running stores
@@ -322,11 +426,46 @@ const PLACEHOLDER_ETS: NavItem[] = [
 ]
 
 const PLACEHOLDER_DEVELOPMENT: NavItem[] = [
-  { title: "Overview", url: "/development", icon: LayoutDashboard },
-  { title: "Projects", url: "/development/projects", icon: FolderKanban },
-  { title: "Deployments", url: "/development/deployments", icon: Rocket },
-  { title: "Roadmap", url: "/development/roadmap", icon: MapIcon },
-  { title: "Tasks", url: "/development/tasks", icon: ListTodo },
+  {
+    title: "Overview", url: "/development", icon: LayoutDashboard,
+    subItems: [
+      { title: "Dashboard", url: "/development" },
+      { title: "Ventures", url: "/development/ventures" },
+      { title: "Health", url: "/development/health" },
+    ],
+  },
+  {
+    title: "Projects", url: "/development/projects", icon: FolderKanban,
+    subItems: [
+      { title: "All", url: "/development/projects" },
+      { title: "Building", url: "/development/projects/building" },
+      { title: "Live", url: "/development/projects/live" },
+    ],
+  },
+  {
+    title: "Deployments", url: "/development/deployments", icon: Rocket,
+    subItems: [
+      { title: "Feed", url: "/development/deployments" },
+      { title: "By project", url: "/development/deployments/by-project" },
+      { title: "Errors", url: "/development/deployments/errors" },
+    ],
+  },
+  {
+    title: "Roadmap", url: "/development/roadmap", icon: MapIcon,
+    subItems: [
+      { title: "Timeline", url: "/development/roadmap" },
+      { title: "Changelog", url: "/development/roadmap/changelog" },
+      { title: "By venture", url: "/development/roadmap/ventures" },
+    ],
+  },
+  {
+    title: "Tasks", url: "/development/tasks", icon: ListTodo,
+    subItems: [
+      { title: "List", url: "/development/tasks" },
+      { title: "Kanban", url: "/development/tasks/kanban" },
+      { title: "By assignee", url: "/development/tasks/assignee" },
+    ],
+  },
 ]
 
 const NAV_ITEMS: NavItem[] = [
@@ -419,20 +558,29 @@ const NAV_ITEMS: NavItem[] = [
   },
 ]
 
+// Prefer the longest matching URL so a short root item (e.g. "Today" at
+// "/life") cannot steal focus from a deeper sibling ("Goals" at "/life/goals")
+// when the user is on /life/goals. Top-level and subItem URLs compete on the
+// same score — whichever prefix is longest wins and its top-level item is the
+// active one.
 function getActiveNavItem(pathname: string, items: NavItem[]): NavItem | null {
+  let best: NavItem | null = null
+  let bestLen = -1
   for (const item of items) {
+    if ((pathname === item.url || pathname.startsWith(item.url + "/")) && item.url.length > bestLen) {
+      best = item
+      bestLen = item.url.length
+    }
     if (item.subItems) {
       for (const sub of item.subItems) {
-        if (pathname === sub.url || pathname.startsWith(sub.url + "/")) {
-          return item
+        if ((pathname === sub.url || pathname.startsWith(sub.url + "/")) && sub.url.length > bestLen) {
+          best = item
+          bestLen = sub.url.length
         }
       }
     }
-    if (pathname === item.url || pathname.startsWith(item.url + "/")) {
-      return item
-    }
   }
-  return null
+  return best
 }
 
 function isSubItemActive(pathname: string, subUrl: string, isFirst: boolean, parentUrl: string): boolean {
@@ -681,6 +829,7 @@ export function TopNavigation() {
       case "usdrop": return PLACEHOLDER_USDROP
       case "ets":         return PLACEHOLDER_ETS
       case "development": return PLACEHOLDER_DEVELOPMENT
+      case "life":        return PLACEHOLDER_LIFE
       case "b2b-ecommerce":
       default:       return NAV_ITEMS
     }
@@ -705,7 +854,9 @@ export function TopNavigation() {
           style={{ gridTemplateColumns: `repeat(${visibleItems.length}, 1fr)` }}
         >
         {visibleItems.map((item) => {
-          const isActive = activeItem?.url === item.url
+          const isActive =
+            activeItem?.url === item.url ||
+            (activeItem == null && (pathname === item.url || pathname.startsWith(item.url + "/")))
           const Icon = item.icon
           const count = item.countKey ? counts[item.countKey] ?? 0 : 0
           return (
