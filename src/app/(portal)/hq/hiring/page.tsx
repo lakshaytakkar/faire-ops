@@ -12,6 +12,7 @@ import {
   Sparkles,
   Target,
   TrendingUp,
+  Megaphone,
 } from "lucide-react"
 
 import { PageHeader } from "@/components/shared/page-header"
@@ -55,15 +56,61 @@ const STAGE_LABEL: Record<string, string> = {
   rejected: "Rejected",
 }
 
-// Source -> badge tone for the chip row under each funnel bar.
-const SOURCE_TONE: Record<string, "blue" | "amber" | "emerald" | "violet" | "slate"> = {
+// Source -> badge tone for the chip row under each funnel bar. Matches the
+// source-tone map specced in the hiring dashboard polish brief.
+const SOURCE_TONE: Record<string, "blue" | "amber" | "emerald" | "violet" | "cyan" | "slate"> = {
   "Naukri Resdex": "blue",
+  Naukri: "blue",
   "Applied on Workindia": "amber",
+  Workindia: "amber",
   Internshala: "emerald",
   Indeed: "violet",
+  Email: "cyan",
+  WhatsApp: "emerald",
+  Poster: "slate",
 }
-function sourceTone(s: string) {
-  return SOURCE_TONE[s] ?? "slate"
+function sourceTone(s: string): "blue" | "amber" | "emerald" | "violet" | "slate" {
+  const mapped = SOURCE_TONE[s]
+  // StatusBadge supports emerald/amber/red/blue/slate/violet — flatten cyan→blue
+  // for the badge surface while keeping bar colors tuned per stage below.
+  if (!mapped) return "slate"
+  if (mapped === "cyan") return "blue"
+  return mapped
+}
+
+// Per-stage fill colors for the funnel bars. No hex — Tailwind tokens only.
+const STAGE_BAR_COLOR: Record<string, string> = {
+  applied: "bg-blue-500",
+  screened: "bg-amber-500",
+  assessment: "bg-cyan-500",
+  interview_1: "bg-violet-400",
+  interview_2: "bg-violet-600",
+  offer: "bg-emerald-400",
+  hired: "bg-emerald-600",
+  rejected: "bg-slate-400",
+}
+
+// Deterministic initials-avatar tone picker. Hashes the name, picks one of 8
+// tone classes. Keeps avatars consistent across renders.
+const AVATAR_TONES = [
+  "bg-blue-100 text-blue-700",
+  "bg-emerald-100 text-emerald-700",
+  "bg-amber-100 text-amber-700",
+  "bg-violet-100 text-violet-700",
+  "bg-rose-100 text-rose-700",
+  "bg-cyan-100 text-cyan-700",
+  "bg-slate-100 text-slate-700",
+  "bg-indigo-100 text-indigo-700",
+] as const
+
+function avatarTone(name: string | null | undefined): string {
+  const key = (name ?? "").trim() || "?"
+  let h = 0
+  for (let i = 0; i < key.length; i++) {
+    h = (h * 31 + key.charCodeAt(i)) | 0
+  }
+  const idx = Math.abs(h) % AVATAR_TONES.length
+  return AVATAR_TONES[idx]
 }
 
 /* ------------------------------------------------------------------ */
@@ -161,6 +208,9 @@ function formatTimeShort(iso: string | null | undefined): string {
 export default async function HiringDashboardPage() {
   const now = new Date()
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const thirtyDaysAgoDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10)
   const today = new Date(now)
   const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
   const sevenDaysAgoDate = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000)
@@ -172,6 +222,8 @@ export default async function HiringDashboardPage() {
     applicationsWeekRes,
     interviewsScheduledRes,
     offersPendingRes,
+    activeJobPostsRes,
+    onboardingRes,
     funnelRes,
     sourcePerfRes,
     todayInterviewsRes,
@@ -197,6 +249,15 @@ export default async function HiringDashboardPage() {
       .from("offers")
       .select("id", { count: "exact", head: true })
       .in("status", ["sent", "draft"]),
+    supabaseHq
+      .from("job_posts")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "live"),
+    supabaseHq
+      .from("employees")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "probation")
+      .gte("join_date", thirtyDaysAgoDate),
     supabaseHq.from("v_hiring_funnel").select("stage, source, n"),
     supabaseHq
       .from("v_hiring_source_performance")
@@ -238,6 +299,8 @@ export default async function HiringDashboardPage() {
   const applicationsWeek = applicationsWeekRes.count ?? 0
   const interviewsScheduled = interviewsScheduledRes.count ?? 0
   const offersPending = offersPendingRes.count ?? 0
+  const activeJobPosts = activeJobPostsRes.count ?? 0
+  const onboardingInProgress = onboardingRes.count ?? 0
 
   const funnel = (funnelRes.data ?? []) as FunnelRow[]
   const sourcePerf = (sourcePerfRes.data ?? []) as SourcePerfRow[]
@@ -353,6 +416,20 @@ export default async function HiringDashboardPage() {
           iconTone="emerald"
           href="/hq/hiring/offers"
         />
+        <MetricCard
+          label="Active job posts"
+          value={formatNumber(activeJobPosts)}
+          icon={Megaphone}
+          iconTone="amber"
+          href="/hq/hiring/roles"
+        />
+        <MetricCard
+          label="Onboarding in progress"
+          value={formatNumber(onboardingInProgress)}
+          icon={Sparkles}
+          iconTone="emerald"
+          href="/hq/people/directory?status=probation"
+        />
       </KPIGrid>
 
       {/* Stage funnel — full width */}
@@ -370,11 +447,17 @@ export default async function HiringDashboardPage() {
             description="As candidates come in, each stage will show up here."
           />
         ) : (
-          <div className="space-y-4">
-            {FUNNEL_STAGES.map((s) => {
+          <div className="space-y-2">
+            {FUNNEL_STAGES.map((s, i) => {
               const n = stageTotals[s] ?? 0
               const width = `${Math.round((n / mainFunnelMax) * 100)}%`
               const sources = stageBySource[s] ?? []
+              const barColor = STAGE_BAR_COLOR[s] ?? "bg-primary/60"
+              // Conversion to NEXT stage — render as inline chip to the right.
+              const next = FUNNEL_STAGES[i + 1]
+              const nextN = next ? stageTotals[next] ?? 0 : 0
+              const pct =
+                next && n > 0 ? Math.round((nextN / n) * 100) : null
               return (
                 <div key={s} className="space-y-1.5">
                   <div className="flex items-center gap-3">
@@ -383,12 +466,15 @@ export default async function HiringDashboardPage() {
                     </div>
                     <div className="flex-1 h-7 rounded bg-muted relative overflow-hidden">
                       <div
-                        className="absolute inset-y-0 left-0 bg-primary/60"
+                        className={`absolute inset-y-0 left-0 ${barColor}`}
                         style={{ width }}
                       />
                     </div>
                     <div className="w-14 text-right text-sm font-semibold tabular-nums">
                       {formatNumber(n)}
+                    </div>
+                    <div className="w-14 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+                      {pct !== null ? `→ ${pct}%` : ""}
                     </div>
                   </div>
                   {sources.length > 0 && (
@@ -604,7 +690,21 @@ export default async function HiringDashboardPage() {
           </DetailCard>
 
           {/* Hiring blockers */}
-          <DetailCard title="Hiring blockers">
+          <DetailCard
+            title={
+              issues.length > 0
+                ? `Hiring blockers (${issues.length})`
+                : "Hiring blockers"
+            }
+            actions={
+              issues.length > 0 ? (
+                <AlertTriangle
+                  className="h-4 w-4 text-amber-600"
+                  aria-hidden
+                />
+              ) : undefined
+            }
+          >
             {issuesErrored ? (
               <EmptyState
                 icon={AlertTriangle}
@@ -618,7 +718,7 @@ export default async function HiringDashboardPage() {
                 description="Nothing is flagged — keep the momentum."
               />
             ) : (
-              <ul className="space-y-2.5">
+              <ul className="space-y-2">
                 {issues.map((i) => (
                   <li
                     key={i.id}
@@ -667,7 +767,9 @@ export default async function HiringDashboardPage() {
                     "—"
                   return (
                     <li key={c.id} className="flex items-center gap-3">
-                      <span className="size-9 shrink-0 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center text-xs font-semibold">
+                      <span
+                        className={`h-7 w-7 shrink-0 rounded-full flex items-center justify-center text-xs font-semibold ${avatarTone(c.name)}`}
+                      >
                         {formatInitials(c.name)}
                       </span>
                       <div className="min-w-0 flex-1">
@@ -738,8 +840,10 @@ function InterviewList({
           cand?.applied_for ||
           "—"
         return (
-          <li key={r.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
-            <span className="size-9 shrink-0 rounded-full bg-violet-50 text-violet-700 flex items-center justify-center text-xs font-semibold">
+          <li key={r.id} className="flex items-center gap-3 py-2 first:pt-0 last:pb-0">
+            <span
+              className={`h-7 w-7 shrink-0 rounded-full flex items-center justify-center text-xs font-semibold ${avatarTone(name)}`}
+            >
               {formatInitials(name)}
             </span>
             <div className="min-w-0 flex-1">
