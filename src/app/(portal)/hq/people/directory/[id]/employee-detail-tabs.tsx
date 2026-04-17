@@ -40,6 +40,7 @@ export interface EmployeeDetail {
   esic_applicable: boolean | null
   office_phone: string | null
   salary_monthly: number | null
+  performance_tag: string | null
 }
 
 export interface AttendanceRow {

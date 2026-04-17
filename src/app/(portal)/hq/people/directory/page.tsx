@@ -1,8 +1,5 @@
 import Link from "next/link"
-import {
-  Users, UserCheck, CalendarDays, Building2,
-  MapPin, Mail, Phone, Crown, Download,
-} from "lucide-react"
+import { Users, UserCheck, Building2, MapPin, Crown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DirectoryFilters } from "./directory-filters"
 import { PageHeader } from "@/components/shared/page-header"
@@ -10,6 +7,8 @@ import { KPIGrid } from "@/components/shared/kpi-grid"
 import { MetricCard } from "@/components/shared/metric-card"
 import { DetailCard } from "@/components/shared/detail-views"
 import { StatusBadge, type StatusTone } from "@/components/shared/status-badge"
+import { type PerformanceTag } from "@/components/shared/performance-dot"
+import { EmployeeCardActions } from "./employee-card-actions"
 import { EmptyState } from "@/components/shared/empty-state"
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table"
 import { supabase, supabaseHq } from "@/lib/supabase"
@@ -23,6 +22,7 @@ const STATUS_TONE: Record<string, StatusTone> = {
   probation: "amber",
   onboarding: "blue",
   on_leave: "violet",
+  notice_period: "amber",
   resigned: "red",
   terminated: "slate",
   offboarded: "slate",
@@ -33,6 +33,32 @@ const TYPE_TONE: Record<string, StatusTone> = {
   "FTE-Ops": "blue",
   Intern: "amber",
   Contract: "violet",
+}
+
+const PERF_CARD_BORDER: Record<PerformanceTag, string> = {
+  dark_green: "border-emerald-700 ring-1 ring-emerald-700/40",
+  green: "border-emerald-500 ring-1 ring-emerald-500/30",
+  yellow: "border-amber-500 ring-1 ring-amber-500/30",
+  red: "border-rose-500 ring-1 ring-rose-500/30",
+}
+
+const PERF_TABLE_RING: Record<PerformanceTag, string> = {
+  dark_green: "ring-2 ring-offset-1 ring-emerald-700",
+  green: "ring-2 ring-offset-1 ring-emerald-500",
+  yellow: "ring-2 ring-offset-1 ring-amber-500",
+  red: "ring-2 ring-offset-1 ring-rose-500",
+}
+
+// Sort rank: directors pinned (0), then dark_green, green, untagged, yellow, red
+const PERF_RANK: Record<string, number> = {
+  dark_green: 1,
+  green: 2,
+  yellow: 4,
+  red: 5,
+}
+function perfRank(tag: string | null | undefined): number {
+  if (!tag) return 3
+  return PERF_RANK[tag] ?? 3
 }
 
 const RESIGNED_STATUSES = new Set(["resigned", "terminated", "offboarded"])
@@ -65,6 +91,7 @@ interface EmployeeRow {
   employment_type: string | null
   phone: string | null
   dob: string | null
+  performance_tag: string | null
 }
 
 interface DepartmentRow {
@@ -91,7 +118,7 @@ export default async function HqDirectoryPage({
     supabaseHq
       .from("employees")
       .select(
-        "id, team_member_id, full_name, email, work_email, photo_url, whatsapp_photo_url, role_title, department_id, vertical, status, join_date, office, employment_type, phone, dob",
+        "id, team_member_id, full_name, email, work_email, photo_url, whatsapp_photo_url, role_title, department_id, vertical, status, join_date, office, employment_type, phone, dob, performance_tag",
       )
       .order("full_name", { ascending: true }),
     supabaseHq.from("departments").select("id, name").order("name"),
@@ -136,11 +163,14 @@ export default async function HqDirectoryPage({
     return true
   })
 
-  // Sort MDs first
+  // Pin directors, then sort by performance rank (dark_green → green → untagged → yellow → red), then alpha
   filtered = filtered.sort((a, b) => {
     const aIsMD = a.role_title === "Managing Director" ? 0 : 1
     const bIsMD = b.role_title === "Managing Director" ? 0 : 1
     if (aIsMD !== bIsMD) return aIsMD - bIsMD
+    const aRank = perfRank(a.performance_tag)
+    const bRank = perfRank(b.performance_tag)
+    if (aRank !== bRank) return aRank - bRank
     return (a.full_name ?? "").localeCompare(b.full_name ?? "")
   })
 
@@ -159,6 +189,7 @@ export default async function HqDirectoryPage({
     { value: "active", label: `Active (${employees.filter((e) => e.status === "active").length})` },
     { value: "probation", label: `Probation (${employees.filter((e) => e.status === "probation").length})` },
     { value: "on_leave", label: `On leave (${employees.filter((e) => e.status === "on_leave").length})` },
+    { value: "notice_period", label: `Notice period (${employees.filter((e) => e.status === "notice_period").length})` },
     { value: "resigned", label: `Resigned (${allEmployees.filter((e) => e.status === "resigned").length})` },
     { value: "terminated", label: `Terminated (${allEmployees.filter((e) => e.status === "terminated").length})` },
   ]
@@ -223,6 +254,7 @@ export default async function HqDirectoryPage({
               const deptName = e.department_id ? deptMap.get(e.department_id) : null
               const isMD = e.role_title === "Managing Director"
               const isResigned = e.status === "resigned" || e.status === "terminated"
+              const perfTag = (e.performance_tag ?? null) as PerformanceTag | null
 
               const phoneClean = e.phone?.replace(/[^0-9]/g, "") ?? ""
               const whatsappUrl = phoneClean ? `https://wa.me/91${phoneClean.slice(-10)}` : null
@@ -231,8 +263,12 @@ export default async function HqDirectoryPage({
               return (
                 <div
                   key={e.id}
-                  className={`group rounded-lg overflow-hidden bg-card border transition-colors hover:border-foreground/20 ${
-                    isMD ? "border-emerald-300 ring-1 ring-emerald-200" : "border-border"
+                  className={`group rounded-lg overflow-hidden bg-card border-2 transition-colors hover:border-foreground/30 ${
+                    perfTag
+                      ? PERF_CARD_BORDER[perfTag]
+                      : isMD
+                        ? "border-emerald-300 ring-1 ring-emerald-200"
+                        : "border-border"
                   } ${isResigned ? "opacity-60" : ""}`}
                 >
                   {/* Photo / Initials area */}
@@ -292,55 +328,14 @@ export default async function HqDirectoryPage({
                     </div>
 
                     {/* Quick action buttons */}
-                    <div className="flex items-center gap-1.5 pt-2 border-t border-border">
-                      {whatsappUrl && (
-                        <a
-                          href={whatsappUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center size-8 rounded-md border border-border bg-background text-muted-foreground hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-colors"
-                          title="WhatsApp"
-                        >
-                          <svg className="size-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                        </a>
-                      )}
-                      {gmailUrl && (
-                        <a
-                          href={gmailUrl}
-                          className="inline-flex items-center justify-center size-8 rounded-md border border-border bg-background text-muted-foreground hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors"
-                          title="Email"
-                        >
-                          <Mail className="size-4" />
-                        </a>
-                      )}
-                      <Link
-                        href={`/hq/people/directory/${e.id}?tab=chat`}
-                        className="inline-flex items-center justify-center size-8 rounded-md border border-border bg-background text-muted-foreground hover:bg-violet-50 hover:text-violet-600 hover:border-violet-200 transition-colors"
-                        title="Chat"
-                      >
-                        <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                      </Link>
-                      {e.phone && (
-                        <a
-                          href={`tel:${e.phone}`}
-                          className="inline-flex items-center justify-center size-8 rounded-md border border-border bg-background text-muted-foreground hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200 transition-colors"
-                          title="Call"
-                        >
-                          <Phone className="size-4" />
-                        </a>
-                      )}
-                      {e.whatsapp_photo_url && (
-                        <a
-                          href={e.whatsapp_photo_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          download
-                          className="inline-flex items-center justify-center size-8 rounded-md border border-border bg-background text-muted-foreground hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors ml-auto"
-                          title="Download WA/Email profile"
-                        >
-                          <Download className="size-4" />
-                        </a>
-                      )}
+                    <div className="pt-2 border-t border-border">
+                      <EmployeeCardActions
+                        id={e.id}
+                        fullName={e.full_name}
+                        phone={e.phone}
+                        workEmail={e.work_email ?? e.email}
+                        waProfileUrl={e.whatsapp_photo_url}
+                      />
                     </div>
                   </div>
                 </div>
@@ -368,15 +363,17 @@ export default async function HqDirectoryPage({
                 {filtered.map((e) => {
                   const avatarUrl = (e.team_member_id ? avatars[e.team_member_id] : null) ?? e.photo_url
                   const deptName = e.department_id ? deptMap.get(e.department_id) : null
+                  const rowTag = (e.performance_tag ?? null) as PerformanceTag | null
+                  const ringCls = rowTag ? PERF_TABLE_RING[rowTag] : "border border-border"
                   return (
                     <TableRow key={e.id} className="cursor-pointer">
                       <TableCell className="py-2">
                         <Link href={`/hq/people/directory/${e.id}`} aria-label={`Open ${e.full_name ?? "employee"}`}>
                           {avatarUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={avatarUrl} alt="" className="size-8 rounded-full object-cover border border-border bg-muted" />
+                            <img src={avatarUrl} alt="" className={`size-8 rounded-full object-cover bg-muted ${ringCls}`} />
                           ) : (
-                            <span className={`size-8 rounded-full inline-flex items-center justify-center text-white text-sm font-semibold ${initialsColor(e.full_name ?? "")}`}>
+                            <span className={`size-8 rounded-full inline-flex items-center justify-center text-white text-sm font-semibold ${initialsColor(e.full_name ?? "")} ${ringCls}`}>
                               {formatInitials(e.full_name)}
                             </span>
                           )}

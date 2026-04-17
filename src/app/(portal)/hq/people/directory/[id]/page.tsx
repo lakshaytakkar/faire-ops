@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button"
 import { BackLink } from "@/components/shared/back-link"
 import { HeroCard } from "@/components/shared/hero-card"
 import { StatusBadge, type StatusTone } from "@/components/shared/status-badge"
+import { PerformanceDot, type PerformanceTag, performanceLabel } from "@/components/shared/performance-dot"
 import { supabase, supabaseHq } from "@/lib/supabase"
 import { formatDate, formatInitials } from "@/lib/format"
+import { EmployeeStatusEditor } from "./employee-status-editor"
 import {
   EmployeeDetailTabs,
   type EmployeeDetail,
@@ -28,7 +30,10 @@ const EMPLOYEE_STATUS_TONE: Record<string, StatusTone> = {
   active: "emerald",
   probation: "amber",
   on_leave: "blue",
+  notice_period: "amber",
+  resigned: "red",
   terminated: "slate",
+  offboarded: "slate",
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }) {
@@ -58,7 +63,7 @@ async function fetchEmployee(id: string) {
     supabaseHq
       .from("employees")
       .select(
-        "id, team_member_id, full_name, email, work_email, phone, photo_url, role_title, department_id, vertical, status, join_date, reporting_to, blood_group, ctc_annual, ctc_currency, father_name, relation, dob, aadhaar_address, pan_no, bank_name, bank_account, ifsc, office, employment_type, pf_applicable, esic_applicable, office_phone, salary_monthly",
+        "id, team_member_id, full_name, email, work_email, phone, photo_url, role_title, department_id, vertical, status, join_date, reporting_to, blood_group, ctc_annual, ctc_currency, father_name, relation, dob, aadhaar_address, pan_no, bank_name, bank_account, ifsc, office, employment_type, pf_applicable, esic_applicable, office_phone, salary_monthly, performance_tag",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -130,6 +135,7 @@ async function fetchEmployee(id: string) {
     esic_applicable: boolean | null
     office_phone: string | null
     salary_monthly: number | null
+    performance_tag: string | null
   }
 
   // Resolve department name + reporting-to name + avatar in parallel.
@@ -188,6 +194,7 @@ async function fetchEmployee(id: string) {
     esic_applicable: emp.esic_applicable,
     office_phone: emp.office_phone,
     salary_monthly: emp.salary_monthly,
+    performance_tag: emp.performance_tag,
   }
 
   const avatarUrl =
@@ -251,6 +258,16 @@ export default async function HqEmployeeDetailPage({
         avatar={avatarNode}
         meta={
           <>
+            {detail.performance_tag && (
+              <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                <PerformanceDot
+                  tag={detail.performance_tag as PerformanceTag}
+                  size="sm"
+                  showRing={false}
+                />
+                {performanceLabel(detail.performance_tag as PerformanceTag)}
+              </span>
+            )}
             {detail.status && (
               <StatusBadge tone={EMPLOYEE_STATUS_TONE[detail.status] ?? "slate"}>
                 {detail.status.replace(/_/g, " ")}
@@ -266,9 +283,11 @@ export default async function HqEmployeeDetailPage({
         }
         actions={
           <>
-            <Button size="sm" variant="outline" disabled>
-              Edit
-            </Button>
+            <EmployeeStatusEditor
+              employeeId={detail.id}
+              initialStatus={detail.status}
+              initialTag={detail.performance_tag}
+            />
             <Button size="sm" variant="outline" disabled>
               Assign Asset
             </Button>

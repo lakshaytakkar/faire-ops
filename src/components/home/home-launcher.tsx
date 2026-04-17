@@ -26,6 +26,9 @@ import {
   ListChecks,
   Smartphone,
   Download,
+  Palette,
+  Lock,
+  ExternalLink,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -247,11 +250,30 @@ export type DeploymentCard = {
   slug: string
   name: string
   brandLabel: string | null
-  kind: "landing" | "client-portal" | "admin-portal" | "vendor-portal"
+  kind: "landing" | "client-portal" | "admin-portal" | "vendor-portal" | "ecommerce"
   url: string
   color: string | null
   venture: string | null
   status: "live" | "building"
+  health: "dark_green" | "green" | "yellow" | "red" | "unknown" | null
+}
+
+// Light traffic-light highlight — dark_green = most stable, green = stable,
+// yellow = partial, red = needs major work. Rendered as a subtle colored
+// left-border on each card (bordered on a light card bg so it reads without
+// shouting). 'unknown' + null render no highlight.
+const HEALTH_BORDER: Record<"dark_green" | "green" | "yellow" | "red", string> = {
+  dark_green: "border-l-[4px] border-l-emerald-700",
+  green: "border-l-[4px] border-l-emerald-400",
+  yellow: "border-l-[4px] border-l-amber-400",
+  red: "border-l-[4px] border-l-rose-300",
+}
+
+const HEALTH_LABEL: Record<"dark_green" | "green" | "yellow" | "red", string> = {
+  dark_green: "Most stable",
+  green: "Stable",
+  yellow: "Partial",
+  red: "Needs work",
 }
 
 const KIND_META: Record<
@@ -262,18 +284,26 @@ const KIND_META: Record<
   "client-portal": { label: "Client portal", icon: Store },
   "admin-portal": { label: "Admin", icon: Building2 },
   "vendor-portal": { label: "Vendor portal", icon: Truck },
+  ecommerce: { label: "Ecommerce", icon: ShoppingBag },
 }
 
 function DeploymentCardRow({ d }: { d: DeploymentCard }) {
   const Icon = KIND_META[d.kind].icon
   const color = d.color ?? "#64748b"
+  const healthCls =
+    d.health && d.health !== "unknown" ? HEALTH_BORDER[d.health] : ""
+  const healthLabel =
+    d.health && d.health !== "unknown" ? HEALTH_LABEL[d.health] : null
   return (
     <a
       href={d.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex items-center gap-3 rounded-lg border border-border/80 bg-card shadow-sm px-3.5 py-2.5 hover:bg-muted/40 transition-colors"
-      title={d.url}
+      className={cn(
+        "group flex items-center gap-3 rounded-lg border border-border/80 bg-card shadow-sm px-3.5 py-2.5 hover:bg-muted/40 transition-colors",
+        healthCls,
+      )}
+      title={healthLabel ? `${d.url} — ${healthLabel}` : d.url}
     >
       <div
         className="h-8 w-8 rounded-md flex items-center justify-center shrink-0"
@@ -380,6 +410,7 @@ function HomeHero({
   const websites = deployments.filter((d) => d.kind === "landing")
   const clientApps = deployments.filter((d) => d.kind === "client-portal")
   const vendorPortals = deployments.filter((d) => d.kind === "vendor-portal")
+  const ecommerce = deployments.filter((d) => d.kind === "ecommerce")
 
   return (
     <div className="relative min-h-screen flex flex-col items-center px-5 py-20">
@@ -391,12 +422,12 @@ function HomeHero({
           TeamSync AI — every operation, one place.
         </p>
 
-        {/* 5-column grid */}
-        <div className="mt-10 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 items-start">
+        {/* 6-column grid */}
+        <div className="mt-10 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 items-start">
           {/* Col 1: Spaces */}
           <div className="flex flex-col gap-2">
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-1">
-              Spaces
+              Admin Spaces
               <span className="ml-1.5 text-xs font-semibold text-white/50">{activeApps.length}</span>
             </p>
             {activeApps.length === 0 ? (
@@ -451,7 +482,193 @@ function HomeHero({
               <MobileAppCard key={app.name} app={app} />
             ))}
           </div>
+
+          {/* Col 6: Ecommerce */}
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-1">
+              Ecommerce
+              <span className="ml-1.5 text-xs font-semibold text-white/50">{ecommerce.length}</span>
+            </p>
+            {ecommerce.map((d) => (
+              <DeploymentCardRow key={d.slug} d={d} />
+            ))}
+          </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Templates view — locked starter kits + pinned Figma/UI8 quicklinks */
+/* ------------------------------------------------------------------ */
+
+type TemplateCategory = {
+  label: string
+  icon: LucideIcon
+  color: string
+  templates: { name: string; desc: string }[]
+}
+
+const TEMPLATE_CATEGORIES: TemplateCategory[] = [
+  {
+    label: "Admin spaces",
+    icon: Building2,
+    color: "#3b82f6",
+    templates: [
+      { name: "Ops HQ", desc: "Multi-space control tower (like TeamSync HQ)" },
+      { name: "Brand admin", desc: "Single-brand admin portal (like ETS/Gullee admin)" },
+      { name: "Finance admin", desc: "P&L, payouts, ledger + reconciliation" },
+      { name: "Content admin", desc: "Posts, social, SEO approvals" },
+    ],
+  },
+  {
+    label: "Websites",
+    icon: Globe,
+    color: "#8b5cf6",
+    templates: [
+      { name: "SaaS landing", desc: "Hero + features + pricing + CTA" },
+      { name: "Agency/studio", desc: "Case studies + portfolio grid" },
+      { name: "Company ecosystem", desc: "Multi-brand parent site (like suprans.in)" },
+      { name: "Product launch", desc: "Single-product splash with waitlist" },
+      { name: "Blog/content", desc: "Editorial layout with categories" },
+    ],
+  },
+  {
+    label: "Client portals",
+    icon: Store,
+    color: "#10b981",
+    templates: [
+      { name: "B2B buyer portal", desc: "Orders + invoices + reorder" },
+      { name: "SaaS app shell", desc: "Dashboard + billing + settings" },
+      { name: "Services client portal", desc: "Case status + docs + messages" },
+      { name: "Marketplace client", desc: "Search + listings + checkout" },
+    ],
+  },
+  {
+    label: "Vendor portals",
+    icon: Truck,
+    color: "#ff6b35",
+    templates: [
+      { name: "Fulfilment vendor", desc: "Inbound orders + labels + tracking" },
+      { name: "Service vendor", desc: "Job queue + completion + payout" },
+      { name: "Drop-ship vendor", desc: "Catalog sync + order routing" },
+    ],
+  },
+  {
+    label: "Ecommerce",
+    icon: ShoppingBag,
+    color: "#ec4899",
+    templates: [
+      { name: "D2C storefront", desc: "Shopify-style single-brand shop" },
+      { name: "B2B storefront", desc: "Catalog + quote + bulk pricing" },
+      { name: "Marketplace", desc: "Multi-vendor with commissions" },
+      { name: "Subscription box", desc: "Recurring billing + skip/swap" },
+    ],
+  },
+  {
+    label: "Mobile apps",
+    icon: Smartphone,
+    color: "#6366f1",
+    templates: [
+      { name: "React Native starter", desc: "Auth + tabs + push" },
+      { name: "Kiosk/POS app", desc: "Cashier UI + offline cache" },
+      { name: "Delivery rider app", desc: "Jobs + nav + completion" },
+      { name: "Internal ops app", desc: "Team utilities + QR scan" },
+    ],
+  },
+]
+
+const DESIGN_LINKS: { name: string; url: string; color: string; hint: string }[] = [
+  { name: "Figma", url: "https://www.figma.com", color: "#f24e1e", hint: "Design files + component libraries" },
+  { name: "UI8", url: "https://ui8.net", color: "#0f172a", hint: "Premium design systems + kits" },
+]
+
+function TemplatesView() {
+  return (
+    <div className="relative min-h-screen flex flex-col items-center px-5 py-20">
+      <div className="w-full max-w-6xl rounded-2xl border border-border/60 bg-white/95 backdrop-blur-xl shadow-2xl p-6 md:p-10 space-y-8">
+        <div>
+          <h2 className="text-2xl font-bold font-heading text-foreground">Templates</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Locked starter kits + design systems. Deploy-ready scaffolds for every project kind.
+          </p>
+        </div>
+
+        {/* Pinned design tool quicklinks */}
+        <div className="flex flex-wrap gap-2">
+          {DESIGN_LINKS.map((l) => (
+            <a
+              key={l.name}
+              href={l.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex items-center gap-2 rounded-md border border-border/70 bg-card hover:bg-muted/50 transition-colors px-3 py-2"
+              title={l.hint}
+            >
+              <span
+                className="h-6 w-6 rounded-md flex items-center justify-center shrink-0"
+                style={{ background: `${l.color}22`, color: l.color }}
+              >
+                <Palette className="h-3.5 w-3.5" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground leading-tight">{l.name}</p>
+                <p className="text-[11px] text-muted-foreground leading-tight truncate">{l.hint}</p>
+              </div>
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </a>
+          ))}
+        </div>
+
+        {/* Template categories */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {TEMPLATE_CATEGORIES.map((cat) => {
+            const CatIcon = cat.icon
+            return (
+              <div
+                key={cat.label}
+                className="rounded-lg border border-border/70 bg-card shadow-sm p-4"
+              >
+                <div className="flex items-center gap-2.5 mb-3">
+                  <span
+                    className="h-7 w-7 rounded-md flex items-center justify-center shrink-0"
+                    style={{ background: `${cat.color}22` }}
+                  >
+                    <CatIcon className="h-4 w-4" style={{ color: cat.color }} />
+                  </span>
+                  <h3 className="text-sm font-bold tracking-tight text-foreground">{cat.label}</h3>
+                  <span className="ml-auto text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {cat.templates.length}
+                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  {cat.templates.map((t) => (
+                    <div
+                      key={t.name}
+                      className="flex items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1.5"
+                      title="Locked — coming soon"
+                    >
+                      <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground leading-tight truncate">
+                          {t.name}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground leading-tight truncate">
+                          {t.desc}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <p className="text-xs text-muted-foreground text-center">
+          Templates are locked today. Tell Claude which one to unlock and it'll scaffold a new Vercel project + Supabase schema.
+        </p>
       </div>
     </div>
   )
@@ -464,12 +681,12 @@ function HomeHero({
 function PluginsView() {
   return (
     <div className="relative min-h-screen flex flex-col items-center px-5 py-20">
-      <div className="w-full max-w-6xl rounded-2xl border border-white/10 bg-black/45 backdrop-blur-xl shadow-2xl p-6 md:p-10">
+      <div className="w-full max-w-6xl rounded-2xl border border-border/60 bg-white/95 backdrop-blur-xl shadow-2xl p-6 md:p-10">
         <PluginsCatalogue
           categories={PLUGIN_CATEGORIES}
           totalInstalled={countInstalled()}
           totalPending={countPending()}
-          tone="glass"
+          tone="light"
         />
       </div>
     </div>
@@ -480,7 +697,7 @@ function PluginsView() {
 /*  Launcher root                                                      */
 /* ------------------------------------------------------------------ */
 
-type View = "home" | "plugins"
+type View = "home" | "plugins" | "templates"
 
 interface HomeLauncherProps {
   activeApps: Space[]
@@ -534,6 +751,20 @@ export function HomeLauncher({ activeApps, deployments }: HomeLauncherProps) {
           </button>
           <button
             type="button"
+            onClick={() => setView("templates")}
+            className={cn(
+              "inline-flex items-center gap-1.5 h-8 px-3 rounded text-sm font-medium transition-colors",
+              view === "templates"
+                ? "bg-foreground text-background"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/40",
+            )}
+            title="Templates"
+          >
+            <Palette className="h-4 w-4" />
+            Templates
+          </button>
+          <button
+            type="button"
             onClick={() => router.push("/tasks")}
             className="inline-flex items-center gap-1.5 h-8 px-3 rounded text-sm font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-muted/40"
             title="Tasks"
@@ -557,6 +788,7 @@ export function HomeLauncher({ activeApps, deployments }: HomeLauncherProps) {
 
       {view === "home" && <HomeHero activeApps={activeApps} deployments={deployments} />}
       {view === "plugins" && <PluginsView />}
+      {view === "templates" && <TemplatesView />}
 
       {view === "home" && (
         <div className="absolute bottom-4 left-4 z-10">

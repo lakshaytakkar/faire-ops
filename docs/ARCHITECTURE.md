@@ -43,10 +43,10 @@ Level 0 — COMPANY
         Suprans ( = Startup Squad)                 [single legal entity]
 
 Level 1 — DEPLOYMENTS                              [distinct Vercel apps]
-├── TeamSync AI              ← faire-ops           (internal ops, all employees)
-├── legalnations-landing     ← external/legalnations          (public marketing site)
-├── suprans-landing          ← external/supranslanding        (public marketing site)
-└── future client portals    ← external/<venture>-client      (one per venture)
+├── TeamSync AI              ← team-portal                    (internal ops, all employees)
+├── legalnations-landing     ← websites/legalnations-landing  (public marketing site)
+├── suprans-landing          ← websites/suprans-landing-v2    (public marketing site)
+└── future client portals    ← client-apps/<venture>-client   (one per venture)
 
 Level 2 — SPACES inside TeamSync AI                [rows in public.spaces]
 ├── kind='company'
@@ -115,9 +115,9 @@ Level 5 — TEAMS inside a venture                   [public.user_groups]
 
 ### 3.4 — Client portals
 
-**Separate deployment per venture.** Same pattern as the current `external/legalnations` / `external/supranslanding` public sites. Each client portal:
+**Separate deployment per venture.** Same pattern as the current `websites/legalnations-landing` / `websites/suprans-landing-v2` public sites. Each client portal:
 
-- Lives under `external/<venture>-client/` or its own git repo.
+- Lives under `client-apps/<venture>-client/` or its own git repo.
 - Is its own Vercel project.
 - Reads our Supabase with the anon key + strict RLS locked to `auth.uid() = client.user_id`.
 - Only touches the venture's schema (e.g., LegalNations client portal only reads `legalnations.*`).

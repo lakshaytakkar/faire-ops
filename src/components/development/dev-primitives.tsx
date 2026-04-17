@@ -95,6 +95,7 @@ export const KIND_META: Record<ProjectKind, { label: string }> = {
   "client-portal": { label: "Client Portal" },
   "admin-portal": { label: "Admin Portal" },
   "vendor-portal": { label: "Vendor Portal" },
+  ecommerce: { label: "Ecommerce" },
 }
 
 export function KindPill({ kind }: { kind: ProjectKind }) {

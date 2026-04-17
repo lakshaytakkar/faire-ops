@@ -14,7 +14,7 @@ export default async function HomePage() {
     listSpaces(),
     supabase
       .from("projects")
-      .select("slug, name, brand, brand_label, kind, url, color, venture, status")
+      .select("slug, name, brand, brand_label, kind, url, color, venture, status, health")
       .in("status", ["live", "building"])
       .not("url", "is", null)
       .order("venture", { ascending: true })
@@ -29,11 +29,12 @@ export default async function HomePage() {
       slug: p.slug as string,
       name: (p.name as string) ?? (p.brand_label as string) ?? (p.slug as string),
       brandLabel: (p.brand_label as string | null) ?? null,
-      kind: (p.kind as "landing" | "client-portal" | "admin-portal" | "vendor-portal") ?? "landing",
+      kind: (p.kind as "landing" | "client-portal" | "admin-portal" | "vendor-portal" | "ecommerce") ?? "landing",
       url: p.url as string,
       color: (p.color as string | null) ?? null,
       venture: (p.venture as string | null) ?? null,
       status: (p.status as "live" | "building") ?? "live",
+      health: (p.health as "dark_green" | "green" | "yellow" | "red" | "unknown" | null) ?? null,
     }))
 
   return <HomeLauncher activeApps={activeApps} deployments={deployments} />

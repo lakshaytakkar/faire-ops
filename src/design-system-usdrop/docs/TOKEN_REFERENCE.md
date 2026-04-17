@@ -1,6 +1,6 @@
 # USDrop AI v3 — Token Reference
 
-Complete design token inventory extracted from `external/usdrop-v3/src/app/globals.css`.
+Complete design token inventory extracted from `_archive/source-repos/usdrop-v3/src/app/globals.css`.
 
 ## Color Tokens (OKLCH)
 

@@ -11,6 +11,7 @@ import {
   Lock,
   Shield,
   Truck,
+  ShoppingBag,
   type LucideIcon,
 } from "lucide-react"
 import {
@@ -50,6 +51,8 @@ function kindIcon(kind: ProjectKind): LucideIcon {
       return Shield
     case "vendor-portal":
       return Truck
+    case "ecommerce":
+      return ShoppingBag
   }
 }
 

@@ -33,6 +33,9 @@ import {
   UserCircle,
   CheckCircle2,
   FolderOpen,
+  Headphones,
+  Factory,
+  Inbox,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useBrandFilter } from "@/lib/brand-filter-context"
@@ -143,12 +146,10 @@ const PLACEHOLDER_HQ: NavItem[] = [
     ],
   },
   {
-    title: "Assets", url: "/hq/assets/devices", icon: Briefcase,
+    title: "Assets", url: "/hq/assets/inventory", icon: Briefcase,
     subItems: [
-      { title: "Devices", url: "/hq/assets/devices" },
-      { title: "Licenses", url: "/hq/assets/licenses" },
-      { title: "Vendor Contracts", url: "/hq/assets/contracts" },
       { title: "Office Inventory", url: "/hq/assets/inventory" },
+      { title: "IP", url: "/hq/assets/ip" },
     ],
   },
   {
@@ -644,6 +645,96 @@ const PLACEHOLDER_JSBLUERIDGE: NavItem[] = [
   },
 ]
 
+// chinaproducts — rep portal (internal) for chinaproducts.in wholesale
+// catalog. Reps live on the Queue; other sections give quick access to
+// orders, SKU browser, and the call-script library.
+const PLACEHOLDER_CHINAPRODUCTS: NavItem[] = [
+  {
+    title: "Overview", url: "/chinaproducts/overview", icon: LayoutDashboard,
+    subItems: [
+      { title: "Dashboard", url: "/chinaproducts/overview" },
+    ],
+  },
+  {
+    title: "Queue", url: "/chinaproducts/queue", icon: Headphones,
+    subItems: [
+      { title: "All",          url: "/chinaproducts/queue" },
+      { title: "Open",         url: "/chinaproducts/queue?status=open" },
+      { title: "In progress",  url: "/chinaproducts/queue?status=in_progress" },
+      { title: "Resolved",     url: "/chinaproducts/queue?status=resolved" },
+    ],
+  },
+  {
+    title: "Orders", url: "/chinaproducts/orders", icon: ShoppingCart,
+    subItems: [
+      { title: "All",            url: "/chinaproducts/orders" },
+      { title: "In production",  url: "/chinaproducts/orders?status=in_production" },
+      { title: "Dispatched",     url: "/chinaproducts/orders?status=dispatched" },
+      { title: "Delivered",      url: "/chinaproducts/orders?status=delivered" },
+    ],
+  },
+  {
+    title: "Products", url: "/chinaproducts/products", icon: Package,
+    subItems: [
+      { title: "All SKUs",    url: "/chinaproducts/products" },
+      { title: "Trending",    url: "/chinaproducts/products?filter=trending" },
+      { title: "New arrivals",url: "/chinaproducts/products?filter=new" },
+    ],
+  },
+  {
+    title: "Scripts", url: "/chinaproducts/scripts", icon: FileText,
+    subItems: [
+      { title: "Library",     url: "/chinaproducts/scripts" },
+      { title: "Objections",  url: "/chinaproducts/scripts?view=objections" },
+    ],
+  },
+]
+
+// chinaimports — ops portal (internal) for chinaimports.in custom sourcing
+// RFQs. Central surface is the Queue; Orders shows the 9-stage kanban;
+// Factories is the shared factory directory.
+const PLACEHOLDER_CHINAIMPORTS: NavItem[] = [
+  {
+    title: "Overview", url: "/chinaimports/overview", icon: LayoutDashboard,
+    subItems: [
+      { title: "Dashboard", url: "/chinaimports/overview" },
+    ],
+  },
+  {
+    title: "Queue", url: "/chinaimports/queue", icon: Inbox,
+    subItems: [
+      { title: "All",            url: "/chinaimports/queue" },
+      { title: "New",            url: "/chinaimports/queue?bucket=new" },
+      { title: "Sourcing",       url: "/chinaimports/queue?bucket=sourcing" },
+      { title: "Quote ready",    url: "/chinaimports/queue?bucket=quote_ready" },
+      { title: "Sample phase",   url: "/chinaimports/queue?bucket=sample_phase" },
+      { title: "Bulk phase",     url: "/chinaimports/queue?bucket=bulk_phase" },
+    ],
+  },
+  {
+    title: "Quotes", url: "/chinaimports/quotes", icon: FileText,
+    subItems: [
+      { title: "All",         url: "/chinaimports/quotes" },
+      { title: "Recommended", url: "/chinaimports/quotes?filter=recommended" },
+    ],
+  },
+  {
+    title: "Orders", url: "/chinaimports/orders", icon: Truck,
+    subItems: [
+      { title: "Kanban",        url: "/chinaimports/orders" },
+      { title: "Bulk production", url: "/chinaimports/orders?stage=bulk_production" },
+      { title: "In transit",    url: "/chinaimports/orders?stage=in_transit" },
+      { title: "Delivered",     url: "/chinaimports/orders?stage=delivered" },
+    ],
+  },
+  {
+    title: "Factories", url: "/chinaimports/factories", icon: Factory,
+    subItems: [
+      { title: "Directory",   url: "/chinaimports/factories" },
+    ],
+  },
+]
+
 const PLACEHOLDER_B2B_ECOSYSTEM: NavItem[] = [
   {
     title: "Overview", url: "/b2b-ecosystem/overview", icon: LayoutDashboard,
@@ -1035,6 +1126,8 @@ export function TopNavigation() {
       case "life":           return PLACEHOLDER_LIFE
       case "jsblueridge":    return PLACEHOLDER_JSBLUERIDGE
       case "b2b-ecosystem":  return PLACEHOLDER_B2B_ECOSYSTEM
+      case "chinaproducts":  return PLACEHOLDER_CHINAPRODUCTS
+      case "chinaimports":   return PLACEHOLDER_CHINAIMPORTS
       case "b2b-ecommerce":
       default:               return NAV_ITEMS
     }

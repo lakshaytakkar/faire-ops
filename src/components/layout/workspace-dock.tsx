@@ -28,6 +28,7 @@ import {
   Phone,
   StickyNote,
   LayoutGrid,
+  Contact,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
@@ -82,6 +83,7 @@ const WORKSPACE_ITEMS = [
   { module: "calendar",    legacyHref: "/workspace/calendar",         icon: Calendar,       label: "Calendar" },
   { module: "tasks",       legacyHref: "/operations/tasks",           icon: ClipboardList,  label: "Tasks" },
   { module: "team",        legacyHref: "/workspace/team",             icon: Users,          label: "Team" },
+  { module: "contacts",    legacyHref: "/workspace/contacts",         icon: Contact,        label: "Contacts" },
   { module: "chat",        legacyHref: "/workspace/chat",             icon: MessageCircle,  label: "Chat" },
   { module: "calls-qa",    legacyHref: "/workspace/qa/calls",         icon: Phone,          label: "Calls QA" },
   { module: "emails",      legacyHref: "/workspace/emails/dashboard", icon: Megaphone,      label: "Comms" },

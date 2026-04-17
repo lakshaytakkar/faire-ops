@@ -44,9 +44,6 @@ yarn-error.log*
 # vercel
 .vercel
 
-# External standalone projects (separate Vercel deployments, separate git repos)
-external/
-
 # claude
 .claude/
 

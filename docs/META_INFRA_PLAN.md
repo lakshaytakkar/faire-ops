@@ -75,7 +75,7 @@ INSERT INTO public.project_types (key, label, sort_order) VALUES
 ALTER TABLE public.projects
   ADD COLUMN IF NOT EXISTS project_type_id uuid REFERENCES public.project_types(id),
   ADD COLUMN IF NOT EXISTS owner_email text,
-  ADD COLUMN IF NOT EXISTS repo_path text,       -- 'src/app/(portal)/hq' or 'external/usdrop-landing'
+  ADD COLUMN IF NOT EXISTS repo_path text,       -- 'src/app/(portal)/hq' or 'websites/usdrop-landing'
   ADD COLUMN IF NOT EXISTS health_status text,   -- 'green'|'amber'|'red'|'unknown'
   ADD COLUMN IF NOT EXISTS last_major_update_at timestamptz;
 
@@ -222,7 +222,7 @@ Categorize every in-flight project into the new registry.
 **Plugins (~15):** tasks, chat, calls-qa, calendar, files, ai-tools, gmail, inbox, knowledge, links, research, team, tickets, training, automations, analytics, ai-team, bookings (queued).
 **Client Portals (2+):** ets-client-full, usdrop-client.
 **Mobile Apps (0 today):** single placeholder row marked `status: not-started`.
-**Landing Pages (4):** suprans (external/supranslanding), usdrop-landing, ets-landing, legalnations.
+**Landing Pages (4):** suprans (websites/suprans-landing-v1 + v2), usdrop-landing, ets-landing, legalnations-landing.
 
 For each: insert/update in `public.projects` with `project_type_id`, `repo_path`, `owner_email`, `health_status` ('green' if deployed recently else 'unknown'). Create one `public.project_checklists` row per project with all items initialized to `status: 'pending'`.
 

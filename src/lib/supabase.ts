@@ -73,14 +73,14 @@ export const supabaseLegal = createClient(supabaseUrl, supabaseAnonKey, {
 
 // SuprDM admin (suprdm.users, suprdm.plans, suprdm.roles, suprdm.features,
 // suprdm.automations, suprdm.payments). Mirrors the SuprDM product's data model;
-// client app lives at a separate Vercel deploy, admin lives inside faire-ops.
+// client app lives at a separate Vercel deploy, admin lives inside team-portal.
 export const supabaseSuprdm = createClient(supabaseUrl, supabaseAnonKey, {
   db: { schema: "suprdm" },
 })
 
 // Gullee admin (gullee.products, gullee.collections, gullee.retailers,
 // gullee.orders, gullee.wholesale_applications). Storefronts at gullee-storefront
-// and toyarina-storefront on Vercel; admin lives inside faire-ops.
+// and toyarina-storefront on Vercel; admin lives inside team-portal.
 export const supabaseGullee = createClient(supabaseUrl, supabaseAnonKey, {
   db: { schema: "gullee" },
 })

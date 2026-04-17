@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Globe, Lock, Shield, Truck, type LucideIcon } from "lucide-react"
+import { Globe, Lock, Shield, Truck, ShoppingBag, type LucideIcon } from "lucide-react"
 import {
   type Project,
   type ProjectKind,
@@ -46,6 +46,8 @@ function kindIcon(kind: ProjectKind): LucideIcon {
       return Shield
     case "vendor-portal":
       return Truck
+    case "ecommerce":
+      return ShoppingBag
   }
 }
 

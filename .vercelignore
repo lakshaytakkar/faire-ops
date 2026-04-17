@@ -2,10 +2,8 @@ docs/
 scripts/
 *.md
 !README.md
-faire.code-workspace
+team-portal.code-workspace
 .claude/
-external/
-external/**
 **/node_modules
 **/.next/cache
 tmp-images/

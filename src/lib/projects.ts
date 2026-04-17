@@ -14,6 +14,7 @@ export type ProjectKind =
   | "client-portal"
   | "admin-portal"
   | "vendor-portal"
+  | "ecommerce"
 
 export type ProjectVersion = "mvp" | "alpha" | "beta" | "stable"
 
@@ -607,6 +608,8 @@ export function kindLabel(kind: ProjectKind): string {
       return "Admin Portal"
     case "vendor-portal":
       return "Vendor Portal"
+    case "ecommerce":
+      return "Ecommerce"
   }
 }
 
