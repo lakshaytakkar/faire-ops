@@ -1,0 +1,32 @@
+/* Page header */
+.ds-usdrop-page-header { margin-bottom: 1rem; }
+.ds-usdrop-page-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+}
+.ds-usdrop-page-subtitle {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin-top: 0.25rem;
+}
+
+/* Metric grid (3 columns on sm+) */
+.ds-usdrop-metric-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+@media (min-width: 640px) {
+  .ds-usdrop-metric-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Content area with data table */
+.ds-usdrop-data-section {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}

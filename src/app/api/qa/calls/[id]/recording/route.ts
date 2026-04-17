@@ -32,9 +32,9 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     }
   }
 
-  // Fall back to direct Callyzer URL
+  // Fall back to direct remote URL (legacy data)
   if (call.recording_url) {
-    return NextResponse.json({ url: call.recording_url, source: "callyzer" })
+    return NextResponse.json({ url: call.recording_url, source: "remote" })
   }
 
   return NextResponse.json({ error: "No recording available" }, { status: 404 })

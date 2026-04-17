@@ -1,0 +1,89 @@
+/* Design System Token Library — Faire Wholesale Admin Portal
+   Extracted from src/app/globals.css. This is a reference/documentation file.
+   The runtime system uses globals.css directly with Tailwind CSS v4. */
+
+:root {
+  /* ── Core Colors ── */
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(225 47% 15%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(225 47% 15%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(225 47% 15%);
+  --primary: hsl(223 83% 53%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(226 42% 96%);
+  --secondary-foreground: hsl(225 47% 15%);
+  --muted: hsl(226 30% 95%);
+  --muted-foreground: hsl(224 15% 42%);
+  --accent: hsl(226 42% 98%);
+  --accent-foreground: hsl(225 47% 25%);
+  --destructive: hsl(0 85% 45%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(226 30% 85%);
+  --input: hsl(226 30% 85%);
+  --ring: hsl(223 83% 53%);
+
+  /* ── Semantic Status ── */
+  --success: hsl(142 71% 45%);
+  --success-foreground: hsl(0 0% 100%);
+  --warning: hsl(38 92% 50%);
+  --warning-foreground: hsl(0 0% 100%);
+  --info: hsl(199 89% 48%);
+  --info-foreground: hsl(0 0% 100%);
+
+  /* ── Sidebar ── */
+  --sidebar: hsl(225 33% 98%);
+  --sidebar-foreground: hsl(225 47% 15%);
+  --sidebar-primary: hsl(223 83% 53%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(226 42% 96%);
+  --sidebar-accent-foreground: hsl(225 47% 25%);
+  --sidebar-border: hsl(226 42% 92%);
+  --sidebar-ring: hsl(223 83% 53%);
+
+  /* ── Chart ── */
+  --chart-1: hsl(223 83% 53%);
+  --chart-2: hsl(215 80% 48%);
+  --chart-3: hsl(230 75% 45%);
+  --chart-4: hsl(223 90% 94%);
+  --chart-5: hsl(225 15% 40%);
+
+  /* ── Elevation ── */
+  --shadow-xs: 0px 1px 2px rgba(21,30,58,0.06);
+  --shadow-sm: 0px 1px 3px rgba(21,30,58,0.05), 0px 1px 2px rgba(21,30,58,0.04);
+  --shadow-md: 0px 5px 10px -2px rgba(21,30,58,0.04), 0px 4px 8px -1px rgba(21,30,58,0.02);
+  --shadow-lg: 0px 12px 16px -4px rgba(21,30,58,0.08), 0px 4px 6px -2px rgba(21,30,58,0.03);
+  --shadow-xl: 0px 24px 48px -12px rgba(21,30,58,0.12);
+  --shadow-2xl: 0px 24px 48px -12px rgba(21,30,58,0.18);
+  --shadow-btn-primary: rgba(0,14,88,0.4) 0px 1px 2px 0px, rgba(34,90,234,0.84) 0px 0px 0px 1px;
+  --shadow-btn-secondary: rgba(21,30,58,0.12) 0px 1px 2px 0px, rgba(21,30,58,0.12) 0px 0px 0px 1px;
+
+  /* ── Typography ── */
+  --font-sans: var(--font-plus-jakarta), 'Plus Jakarta Sans', sans-serif;
+  --font-heading: var(--font-plus-jakarta), 'Plus Jakarta Sans', sans-serif;
+  --font-mono: Menlo, 'Courier New', monospace;
+  --font-serif: Georgia, serif;
+
+  /* ── Radius ── */
+  --radius: 0.375rem;
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: calc(var(--radius));
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+  --radius-2xl: calc(var(--radius) + 10px);
+
+  /* ── Brand Store Identity ── */
+  --color-store-buddha: #EF4444;
+  --color-store-lunar: #3B82F6;
+  --color-store-toy: #10B981;
+  --color-store-bloom: #F59E0B;
+  --color-store-spark: #8B5CF6;
+  --color-store-cozy: #EC4899;
+
+  /* ── Status Indicators ── */
+  --color-status-online: rgb(34 197 94);
+  --color-status-away: rgb(245 158 11);
+  --color-status-busy: rgb(239 68 68);
+  --color-status-offline: rgb(156 163 175);
+}

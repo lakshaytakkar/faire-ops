@@ -1,0 +1,23 @@
+/* App shell — light sidebar + content */
+.ds-ln-shell {
+  display: flex;
+  min-height: 100svh;
+  width: 100%;
+  background: var(--background);
+}
+.ds-ln-shell-sidebar { flex-shrink: 0; }
+.ds-ln-shell-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+.ds-ln-shell-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+@media (min-width: 1024px) {
+  .ds-ln-shell-content { padding: 1.5rem 2rem; }
+}

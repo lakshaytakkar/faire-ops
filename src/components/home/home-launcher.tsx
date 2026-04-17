@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   ShoppingBag,
   Briefcase,
@@ -14,7 +15,6 @@ import {
   Wallet,
   HelpCircle,
   Puzzle,
-  FolderKanban,
   Home as HomeIcon,
   Building2,
   Scale,
@@ -22,22 +22,16 @@ import {
   Globe,
   Store,
   Truck,
+  Code,
+  ListChecks,
+  Smartphone,
+  Download,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Space } from "@/lib/spaces"
-import type {
-  Project,
-  ProjectWithChildren,
-  ChecklistSummary,
-} from "@/lib/projects"
 import { WallpaperSwitcher } from "@/components/home/wallpaper-switcher"
-import { InstallButton } from "@/components/home/install-button"
 import { PluginsCatalogue } from "@/components/home/plugins-catalogue"
-import { ProjectsGrid } from "@/components/home/projects-grid"
-import { ProjectsMatrix } from "@/components/home/projects-matrix"
-import { BrandKitGallery } from "@/components/home/brand-kit-gallery"
-import { ProjectDetailInline } from "@/components/home/project-detail-inline"
 import {
   PLUGIN_CATEGORIES,
   countInstalled,
@@ -45,7 +39,7 @@ import {
 } from "@/lib/plugins-catalog"
 
 /* ------------------------------------------------------------------ */
-/*  Hero wallpapers — first one is the default.                        */
+/*  Wallpapers                                                         */
 /* ------------------------------------------------------------------ */
 
 const WP_BASE =
@@ -84,6 +78,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Globe,
   Store,
   Truck,
+  Code,
 }
 
 function resolveIcon(name: string | null): LucideIcon {
@@ -107,15 +102,13 @@ interface ExternalApp {
 }
 
 const EXTERNAL_APPS: ExternalApp[] = [
-  { name: "EazyToSell", domain: "ets-landing.vercel.app", url: "https://ets-landing.vercel.app", description: "Store Launch Program — Indian partner retailers", category: "website", status: "live", icon: Globe, color: "#10b981" },
-  { name: "EazyToSell Portal", domain: "ets-client.vercel.app", url: "https://ets-client.vercel.app", description: "Partners + cashiers + vendors — shared login", category: "client-portal", status: "live", icon: Store, color: "#10b981" },
-  { name: "LegalNations", domain: "legalnations.com", url: "https://legalnations.com", description: "LLC formation landing page", category: "website", status: "planned", icon: Globe, color: "#10b981" },
-  { name: "GoyoTours", domain: "goyotours.com", url: "https://goyotours.com", description: "Travel booking landing page", category: "website", status: "planned", icon: Globe, color: "#f59e0b" },
-  { name: "USDrop AI", domain: "usdropai.com", url: "https://usdropai.com", description: "Dropshipping SaaS landing page", category: "website", status: "planned", icon: Globe, color: "#ec4899" },
-  { name: "Suprans", domain: "suprans.in", url: "https://suprans.in", description: "Main company website", category: "website", status: "planned", icon: Globe, color: "#8b5cf6" },
-  { name: "LegalNations Client Portal", domain: "client.legalnations.com", url: "https://client.legalnations.com", description: "LLC clients — case status and documents", category: "client-portal", status: "planned", icon: Store, color: "#10b981" },
-  { name: "USDrop Vendor Portal", domain: "vendor.usdropai.com", url: "https://vendor.usdropai.com", description: "Fulfillment vendors — order queue and tracking", category: "vendor-portal", status: "planned", icon: Truck, color: "#ec4899" },
-  { name: "B2B Vendor Portal", domain: "vendor.eazytosell.com", url: "https://vendor.eazytosell.com", description: "B2B vendors — POs and invoices", category: "vendor-portal", status: "planned", icon: Truck, color: "#3b82f6" },
+  { name: "Suprans", domain: "suprans.in", url: "https://suprans-landing.vercel.app", description: "Ecosystem site led by Mr. Suprans", category: "website", status: "live", icon: Globe, color: "#f34147" },
+  { name: "EazyToSell", domain: "ets-landing.vercel.app", url: "https://ets-landing.vercel.app", description: "Store Launch Program — Indian retailers", category: "website", status: "live", icon: Globe, color: "#10b981" },
+  { name: "EazyToSell Portal", domain: "ets-client.vercel.app", url: "https://ets-client.vercel.app", description: "Partners + cashiers + vendors", category: "client-portal", status: "live", icon: Store, color: "#10b981" },
+  { name: "LegalNations", domain: "legalnations.com", url: "https://legalnations.com", description: "US LLC formation for Indian founders", category: "website", status: "planned", icon: Globe, color: "#059669" },
+  { name: "USDrop AI", domain: "usdrop.ai", url: "https://usdrop.ai", description: "AI dropshipping platform", category: "website", status: "planned", icon: Globe, color: "#2a5fb2" },
+  { name: "USDrop App", domain: "app.usdrop.ai", url: "https://app.usdrop.ai", description: "The end-user SaaS — beta", category: "client-portal", status: "building", icon: Store, color: "#2a5fb2" },
+  { name: "GoyoTours", domain: "goyotours.com", url: "https://goyotours.com", description: "China travel desk", category: "website", status: "planned", icon: Globe, color: "#f59e0b" },
 ]
 
 /* ------------------------------------------------------------------ */
@@ -130,34 +123,29 @@ function ActiveSpaceCard({ space }: { space: Space }) {
   const inner = (
     <>
       <div
-        className="h-10 w-10 rounded-md flex items-center justify-center shrink-0 ring-1 ring-black/[0.04]"
-        style={{
-          background: `linear-gradient(135deg, ${color}26, ${color}10)`,
-        }}
+        className="h-8 w-8 rounded-md flex items-center justify-center shrink-0"
+        style={{ background: `linear-gradient(135deg, ${color}1f, ${color}08)` }}
       >
-        <Icon className="h-5 w-5" style={{ color }} />
+        <Icon className="h-4 w-4" style={{ color }} />
       </div>
       <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-semibold font-heading text-foreground leading-tight truncate">
+        <p className="text-sm font-semibold text-foreground leading-tight truncate">
           {space.name}
-        </h3>
-        <p className="text-xs text-muted-foreground truncate mt-0.5">
+        </p>
+        <p className="text-xs text-muted-foreground leading-tight mt-0.5 truncate">
           {space.tagline}
         </p>
       </div>
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground shrink-0">
-        {isExternal ? "Visit" : "Open"}
-        {isExternal ? (
-          <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-        ) : (
-          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-        )}
-      </span>
+      {isExternal ? (
+        <ArrowUpRight className="h-4 w-4 text-foreground shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+      ) : (
+        <ArrowRight className="h-4 w-4 text-foreground shrink-0 transition-transform group-hover:translate-x-0.5" />
+      )}
     </>
   )
 
   const className =
-    "group flex items-center gap-4 rounded-lg border border-border/80 bg-card shadow-sm px-5 py-4 transition-colors hover:bg-muted/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    "group flex items-center gap-3 rounded-lg border border-border/80 bg-card shadow-sm px-3.5 py-2.5 transition-colors hover:bg-muted/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
   if (isExternal) {
     return (
@@ -189,40 +177,40 @@ function ExternalAppCard({ app }: { app: ExternalApp }) {
         ? "text-amber-700 bg-amber-50 ring-amber-200"
         : "text-muted-foreground bg-muted/60 ring-border/60"
 
-  const Wrapper = isLive ? "a" : "div"
-  const wrapperProps = isLive
+  const Wrapper = isLive || app.status === "building" ? "a" : "div"
+  const wrapperProps = (isLive || app.status === "building")
     ? { href: app.url, target: "_blank" as const, rel: "noopener noreferrer" }
     : {}
 
   return (
     <Wrapper
       {...wrapperProps}
-      className={`group flex items-center gap-2.5 rounded-lg border border-border/80 bg-card shadow-sm px-3 py-2 ${
-        isLive ? "hover:bg-muted/40 transition-colors" : "opacity-75 cursor-not-allowed select-none"
+      className={`group flex items-center gap-3 rounded-lg border border-border/80 bg-card shadow-sm px-3.5 py-2.5 ${
+        isLive || app.status === "building"
+          ? "hover:bg-muted/40 transition-colors"
+          : "opacity-75 cursor-not-allowed select-none"
       }`}
       title={app.domain}
     >
       <div
-        className="h-7 w-7 rounded-md flex items-center justify-center shrink-0 ring-1 ring-black/[0.04]"
-        style={{
-          background: `linear-gradient(135deg, ${app.color}1a, ${app.color}08)`,
-        }}
+        className="h-8 w-8 rounded-md flex items-center justify-center shrink-0"
+        style={{ background: `linear-gradient(135deg, ${app.color}1f, ${app.color}08)` }}
       >
-        <Icon className="h-3.5 w-3.5" style={{ color: app.color }} />
+        <Icon className="h-4 w-4" style={{ color: app.color }} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-foreground leading-tight truncate">
+        <p className="text-sm font-semibold text-foreground leading-tight truncate">
           {app.domain}
         </p>
-        <p className="text-[10px] text-muted-foreground leading-tight mt-0.5 truncate">
+        <p className="text-xs text-muted-foreground leading-tight mt-0.5 truncate">
           {app.description}
         </p>
       </div>
-      {isLive ? (
-        <ArrowUpRight className="h-3.5 w-3.5 text-foreground shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+      {isLive || app.status === "building" ? (
+        <ArrowUpRight className="h-4 w-4 text-foreground shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
       ) : (
         <span
-          className={`text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded ring-1 ring-inset ${statusClass}`}
+          className={`text-xs uppercase tracking-wider font-bold px-2 py-0.5 rounded ring-1 ring-inset ${statusClass}`}
         >
           {statusLabel}
         </span>
@@ -241,10 +229,10 @@ function EmptyState() {
       <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
         <Layers className="h-5 w-5 text-muted-foreground" />
       </div>
-      <h3 className="text-sm font-semibold font-heading text-foreground">
+      <h3 className="text-base font-semibold font-heading text-foreground">
         No spaces yet
       </h3>
-      <p className="text-xs text-muted-foreground max-w-sm">
+      <p className="text-sm text-muted-foreground max-w-sm">
         Once a space is activated it will appear here.
       </p>
     </div>
@@ -252,40 +240,217 @@ function EmptyState() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Home hero view — the original centered launcher content            */
+/*  Deployment card — DB-driven, grouped by kind                       */
 /* ------------------------------------------------------------------ */
 
-function HomeHero({ activeApps }: { activeApps: Space[] }) {
+export type DeploymentCard = {
+  slug: string
+  name: string
+  brandLabel: string | null
+  kind: "landing" | "client-portal" | "admin-portal" | "vendor-portal"
+  url: string
+  color: string | null
+  venture: string | null
+  status: "live" | "building"
+}
+
+const KIND_META: Record<
+  DeploymentCard["kind"],
+  { label: string; icon: LucideIcon }
+> = {
+  landing: { label: "Website", icon: Globe },
+  "client-portal": { label: "Client portal", icon: Store },
+  "admin-portal": { label: "Admin", icon: Building2 },
+  "vendor-portal": { label: "Vendor portal", icon: Truck },
+}
+
+function DeploymentCardRow({ d }: { d: DeploymentCard }) {
+  const Icon = KIND_META[d.kind].icon
+  const color = d.color ?? "#64748b"
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center px-5 py-20">
-      <div className="w-full max-w-md flex flex-col items-center">
+    <a
+      href={d.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex items-center gap-3 rounded-lg border border-border/80 bg-card shadow-sm px-3.5 py-2.5 hover:bg-muted/40 transition-colors"
+      title={d.url}
+    >
+      <div
+        className="h-8 w-8 rounded-md flex items-center justify-center shrink-0"
+        style={{ background: `linear-gradient(135deg, ${color}1f, ${color}08)` }}
+      >
+        <Icon className="h-4 w-4" style={{ color }} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-foreground leading-tight truncate">
+          {d.brandLabel ?? d.name}
+        </p>
+        <p className="text-xs text-muted-foreground leading-tight mt-0.5 truncate">
+          {d.url.replace(/^https?:\/\//, "")}
+        </p>
+      </div>
+      <ArrowUpRight className="h-4 w-4 text-foreground shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+    </a>
+  )
+}
+
+function DeploymentSection({
+  label,
+  items,
+}: {
+  label: string
+  items: DeploymentCard[]
+}) {
+  if (items.length === 0) return null
+  return (
+    <div className="w-full flex flex-col gap-2">
+      <p className="text-sm font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-1">
+        {label}
+        <span className="ml-1.5 text-xs font-semibold text-white/50">{items.length}</span>
+      </p>
+      {items.map((d) => (
+        <DeploymentCardRow key={d.slug} d={d} />
+      ))}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Mobile apps — static list of downloadable APKs / links             */
+/* ------------------------------------------------------------------ */
+
+const WP_STORAGE =
+  "https://eeoesllyceegmzfqfbyu.supabase.co/storage/v1/object/public/nexus-assets"
+
+interface MobileApp {
+  name: string
+  description: string
+  platform: "android" | "ios"
+  downloadUrl: string
+  color: string
+}
+
+const MOBILE_APPS: MobileApp[] = [
+  {
+    name: "Callsync",
+    description: "Auto-sync call logs & recordings",
+    platform: "android",
+    downloadUrl: `${WP_STORAGE}/callsync-v1.apk`,
+    color: "#6366f1",
+  },
+]
+
+function MobileAppCard({ app }: { app: MobileApp }) {
+  return (
+    <a
+      href={app.downloadUrl}
+      download
+      className="group flex items-center gap-3 rounded-lg border border-border/80 bg-card shadow-sm px-3.5 py-2.5 hover:bg-muted/40 transition-colors"
+    >
+      <div
+        className="h-8 w-8 rounded-md flex items-center justify-center shrink-0"
+        style={{ background: `linear-gradient(135deg, ${app.color}1f, ${app.color}08)` }}
+      >
+        <Smartphone className="h-4 w-4" style={{ color: app.color }} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-foreground leading-tight truncate">
+          {app.name}
+        </p>
+        <p className="text-xs text-muted-foreground leading-tight mt-0.5 truncate">
+          {app.description}
+        </p>
+      </div>
+      <Download className="h-4 w-4 text-foreground shrink-0 transition-transform group-hover:translate-y-0.5" />
+    </a>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Home hero — 5-column grid                                          */
+/* ------------------------------------------------------------------ */
+
+function HomeHero({
+  activeApps,
+  deployments,
+}: {
+  activeApps: Space[]
+  deployments: DeploymentCard[]
+}) {
+  const websites = deployments.filter((d) => d.kind === "landing")
+  const clientApps = deployments.filter((d) => d.kind === "client-portal")
+  const vendorPortals = deployments.filter((d) => d.kind === "vendor-portal")
+
+  return (
+    <div className="relative min-h-screen flex flex-col items-center px-5 py-20">
+      <div className="w-full max-w-7xl flex flex-col items-center mt-16">
         <h1 className="text-4xl md:text-5xl font-bold font-heading tracking-tight text-center text-white">
           Suprans<span className="text-primary"> HQ</span>
         </h1>
-        <p className="mt-1.5 text-sm text-white/90 text-center">
+        <p className="mt-2 text-base text-white/90 text-center">
           TeamSync AI — every operation, one place.
         </p>
 
-        <div className="mt-6 w-full flex flex-col gap-2">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-1">
-            Spaces
-          </p>
-          {activeApps.length === 0 ? (
-            <EmptyState />
-          ) : (
-            activeApps.map((app) => (
-              <ActiveSpaceCard key={app.id} space={app} />
-            ))
-          )}
-        </div>
+        {/* 5-column grid */}
+        <div className="mt-10 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 items-start">
+          {/* Col 1: Spaces */}
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-1">
+              Spaces
+              <span className="ml-1.5 text-xs font-semibold text-white/50">{activeApps.length}</span>
+            </p>
+            {activeApps.length === 0 ? (
+              <EmptyState />
+            ) : (
+              activeApps.map((app) => (
+                <ActiveSpaceCard key={app.id} space={app} />
+              ))
+            )}
+          </div>
 
-        <div className="mt-6 w-full flex flex-col gap-2">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-1">
-            Public sites
-          </p>
-          {EXTERNAL_APPS.map((app) => (
-            <ExternalAppCard key={app.domain} app={app} />
-          ))}
+          {/* Col 2: Websites */}
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-1">
+              Websites
+              <span className="ml-1.5 text-xs font-semibold text-white/50">{websites.length}</span>
+            </p>
+            {websites.map((d) => (
+              <DeploymentCardRow key={d.slug} d={d} />
+            ))}
+          </div>
+
+          {/* Col 3: Client Apps */}
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-1">
+              Client Apps
+              <span className="ml-1.5 text-xs font-semibold text-white/50">{clientApps.length}</span>
+            </p>
+            {clientApps.map((d) => (
+              <DeploymentCardRow key={d.slug} d={d} />
+            ))}
+          </div>
+
+          {/* Col 4: Vendor Portals */}
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-1">
+              Vendor Portals
+              <span className="ml-1.5 text-xs font-semibold text-white/50">{vendorPortals.length}</span>
+            </p>
+            {vendorPortals.map((d) => (
+              <DeploymentCardRow key={d.slug} d={d} />
+            ))}
+          </div>
+
+          {/* Col 5: Mobile Apps */}
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-white/70 text-center mb-1">
+              Mobile Apps
+              <span className="ml-1.5 text-xs font-semibold text-white/50">{MOBILE_APPS.length}</span>
+            </p>
+            {MOBILE_APPS.map((app) => (
+              <MobileAppCard key={app.name} app={app} />
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -293,7 +458,7 @@ function HomeHero({ activeApps }: { activeApps: Space[] }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Plugins view — same wallpaper, scrollable glass panel              */
+/*  Plugins view                                                       */
 /* ------------------------------------------------------------------ */
 
 function PluginsView() {
@@ -312,279 +477,99 @@ function PluginsView() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Projects view — compact list, click a row to open inline detail    */
+/*  Launcher root                                                      */
 /* ------------------------------------------------------------------ */
 
-type ProjectsViewMode = "matrix" | "grid" | "kits"
-
-function ProjectsView({
-  projects,
-  summaries,
-  detailMap,
-  selectedDetail,
-  selectedDimension,
-  mode,
-  onModeChange,
-  onSelectCell,
-  onBack,
-}: {
-  projects: Project[]
-  summaries: Map<string, ChecklistSummary>
-  detailMap: Map<string, ProjectWithChildren>
-  selectedDetail: ProjectWithChildren | null
-  selectedDimension: string | null
-  mode: ProjectsViewMode
-  onModeChange: (m: ProjectsViewMode) => void
-  onSelectCell: (slug: string, dimension?: string) => void
-  onBack: () => void
-}) {
-  return (
-    <div className="relative min-h-screen flex flex-col items-center px-5 py-16">
-      <div className="w-full max-w-7xl rounded-2xl border border-white/10 bg-black/50 backdrop-blur-xl shadow-2xl p-5 md:p-8">
-        {selectedDetail ? (
-          <ProjectDetailInline
-            project={selectedDetail}
-            onBack={onBack}
-            initialExpandedDimension={selectedDimension}
-          />
-        ) : (
-          <>
-            {/* Tri-toggle */}
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h2 className="text-xl font-bold font-heading text-white">
-                  Projects
-                </h2>
-                <p className="text-sm text-white/60 mt-0.5">
-                  Production readiness across every brand and surface.
-                </p>
-              </div>
-              <div className="inline-flex items-center gap-0.5 h-8 p-0.5 rounded-md border border-white/15 bg-black/40">
-                {(["matrix", "grid", "kits"] as const).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => onModeChange(m)}
-                    className={cn(
-                      "inline-flex items-center h-7 px-3 rounded text-xs font-medium transition-colors",
-                      mode === m
-                        ? "bg-white text-black"
-                        : "text-white/60 hover:text-white hover:bg-white/10"
-                    )}
-                  >
-                    {m === "matrix" ? "Matrix" : m === "grid" ? "Grid" : "Brand kits"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {mode === "matrix" && (
-              <ProjectsMatrix
-                projects={projects}
-                detailMap={detailMap}
-                tone="glass"
-                onSelectSlug={onSelectCell}
-              />
-            )}
-            {mode === "grid" && (
-              <ProjectsGrid
-                projects={projects}
-                summaries={summaries}
-                tone="glass"
-                onSelectSlug={(slug) => onSelectCell(slug)}
-              />
-            )}
-            {mode === "kits" && (
-              <BrandKitGallery
-                projects={projects}
-                detailMap={detailMap}
-                onSelectSlug={(slug) => onSelectCell(slug, "brand-kit")}
-              />
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  )
-}
-
-/* ------------------------------------------------------------------ */
-/*  Launcher root — owns view state, renders wallpaper + view          */
-/* ------------------------------------------------------------------ */
-
-type View = "home" | "plugins" | "projects"
+type View = "home" | "plugins"
 
 interface HomeLauncherProps {
   activeApps: Space[]
-  projects: Project[]
-  /** Array of [projectId, ChecklistSummary] so we can pass a Map across the
-      server→client boundary (Maps aren't serializable as props). */
-  projectSummaries: Array<[string, ChecklistSummary]>
-  /** Array of [slug, ProjectWithChildren] — full detail for every project,
-      pre-fetched server-side so the inline detail view opens instantly. */
-  projectDetails: Array<[string, ProjectWithChildren]>
+  deployments: DeploymentCard[]
 }
 
-export function HomeLauncher({
-  activeApps,
-  projects,
-  projectSummaries,
-  projectDetails,
-}: HomeLauncherProps) {
+export function HomeLauncher({ activeApps, deployments }: HomeLauncherProps) {
   const [view, setView] = useState<View>("home")
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(null)
-  const [selectedDimension, setSelectedDimension] = useState<string | null>(null)
-  const [projectsMode, setProjectsMode] = useState<ProjectsViewMode>("matrix")
-  const [projectsModeHydrated, setProjectsModeHydrated] = useState(false)
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("teamops:plugins-view-mode")
-      if (stored === "grid" || stored === "kits" || stored === "matrix") {
-        setProjectsMode(stored)
-      }
-    } catch {
-      /* ignore */
-    }
-    setProjectsModeHydrated(true)
-  }, [])
-
-  const setProjectsModeAndPersist = (m: ProjectsViewMode) => {
-    setProjectsMode(m)
-    if (projectsModeHydrated) {
-      try {
-        localStorage.setItem("teamops:plugins-view-mode", m)
-      } catch {
-        /* ignore */
-      }
-    }
-  }
-
-  const summaryMap = useMemo(
-    () => new Map(projectSummaries),
-    [projectSummaries]
-  )
-  const detailMap = useMemo(
-    () => new Map(projectDetails),
-    [projectDetails]
-  )
-  const selectedDetail = selectedSlug ? detailMap.get(selectedSlug) ?? null : null
-
-  const handleSelectCell = (slug: string, dimension?: string) => {
-    setSelectedSlug(slug)
-    setSelectedDimension(dimension ?? null)
-  }
-
-  const handleBack = () => {
-    setSelectedSlug(null)
-    setSelectedDimension(null)
-  }
+  const router = useRouter()
 
   return (
     <main className="relative min-h-screen overflow-hidden">
-      {/* Pastel fallback gradient — visible if any wallpaper fails */}
       <div
         className="fixed inset-0 -z-20"
         style={{
-          background:
-            "linear-gradient(180deg, #fce7f3 0%, #f5d0fe 35%, #dcfce7 100%)",
+          background: "linear-gradient(180deg, #fce7f3 0%, #f5d0fe 35%, #dcfce7 100%)",
         }}
       />
-      {/* Wallpaper — renders once and stays mounted across view switches */}
       <WallpaperSwitcher wallpapers={WALLPAPERS} />
 
-      {/* Top-left corner — view tab pill (Home / Plugins / Projects) */}
+      {/* Top-left: Home / Plugins toggle */}
       <div className="absolute top-4 left-4 z-10">
-        <div className="inline-flex items-center gap-0.5 h-8 p-0.5 rounded-md border border-border/80 bg-card shadow-sm">
+        <div className="inline-flex items-center gap-0.5 h-9 p-0.5 rounded-md border border-border/80 bg-card shadow-sm">
           <button
             type="button"
             onClick={() => setView("home")}
             className={cn(
-              "inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-xs font-medium transition-colors",
+              "inline-flex items-center gap-1.5 h-8 px-3 rounded text-sm font-medium transition-colors",
               view === "home"
                 ? "bg-foreground text-background"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/40",
             )}
             title="Home"
           >
-            <HomeIcon className="h-3.5 w-3.5" />
+            <HomeIcon className="h-4 w-4" />
             Home
           </button>
           <button
             type="button"
             onClick={() => setView("plugins")}
             className={cn(
-              "inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-xs font-medium transition-colors",
+              "inline-flex items-center gap-1.5 h-8 px-3 rounded text-sm font-medium transition-colors",
               view === "plugins"
                 ? "bg-foreground text-background"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/40",
             )}
             title="Plugins"
           >
-            <Puzzle className="h-3.5 w-3.5" />
+            <Puzzle className="h-4 w-4" />
             Plugins
           </button>
           <button
             type="button"
-            onClick={() => setView("projects")}
-            className={cn(
-              "inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-xs font-medium transition-colors",
-              view === "projects"
-                ? "bg-foreground text-background"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
-            )}
-            title="Projects"
+            onClick={() => router.push("/tasks")}
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded text-sm font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-muted/40"
+            title="Tasks"
           >
-            <FolderKanban className="h-3.5 w-3.5" />
-            Projects
+            <ListChecks className="h-4 w-4" />
+            Tasks
           </button>
         </div>
       </div>
 
-      {/* Top-right corner — Help button */}
-      <div className="absolute top-4 right-4 z-10 flex items-center gap-1">
+      {/* Top-right: Help */}
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5">
         <Link
           href="/workspace/knowledge"
-          className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-border/80 bg-card shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+          className="inline-flex items-center justify-center h-9 w-9 rounded-md border border-border/80 bg-card shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
           title="Help"
         >
           <HelpCircle className="h-4 w-4" />
         </Link>
       </div>
 
-      {/* View content — wallpaper stays the same underneath */}
-      {view === "home" && <HomeHero activeApps={activeApps} />}
+      {view === "home" && <HomeHero activeApps={activeApps} deployments={deployments} />}
       {view === "plugins" && <PluginsView />}
-      {view === "projects" && (
-        <ProjectsView
-          projects={projects}
-          summaries={summaryMap}
-          detailMap={detailMap}
-          selectedDetail={selectedDetail}
-          selectedDimension={selectedDimension}
-          mode={projectsMode}
-          onModeChange={setProjectsModeAndPersist}
-          onSelectCell={handleSelectCell}
-          onBack={handleBack}
-        />
-      )}
 
-      {/* Bottom-left wallpaper attribution (Home view only) */}
       {view === "home" && (
         <div className="absolute bottom-4 left-4 z-10">
           <div className="rounded-md border border-border/80 bg-card shadow-sm px-3 py-2 max-w-[220px]">
-            <p className="text-[11px] font-semibold text-foreground leading-tight">
-              Vestrahorn Sunset
+            <p className="text-sm font-semibold text-foreground leading-tight">
+              Wallpaper
             </p>
-            <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
-              Iceland · Stokksnes
+            <p className="text-xs text-muted-foreground leading-tight mt-0.5">
+              Switch via the right-dock user menu.
             </p>
           </div>
         </div>
       )}
-
-      {/* Bottom-right install / download button (Home view only) */}
-      {view === "home" && <InstallButton />}
     </main>
   )
 }

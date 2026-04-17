@@ -1,0 +1,31 @@
+/* Table Component Classes */
+
+.ds-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.ds-table th {
+  text-align: left;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  border-bottom: 1px solid var(--border);
+}
+
+.ds-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+}
+
+.ds-table tr:hover {
+  background-color: var(--muted);
+}
+
+.ds-table-nums {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}

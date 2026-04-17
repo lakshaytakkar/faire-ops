@@ -1,0 +1,103 @@
+/* LegalNations Client Portal — Cards
+   Clean, professional cards for legal content. */
+
+/* Base card — clean, no shadow by default */
+.ds-ln-card {
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+}
+.ds-ln-card-elevated { box-shadow: var(--shadow-sm); }
+.ds-ln-card-hover:hover { box-shadow: var(--shadow-md); transition: box-shadow 200ms; }
+
+/* Card slots */
+.ds-ln-card-header { display: flex; align-items: start; justify-content: space-between; margin-bottom: 0.75rem; }
+.ds-ln-card-title { font-size: 0.9375rem; font-weight: 600; color: var(--foreground); }
+.ds-ln-card-description { font-size: 0.8125rem; color: var(--muted-foreground); margin-top: 0.125rem; }
+.ds-ln-card-content {}
+.ds-ln-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+
+/* Status card — for LLC status, filing status etc. */
+.ds-ln-status-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.ds-ln-status-card-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ds-ln-status-card-icon svg { width: 1.25rem; height: 1.25rem; }
+.ds-ln-status-card-icon--delivered { background: hsl(160 50% 92%); color: var(--status-delivered); }
+.ds-ln-status-card-icon--processing { background: hsl(210 50% 92%); color: var(--status-processing); }
+.ds-ln-status-card-icon--pending { background: hsl(40 50% 92%); color: var(--status-pending); }
+.ds-ln-status-card-label { font-size: 0.8125rem; color: var(--muted-foreground); }
+.ds-ln-status-card-value { font-size: 1.5rem; font-weight: 600; color: var(--foreground); line-height: 1.2; }
+
+/* Document card — file item in vault */
+.ds-ln-doc-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: background 150ms;
+}
+.ds-ln-doc-card:hover { background: var(--muted); }
+.ds-ln-doc-card-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  background: hsl(160 20% 94%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ds-ln-doc-card-icon svg { width: 1rem; height: 1rem; color: var(--primary); }
+.ds-ln-doc-card-name { font-size: 0.875rem; font-weight: 500; color: var(--foreground); }
+.ds-ln-doc-card-meta { font-size: 0.75rem; color: var(--muted-foreground); }
+.ds-ln-doc-card-action { margin-left: auto; }
+
+/* Phase card — onboarding phase summary */
+.ds-ln-phase-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.ds-ln-phase-card[data-complete="true"] { border-left: 3px solid var(--phase-complete); }
+.ds-ln-phase-card[data-active="true"] { border-left: 3px solid var(--phase-active); background: hsl(42 80% 55% / 0.04); }
+.ds-ln-phase-card[data-pending="true"] { opacity: 0.6; }
+.ds-ln-phase-number {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.ds-ln-phase-number--complete { background: var(--phase-complete); color: white; }
+.ds-ln-phase-number--active { background: var(--phase-active); color: var(--accent-foreground); }
+.ds-ln-phase-number--pending { background: var(--phase-pending); color: var(--muted-foreground); }
+.ds-ln-phase-title { font-size: 0.875rem; font-weight: 600; color: var(--foreground); }
+.ds-ln-phase-subtitle { font-size: 0.75rem; color: var(--muted-foreground); }

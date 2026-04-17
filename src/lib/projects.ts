@@ -68,6 +68,9 @@ export interface ProjectPluginRow {
   status: PluginInstallStatus
 }
 
+export type ProjectStatus = "live" | "building" | "planning" | "on-hold" | "deprecated"
+export type ProjectHealth = "green" | "yellow" | "red" | "unknown"
+
 export interface Project {
   id: string
   slug: string
@@ -80,6 +83,15 @@ export interface Project {
   url: string | null
   color: string | null
   sort_order: number
+  /* ---- development metadata (added 2026-04-13) ---- */
+  venture: string | null
+  status: ProjectStatus
+  health: ProjectHealth
+  tech_stack: string[]
+  owner_name: string | null
+  owner_email: string | null
+  last_deploy_at: string | null
+  narrative: string | null
 }
 
 export interface ProjectCredentials {
@@ -125,7 +137,7 @@ export interface ProjectWithChildren extends Project {
 }
 
 const PROJECT_COLUMNS =
-  "id, slug, brand, brand_label, kind, name, description, version, url, color, sort_order"
+  "id, slug, brand, brand_label, kind, name, description, version, url, color, sort_order, venture, status, health, tech_stack, owner_name, owner_email, last_deploy_at, narrative"
 
 function normalizeChecklistItem(row: Record<string, unknown>): ChecklistItem {
   return {
@@ -183,6 +195,10 @@ function normalizeBrandKit(row: Record<string, unknown>): ProjectBrandKit {
 }
 
 function normalizeProject(row: Record<string, unknown>): Project {
+  const raw = row.tech_stack
+  const tech_stack: string[] = Array.isArray(raw)
+    ? (raw as unknown[]).map((x) => String(x))
+    : []
   return {
     id: String(row.id ?? ""),
     slug: String(row.slug ?? ""),
@@ -195,6 +211,14 @@ function normalizeProject(row: Record<string, unknown>): Project {
     url: (row.url as string | null) ?? null,
     color: (row.color as string | null) ?? null,
     sort_order: Number(row.sort_order ?? 0),
+    venture: (row.venture as string | null) ?? null,
+    status: (String(row.status ?? "building") as ProjectStatus),
+    health: (String(row.health ?? "unknown") as ProjectHealth),
+    tech_stack,
+    owner_name: (row.owner_name as string | null) ?? null,
+    owner_email: (row.owner_email as string | null) ?? null,
+    last_deploy_at: (row.last_deploy_at as string | null) ?? null,
+    narrative: (row.narrative as string | null) ?? null,
   }
 }
 

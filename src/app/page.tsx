@@ -1,64 +1,40 @@
 import { listSpaces } from "@/lib/spaces"
-import {
-  listProjects,
-  listAllProjectChildren,
-  summarizeChecklist,
-  type ChecklistSummary,
-  type ProjectWithChildren,
-} from "@/lib/projects"
-import { HomeLauncher } from "@/components/home/home-launcher"
+import { supabase } from "@/lib/supabase"
+import { HomeLauncher, type DeploymentCard } from "@/components/home/home-launcher"
 
 export const dynamic = "force-dynamic"
 
 /**
- * Homepage — thin server wrapper. Fetches:
- *   - the list of active spaces (for the Home view)
- *   - the full projects catalogue + per-project checklist, pages, plugins
- *     (for the inline Projects view AND the inline project detail view)
- *
- * Everything is fetched server-side in parallel and passed down as plain
- * serializable props so the <HomeLauncher> client component can swap views
- * instantly without a second round-trip.
+ * Homepage — thin server wrapper. Passes active spaces + live deployments
+ * from `public.projects` to the client launcher. "All active deployments for
+ * all clients" is grouped on the hero so the dock stays clean.
  */
 export default async function HomePage() {
-  const [spaces, projects] = await Promise.all([
+  const [spaces, { data: projectsRaw }] = await Promise.all([
     listSpaces(),
-    listProjects(),
+    supabase
+      .from("projects")
+      .select("slug, name, brand, brand_label, kind, url, color, venture, status")
+      .in("status", ["live", "building"])
+      .not("url", "is", null)
+      .order("venture", { ascending: true })
+      .order("sort_order", { ascending: true }),
   ])
+
   const activeApps = spaces.filter((s) => s.is_active)
 
-  const {
-    checklistByProject,
-    pagesByProject,
-    pluginsByProject,
-    credentialsByProject,
-    brandKitByProject,
-  } = await listAllProjectChildren(projects.map((p) => p.id))
+  const deployments: DeploymentCard[] = (projectsRaw ?? [])
+    .filter((p) => typeof p.url === "string" && p.url.startsWith("http"))
+    .map((p) => ({
+      slug: p.slug as string,
+      name: (p.name as string) ?? (p.brand_label as string) ?? (p.slug as string),
+      brandLabel: (p.brand_label as string | null) ?? null,
+      kind: (p.kind as "landing" | "client-portal" | "admin-portal" | "vendor-portal") ?? "landing",
+      url: p.url as string,
+      color: (p.color as string | null) ?? null,
+      venture: (p.venture as string | null) ?? null,
+      status: (p.status as "live" | "building") ?? "live",
+    }))
 
-  const summaryEntries: Array<[string, ChecklistSummary]> = projects.map(
-    (p) => [p.id, summarizeChecklist(checklistByProject.get(p.id) ?? [])]
-  )
-
-  const detailEntries: Array<[string, ProjectWithChildren]> = projects.map(
-    (p) => [
-      p.slug,
-      {
-        ...p,
-        checklist: checklistByProject.get(p.id) ?? [],
-        pages: pagesByProject.get(p.id) ?? [],
-        plugins: pluginsByProject.get(p.id) ?? [],
-        credentials: credentialsByProject.get(p.id) ?? null,
-        brand_kit: brandKitByProject.get(p.id) ?? null,
-      },
-    ]
-  )
-
-  return (
-    <HomeLauncher
-      activeApps={activeApps}
-      projects={projects}
-      projectSummaries={summaryEntries}
-      projectDetails={detailEntries}
-    />
-  )
+  return <HomeLauncher activeApps={activeApps} deployments={deployments} />
 }

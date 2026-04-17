@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = "force-dynamic"
+
 import {
   Suspense,
   useCallback,
@@ -1564,8 +1566,41 @@ function ProductDrawer({
         <Field label="Barcode">
           <input value={barcode} onChange={(e) => setBarcode(e.target.value)} className="w-full h-9 rounded-md border bg-background px-3 text-sm" />
         </Field>
-        <Field label="Image URL">
-          <input value={image} onChange={(e) => setImage(e.target.value)} className="w-full h-9 rounded-md border bg-background px-3 text-sm" />
+        <Field label="Image">
+          <div className="flex gap-3">
+            <div className="h-24 w-24 shrink-0 rounded-md border bg-muted/40 overflow-hidden flex items-center justify-center">
+              {image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={image}
+                  alt="preview"
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    ;(e.currentTarget as HTMLImageElement).style.display = "none"
+                  }}
+                />
+              ) : (
+                <span className="text-[10px] text-muted-foreground">no image</span>
+              )}
+            </div>
+            <div className="flex-1 space-y-1">
+              <input
+                value={image}
+                onChange={(e) => setImage(e.target.value)}
+                placeholder="https://…"
+                className="w-full h-9 rounded-md border bg-background px-3 text-sm"
+              />
+              {initial?.image_url && image !== initial.image_url && (
+                <button
+                  type="button"
+                  onClick={() => setImage(initial.image_url ?? "")}
+                  className="text-[11px] text-muted-foreground hover:text-foreground underline"
+                >
+                  reset to saved
+                </button>
+              )}
+            </div>
+          </div>
         </Field>
         <Field label="Material">
           <input value={material} onChange={(e) => setMaterial(e.target.value)} className="w-full h-9 rounded-md border bg-background px-3 text-sm" />

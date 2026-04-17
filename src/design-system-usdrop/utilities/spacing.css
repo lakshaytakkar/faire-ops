@@ -1,0 +1,17 @@
+/* USDrop spacing follows --spacing: 0.25rem (4px) base multiplier */
+
+/* Standard page gaps */
+.ds-usdrop-gap-sm { gap: 0.375rem; }  /* 1.5 units — toolbar */
+.ds-usdrop-gap-md { gap: 0.5rem; }    /* 2 units — cards internal */
+.ds-usdrop-gap-lg { gap: 1rem; }      /* 4 units — page sections */
+
+/* Card padding */
+.ds-usdrop-p-card { padding: 0.5rem; }       /* default card */
+.ds-usdrop-p-card-md { padding: 1rem; }      /* metric card */
+.ds-usdrop-p-card-lg { padding: 1.25rem; }   /* profile card */
+
+/* Content area */
+.ds-usdrop-p-content { padding: 0.5rem; }
+
+/* Page margins */
+.ds-usdrop-mb-section { margin-bottom: 1rem; }

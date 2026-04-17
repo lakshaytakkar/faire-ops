@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, GraduationCap } from "lucide-react"
+import { ArrowLeft, GraduationCap, Pencil } from "lucide-react"
 import { supabaseUsdrop } from "@/lib/supabase"
 import { StatusBadge, toneForStatus } from "@/components/shared/status-badge"
 import { DetailCard } from "@/components/shared/detail-views"
 import { EmptyState } from "@/components/shared/empty-state"
 import { formatDate } from "@/lib/format"
+import { DeleteCourseButton } from "./delete-course-button"
 
 export const dynamic = "force-dynamic"
 
@@ -80,6 +81,15 @@ export default async function CourseDetailPage({ params }: { params: Promise<Par
               </p>
             )}
           </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href={`/usdrop/courses/${id}/builder`}
+              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              <Pencil className="size-4" /> Edit Course
+            </Link>
+            <DeleteCourseButton courseId={id} courseTitle={course.title ?? "this course"} />
+          </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-x border-b text-sm">
           <KpiTile label="Modules" value={modules.length.toString()} />
@@ -103,16 +113,24 @@ export default async function CourseDetailPage({ params }: { params: Promise<Par
       <DetailCard
         title="Modules"
         actions={
-          <span className="text-xs font-medium text-muted-foreground">
-            {modules.length} total
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-medium text-muted-foreground">
+              {modules.length} total
+            </span>
+            <Link
+              href={`/usdrop/courses/${id}/builder`}
+              className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              Open Builder
+            </Link>
+          </div>
         }
       >
         {modules.length === 0 ? (
           <EmptyState
             icon={GraduationCap}
             title="No modules"
-            description="Add modules in the learning-content editor."
+            description="Open the course builder to add modules."
           />
         ) : (
           <ol className="space-y-2">

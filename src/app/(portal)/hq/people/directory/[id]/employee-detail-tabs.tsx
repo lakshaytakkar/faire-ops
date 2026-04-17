@@ -14,6 +14,7 @@ export interface EmployeeDetail {
   id: string
   full_name: string | null
   email: string | null
+  work_email: string | null
   phone: string | null
   role_title: string | null
   vertical: string | null
@@ -25,6 +26,20 @@ export interface EmployeeDetail {
   ctc_currency: string | null
   department_name: string | null
   reporting_to_name: string | null
+  father_name: string | null
+  relation: string | null
+  dob: string | null
+  aadhaar_address: string | null
+  pan_no: string | null
+  bank_name: string | null
+  bank_account: string | null
+  ifsc: string | null
+  office: string | null
+  employment_type: string | null
+  pf_applicable: boolean | null
+  esic_applicable: boolean | null
+  office_phone: string | null
+  salary_monthly: number | null
 }
 
 export interface AttendanceRow {
@@ -122,6 +137,7 @@ export function EmployeeDetailTabs({
   const tabs: FilterTab[] = [
     { id: "profile", label: "Profile" },
     { id: "employment", label: "Employment" },
+    { id: "bank", label: "Bank & tax" },
     { id: "documents", label: "Documents" },
     { id: "attendance", label: "Attendance", count: attendance.length },
     { id: "leave", label: "Leave", count: leaveBalances.length + leaveRequests.length },
@@ -137,6 +153,10 @@ export function EmployeeDetailTabs({
           employee.ctc_currency === "INR" || !employee.ctc_currency ? "₹" : `${employee.ctc_currency} `,
         )
       : "—"
+  const monthly =
+    employee.salary_monthly !== null && employee.salary_monthly !== undefined
+      ? formatCurrency(employee.salary_monthly, "₹")
+      : "—"
 
   return (
     <>
@@ -145,13 +165,20 @@ export function EmployeeDetailTabs({
       {tab === "profile" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <DetailCard title="Contact">
-            <InfoRow label="Email" value={employee.email ?? "—"} />
-            <InfoRow label="Phone" value={employee.phone ?? "—"} />
-            <InfoRow label="Location" value="—" />
+            <InfoRow label="Personal phone" value={employee.phone ?? "—"} />
+            <InfoRow label="Office phone" value={employee.office_phone ?? "—"} />
+            <InfoRow label="Personal email" value={employee.email ?? "—"} />
+            <InfoRow label="Work email" value={employee.work_email ?? "—"} />
+            <InfoRow label="Office" value={employee.office ?? "—"} />
           </DetailCard>
           <DetailCard title="Personal">
-            <InfoRow label="Reporting to" value={employee.reporting_to_name ?? "—"} />
+            <InfoRow
+              label={`Father${employee.relation ? ` (${employee.relation})` : ""}`}
+              value={employee.father_name ?? "—"}
+            />
+            <InfoRow label="Date of birth" value={formatDate(employee.dob)} />
             <InfoRow label="Blood group" value={employee.blood_group ?? "—"} />
+            <InfoRow label="Aadhaar address" value={employee.aadhaar_address ?? "—"} />
             <InfoRow label="Status" value={<EmployeeStatusBadge status={employee.status} />} />
           </DetailCard>
         </div>
@@ -162,13 +189,67 @@ export function EmployeeDetailTabs({
           <DetailCard title="Role">
             <InfoRow label="Role / Title" value={employee.role_title ?? "—"} />
             <InfoRow label="Department" value={employee.department_name ?? "—"} />
-            <InfoRow label="Vertical" value={employee.vertical ?? "—"} />
+            <InfoRow label="Office" value={employee.office ?? "—"} />
+            <InfoRow
+              label="Type"
+              value={employee.employment_type ? (
+                <StatusBadge tone="blue">{employee.employment_type}</StatusBadge>
+              ) : "—"}
+            />
             <InfoRow label="Reporting to" value={employee.reporting_to_name ?? "—"} />
+            <InfoRow label="Vertical" value={employee.vertical ?? "—"} />
           </DetailCard>
           <DetailCard title="Tenure & compensation">
             <InfoRow label="Join date" value={formatDate(employee.join_date)} />
             <InfoRow label="Status" value={<EmployeeStatusBadge status={employee.status} />} />
-            <InfoRow label="CTC (annual)" value={ctc} />
+            <InfoRow label="Monthly salary" value={<span className="tabular-nums">{monthly}</span>} />
+            <InfoRow label="CTC (annual)" value={<span className="tabular-nums">{ctc}</span>} />
+            <InfoRow
+              label="PF applicable"
+              value={<StatusBadge tone={employee.pf_applicable ? "emerald" : "slate"}>
+                {employee.pf_applicable ? "Yes" : "No"}
+              </StatusBadge>}
+            />
+            <InfoRow
+              label="ESIC applicable"
+              value={<StatusBadge tone={employee.esic_applicable ? "emerald" : "slate"}>
+                {employee.esic_applicable ? "Yes" : "No"}
+              </StatusBadge>}
+            />
+          </DetailCard>
+        </div>
+      )}
+
+      {tab === "bank" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <DetailCard title="Verified bank account">
+            <InfoRow label="Bank" value={employee.bank_name ?? "—"} />
+            <InfoRow
+              label="Account no."
+              value={<span className="tabular-nums">{employee.bank_account ?? "—"}</span>}
+            />
+            <InfoRow
+              label="IFSC"
+              value={<span className="tabular-nums">{employee.ifsc ?? "—"}</span>}
+            />
+          </DetailCard>
+          <DetailCard title="Tax identifiers">
+            <InfoRow
+              label="PAN"
+              value={<span className="tabular-nums">{employee.pan_no ?? "—"}</span>}
+            />
+            <InfoRow
+              label="PF"
+              value={<StatusBadge tone={employee.pf_applicable ? "emerald" : "slate"}>
+                {employee.pf_applicable ? "Applicable" : "Not applicable"}
+              </StatusBadge>}
+            />
+            <InfoRow
+              label="ESIC"
+              value={<StatusBadge tone={employee.esic_applicable ? "emerald" : "slate"}>
+                {employee.esic_applicable ? "Applicable" : "Not applicable"}
+              </StatusBadge>}
+            />
           </DetailCard>
         </div>
       )}
@@ -335,7 +416,7 @@ export function EmployeeDetailTabs({
                 <tbody>
                   {assets.map((a) => (
                     <tr key={a.id} className="border-b last:border-0">
-                      <td className="px-2 py-2 font-mono text-xs">{a.asset_code ?? "—"}</td>
+                      <td className="px-2 py-2 text-sm tabular-nums">{a.asset_code ?? "—"}</td>
                       <td className="px-2 py-2 capitalize">{a.type ?? "—"}</td>
                       <td className="px-2 py-2">{a.brand_model ?? "—"}</td>
                       <td className="px-2 py-2">
@@ -372,7 +453,7 @@ export function EmployeeDetailTabs({
                 <tbody>
                   {performanceReviews.map((r) => (
                     <tr key={r.id} className="border-b last:border-0">
-                      <td className="px-2 py-2 font-mono text-xs">
+                      <td className="px-2 py-2 text-sm text-muted-foreground tabular-nums">
                         {r.cycle_id ? r.cycle_id.slice(0, 8) : "—"}
                       </td>
                       <td className="px-2 py-2">{formatDate(r.submitted_at)}</td>

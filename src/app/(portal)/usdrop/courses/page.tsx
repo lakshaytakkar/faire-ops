@@ -1,4 +1,5 @@
-import { GraduationCap, Layers, Users, Award } from "lucide-react"
+import Link from "next/link"
+import { GraduationCap, Layers, Users, Award, Plus } from "lucide-react"
 import { supabaseUsdrop } from "@/lib/supabase"
 import { PageHeader } from "@/components/shared/page-header"
 import { KPIGrid } from "@/components/shared/kpi-grid"
@@ -44,6 +45,14 @@ export default async function CoursesPage() {
       <PageHeader
         title="Courses"
         subtitle={`${total.toLocaleString("en-IN")} courses in the learning library`}
+        actions={
+          <Link
+            href="/usdrop/courses/create"
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="size-4" /> Create Course
+          </Link>
+        }
       />
 
       <KPIGrid>

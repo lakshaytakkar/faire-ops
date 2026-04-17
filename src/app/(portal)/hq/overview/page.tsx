@@ -13,7 +13,6 @@ import {
   Landmark,
   ArrowRight,
 } from "lucide-react"
-import { PageHeader } from "@/components/shared/page-header"
 import { KPIGrid } from "@/components/shared/kpi-grid"
 import { MetricCard } from "@/components/shared/metric-card"
 import { DetailCard, InfoRow } from "@/components/shared/detail-views"
@@ -35,12 +34,14 @@ export const metadata = {
 /* ------------------------------------------------------------------ */
 
 const VERTICAL_LABEL: Record<string, string> = {
-  "b2b-ecommerce": "B2B Ecommerce",
+  "b2b-ecommerce": "Faire Wholesale",
   "ets": "EazyToSell",
   "legal": "LegalNations",
   "goyo": "GoyoTours",
   "usdrop": "USDrop AI",
   "toysinbulk": "Toys in Bulk",
+  "jsblueridge": "JSBlueridge",
+  "b2b-ecosystem": "B2B Ecosystem",
   "hq": "HQ / Corporate",
 }
 
@@ -251,10 +252,29 @@ export default async function HqCommandDashboardPage() {
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
-      <PageHeader
-        title="Command Dashboard"
-        subtitle="Company-wide pulse across all verticals."
-      />
+      {/* Hero gradient banner */}
+      <div className="relative isolate overflow-hidden rounded-2xl"
+           style={{ background: "linear-gradient(135deg, hsl(225,50%,12%) 0%, hsl(220,60%,30%) 100%)" }}>
+        <div className="px-6 py-8 sm:px-8 sm:py-10">
+          <p className="text-xs font-semibold uppercase tracking-widest text-blue-300/80">Suprans HQ</p>
+          <h1 className="mt-1 text-2xl font-bold font-heading text-white">Command Center</h1>
+          <p className="mt-1 text-sm text-white/70">Cross-vertical operations dashboard</p>
+          <div className="mt-6 grid grid-cols-3 gap-6">
+            <div>
+              <p className="text-2xl font-bold tabular-nums text-white">{formatCurrency(revenue.total, "₹")}</p>
+              <p className="text-sm text-white/60">Revenue MTD</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold tabular-nums text-white">{formatNumber(headcount.activeTotal)}</p>
+              <p className="text-sm text-white/60">Active headcount</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold tabular-nums text-white">{formatNumber(activeProjects)}</p>
+              <p className="text-sm text-white/60">Active projects</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Top KPI strip — the four headline numbers */}
       <KPIGrid>
@@ -543,6 +563,25 @@ export default async function HqCommandDashboardPage() {
             )}
           </DetailCard>
         </div>
+      </div>
+
+      {/* Quick actions */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Link href="/hq/people/directory" className="group rounded-xl border border-border bg-card p-5 hover:border-primary/40 hover:shadow-md transition-all">
+          <Users className="size-5 text-blue-500 mb-2" />
+          <p className="text-sm font-semibold text-foreground group-hover:text-primary">People</p>
+          <p className="text-sm text-muted-foreground">Team directory &amp; org chart</p>
+        </Link>
+        <Link href="/hq/finance" className="group rounded-xl border border-border bg-card p-5 hover:border-primary/40 hover:shadow-md transition-all">
+          <Wallet className="size-5 text-emerald-500 mb-2" />
+          <p className="text-sm font-semibold text-foreground group-hover:text-primary">Finance</p>
+          <p className="text-sm text-muted-foreground">Revenue, expenses &amp; P&amp;L</p>
+        </Link>
+        <Link href="/hq/compliance" className="group rounded-xl border border-border bg-card p-5 hover:border-primary/40 hover:shadow-md transition-all">
+          <AlertTriangle className="size-5 text-amber-500 mb-2" />
+          <p className="text-sm font-semibold text-foreground group-hover:text-primary">Compliance</p>
+          <p className="text-sm text-muted-foreground">Alerts &amp; regulatory tracking</p>
+        </Link>
       </div>
     </div>
   )

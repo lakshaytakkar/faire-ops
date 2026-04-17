@@ -29,6 +29,31 @@ export const supabaseUsdrop = createClient(supabaseUrl, supabaseAnonKey, {
   db: { schema: "usdrop" },
 })
 
+// JSBlueridge Admin (jsblueridge.*)
+// NOTE: jsblueridge schema is NOT exposed in PostgREST. Client-side code must
+// use the API proxy routes at /api/jsblueridge/data. This anon client is kept
+// for potential future use once the schema is exposed in the Supabase dashboard.
+export const supabaseJSBlueridge = createClient(supabaseUrl, supabaseAnonKey, {
+  db: { schema: "jsblueridge" },
+})
+
+// Server-only: uses service_role key to bypass PostgREST schema exposure.
+// Use this in API routes (never import from client components).
+export function getSupabaseJSBlueridgeAdmin() {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? supabaseAnonKey
+  return createClient(supabaseUrl, key, { db: { schema: "jsblueridge" } })
+}
+
+// B2B Ecosystem — independent D2C ops for Toyarina.com + Gullee.com (b2b_ecosystem.*)
+export const supabaseB2BEcosystem = createClient(supabaseUrl, supabaseAnonKey, {
+  db: { schema: "b2b_ecosystem" },
+})
+
+// Life AI — Mr. Suprans's personal OS (life.*)
+export const supabaseLife = createClient(supabaseUrl, supabaseAnonKey, {
+  db: { schema: "life" },
+})
+
 // Suprans HQ cross-vertical data (hq.entities, hq.revenue, hq.expenses,
 // hq.alerts, hq.v_headcount_by_dept_vertical, ...). See SPACE_PATTERN.md.
 export const supabaseHq = createClient(supabaseUrl, supabaseAnonKey, {
@@ -38,6 +63,12 @@ export const supabaseHq = createClient(supabaseUrl, supabaseAnonKey, {
 // GoyoTours vertical (goyo.bookings, goyo.clients, goyo.tours, goyo.visas, ...)
 export const supabaseGoyo = createClient(supabaseUrl, supabaseAnonKey, {
   db: { schema: "goyo" },
+})
+
+// LegalNations Admin (legal.clients, legal.cases, legal.documents,
+// legal.payments, legal.compliance_items, legal.case_notes, legal.case_tasks)
+export const supabaseLegal = createClient(supabaseUrl, supabaseAnonKey, {
+  db: { schema: "legal" },
 })
 
 /* ------------------------------------------------------------------ */

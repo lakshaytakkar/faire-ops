@@ -35,7 +35,7 @@ import {
 // Hardcoded for the first Space. When a second Space is added, this should
 // be resolved from the URL / database (spaces table) instead of a literal.
 const CURRENT_SPACE = {
-  name: "B2B Ecommerce (USA)",
+  name: "Faire Wholesale Admin",
   tagline: "Wholesale ops · Faire",
   color: "#3b82f6",
 }

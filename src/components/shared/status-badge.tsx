@@ -60,12 +60,22 @@ const DEFAULT_MAP: Record<string, StatusTone> = {
   critical: "red",
   cancelled: "red",
   canceled: "red",
+  expired: "red",
+  refunded: "red",
+  rejected: "red",
+  overdue: "red",
   // blue
   planning: "blue",
   "in-review": "blue",
   review: "blue",
+  probation: "amber",
+  onboarding: "blue",
+  on_leave: "violet",
   // violet
   deferred: "violet",
+  resigned: "red",
+  terminated: "red",
+  offboarded: "red",
   // slate
   inactive: "slate",
   archived: "slate",

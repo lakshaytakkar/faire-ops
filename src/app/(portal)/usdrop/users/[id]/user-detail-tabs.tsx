@@ -1,13 +1,14 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Activity, Ticket, Store as StoreIcon } from "lucide-react"
+import { Activity, Ticket, Store as StoreIcon, GraduationCap, BookOpen, ShoppingBag } from "lucide-react"
 import { DetailCard, InfoRow, LargeModal } from "@/components/shared/detail-views"
 import { FilterBar, type FilterTab } from "@/components/shared/filter-bar"
-import { StatusBadge, toneForStatus } from "@/components/shared/status-badge"
+import { StatusBadge, toneForStatus, type StatusTone } from "@/components/shared/status-badge"
 import { EmptyState } from "@/components/shared/empty-state"
 import { KPIGrid } from "@/components/shared/kpi-grid"
 import { MetricCard } from "@/components/shared/metric-card"
+import { ChannelEmbed } from "@/components/chat/channel-embed"
 
 export interface StoreItem {
   id: string
@@ -33,6 +34,32 @@ export interface ActivityItem {
   activity_type: string | null
   activity_data: unknown
   created_at: string | null
+}
+
+export interface EnrollmentItem {
+  id: string
+  course_id: string | null
+  status: string | null
+  enrolled_at: string | null
+  completed_at: string | null
+  progress: number | null
+}
+
+export interface ModuleCompletionItem {
+  id: string
+  module_id: string | null
+  course_id: string | null
+  completed_at: string | null
+  score: number | null
+}
+
+export interface PicklistItem {
+  id: string
+  product_id: string | null
+  product_title: string | null
+  product_image_url: string | null
+  added_at: string | null
+  notes: string | null
 }
 
 interface ProfileSlim {
@@ -71,7 +98,137 @@ function formatDate(d: string | null | undefined) {
   }
 }
 
-type TabId = "overview" | "stores" | "tickets" | "activity"
+function activityTone(type: string | null): StatusTone {
+  if (!type) return "slate"
+  if (type.includes("suspend") || type.includes("delete")) return "red"
+  if (type.includes("promote")) return "violet"
+  if (type.includes("credit")) return "emerald"
+  if (type.includes("role")) return "blue"
+  if (type.includes("reactivate")) return "emerald"
+  return "slate"
+}
+
+function activityLabel(type: string | null): string {
+  if (!type) return "Unknown"
+  const labels: Record<string, string> = {
+    admin_suspend: "Suspended",
+    admin_reactivate: "Reactivated",
+    admin_promote: "Promoted",
+    admin_demote: "Demoted",
+    admin_credit_grant: "Credits Granted",
+    admin_role_change: "Role Changed",
+    admin_delete: "Deleted",
+    admin_password_reset: "Password Reset",
+    admin_onboarding_force: "Onboarding Forced",
+    admin_create: "Created by Admin",
+  }
+  return labels[type] ?? type.replace(/_/g, " ")
+}
+
+function formatAdminData(data: Record<string, unknown>): string {
+  const parts: string[] = []
+  if (data.reason) parts.push(`Reason: ${data.reason}`)
+  if (data.amount) parts.push(`Amount: ${data.amount}`)
+  if (data.to_plan) parts.push(`Plan: ${data.to_plan}`)
+  if (data.role) parts.push(`Role: ${data.role}`)
+  if (data.new_total !== undefined) parts.push(`New total: ${data.new_total}`)
+  return parts.length > 0 ? parts.join(" · ") : "Admin action"
+}
+
+function EmailWidget({ recipientEmail, templates }: {
+  recipientEmail: string | null
+  templates: Array<{ id: string; name: string | null; subject: string | null }>
+}) {
+  const [subject, setSubject] = useState("")
+  const [body, setBody] = useState("")
+  const [templateId, setTemplateId] = useState("")
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+
+  async function handleSend() {
+    if (!recipientEmail || !subject) return
+    setSending(true)
+    try {
+      const res = await fetch("/api/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: recipientEmail,
+          subject_override: subject,
+          html_override: `<p>${body.replace(/\n/g, "<br/>")}</p>`,
+        }),
+      })
+      if (res.ok) {
+        setSent(true)
+        setSubject("")
+        setBody("")
+        setTimeout(() => setSent(false), 3000)
+      }
+    } finally {
+      setSending(false)
+    }
+  }
+
+  function applyTemplate(id: string) {
+    const t = templates.find(t => t.id === id)
+    if (t) {
+      setSubject(t.subject ?? "")
+      setTemplateId(id)
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      {templates.length > 0 && (
+        <select
+          value={templateId}
+          onChange={(e) => applyTemplate(e.target.value)}
+          className="w-full h-8 rounded-md border bg-background px-2 text-sm"
+        >
+          <option value="">Use template…</option>
+          {templates.map(t => (
+            <option key={t.id} value={t.id}>{t.name ?? t.subject ?? "Untitled"}</option>
+          ))}
+        </select>
+      )}
+      <div className="text-sm text-muted-foreground">
+        To: <span className="font-medium text-foreground">{recipientEmail ?? "No email"}</span>
+      </div>
+      <input
+        type="text"
+        placeholder="Subject"
+        value={subject}
+        onChange={(e) => setSubject(e.target.value)}
+        className="w-full h-8 rounded-md border bg-background px-3 text-sm"
+      />
+      <textarea
+        placeholder="Message body…"
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        rows={4}
+        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+      />
+      <div className="flex items-center justify-between">
+        <a
+          href="/usdrop/email"
+          className="text-sm text-primary hover:underline"
+        >
+          Manage templates
+        </a>
+        <button
+          type="button"
+          onClick={handleSend}
+          disabled={sending || !recipientEmail || !subject}
+          className="h-8 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50 hover:bg-primary/90 transition-colors"
+        >
+          {sending ? "Sending…" : sent ? "Sent!" : "Send Email"}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+type TabId = "overview" | "stores" | "tickets" | "activity" | "courses" | "picklist"
 
 export function UserDetailTabs({
   profile,
@@ -80,6 +237,11 @@ export function UserDetailTabs({
   stores,
   tickets,
   activity,
+  emailTemplates,
+  planChanges,
+  enrollments,
+  moduleCompletions,
+  picklist,
 }: {
   profile: ProfileSlim
   planName: string | null
@@ -87,6 +249,19 @@ export function UserDetailTabs({
   stores: StoreItem[]
   tickets: TicketItem[]
   activity: ActivityItem[]
+  emailTemplates: Array<{ id: string; name: string | null; subject: string | null; type: string | null; category: string | null }>
+  planChanges: Array<{
+    id: string
+    from_plan: string | null
+    to_plan: string | null
+    narration: string | null
+    proof_url: string | null
+    performed_by: string | null
+    created_at: string | null
+  }>
+  enrollments: EnrollmentItem[]
+  moduleCompletions: ModuleCompletionItem[]
+  picklist: PicklistItem[]
 }) {
   const [tab, setTab] = useState<TabId>("overview")
   const [selectedStore, setSelectedStore] = useState<StoreItem | null>(null)
@@ -97,32 +272,38 @@ export function UserDetailTabs({
     () => [
       { id: "overview", label: "Overview" },
       { id: "stores", label: "Shopify stores", count: stores.length },
+      { id: "courses", label: "Courses", count: enrollments.length },
+      { id: "picklist", label: "Saved products", count: picklist.length },
       { id: "tickets", label: "Tickets", count: tickets.length },
       { id: "activity", label: "Activity", count: activity.length },
     ],
-    [stores.length, tickets.length, activity.length],
+    [stores.length, tickets.length, activity.length, enrollments.length, picklist.length],
   )
 
   return (
     <>
-      <KPIGrid>
-        <MetricCard
-          label="Plan"
-          value={planName ?? profile.subscription_status ?? "—"}
-          hint={profile.is_trial ? "on trial" : undefined}
-        />
-        <MetricCard label="Credits" value={profile.credits ?? 0} />
-        <MetricCard
-          label="Onboarded"
-          value={profile.onboarding_completed ? "Yes" : "No"}
-          hint={`${profile.onboarding_progress ?? 0}%`}
-        />
-        <MetricCard label="Joined" value={joinedLabel} />
-      </KPIGrid>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Left — main content */}
+        <div className="lg:col-span-2 space-y-5">
+          <KPIGrid>
+            <MetricCard
+              label="Plan"
+              value={planName ?? profile.subscription_status ?? "—"}
+              hint={profile.is_trial ? "on trial" : undefined}
+            />
+            <MetricCard label="Credits" value={profile.credits ?? 0} />
+            <MetricCard
+              label="Onboarded"
+              value={profile.onboarding_completed ? "Yes" : "No"}
+              hint={`${profile.onboarding_progress ?? 0}%`}
+            />
+            <MetricCard label="Joined" value={joinedLabel} />
+          </KPIGrid>
 
-      <FilterBar tabs={tabs} activeTab={tab} onTabChange={(id) => setTab(id as TabId)} />
+          <FilterBar tabs={tabs} activeTab={tab} onTabChange={(id) => setTab(id as TabId)} />
 
-      {tab === "overview" && (
+          {tab === "overview" && (
+        <>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <DetailCard title="Profile">
             <div className="divide-y">
@@ -200,6 +381,34 @@ export function UserDetailTabs({
             </div>
           </DetailCard>
         </div>
+
+        {planChanges.length > 0 && (
+          <DetailCard title={`Plan History (${planChanges.length})`}>
+            <ul className="divide-y">
+              {planChanges.map((pc) => (
+                <li key={pc.id} className="py-3 flex items-center justify-between">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium">
+                      {pc.from_plan ?? "—"} → {pc.to_plan}
+                    </div>
+                    {pc.narration && (
+                      <div className="text-sm text-muted-foreground mt-0.5">{pc.narration}</div>
+                    )}
+                    {pc.proof_url && (
+                      <a href={pc.proof_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline mt-0.5 block">
+                        View payment proof
+                      </a>
+                    )}
+                  </div>
+                  <div className="text-sm text-muted-foreground tabular-nums shrink-0">
+                    {formatDate(pc.created_at)}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </DetailCard>
+        )}
+        </>
       )}
 
       {tab === "stores" && (
@@ -310,10 +519,12 @@ export function UserDetailTabs({
                       {formatDate(a.created_at)}
                     </td>
                     <td className="px-2 py-3">
-                      <StatusBadge tone="slate">{a.activity_type ?? "—"}</StatusBadge>
+                      <StatusBadge tone={activityTone(a.activity_type)}>{activityLabel(a.activity_type)}</StatusBadge>
                     </td>
                     <td className="px-2 py-3 text-sm text-muted-foreground truncate max-w-md">
-                      {a.activity_data ? JSON.stringify(a.activity_data).slice(0, 120) : "—"}
+                      {a.activity_type?.startsWith("admin_") && a.activity_data
+                        ? formatAdminData(a.activity_data as Record<string, unknown>)
+                        : a.activity_data ? JSON.stringify(a.activity_data).slice(0, 120) : "—"}
                     </td>
                   </tr>
                 ))}
@@ -323,6 +534,140 @@ export function UserDetailTabs({
         </DetailCard>
       )}
 
+      {tab === "courses" && (
+        <>
+          <DetailCard title={`Enrolled courses (${enrollments.length})`}>
+            {enrollments.length === 0 ? (
+              <EmptyState
+                icon={GraduationCap}
+                title="No course enrollments"
+                description="This user hasn't enrolled in any courses yet."
+              />
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left text-xs font-medium text-muted-foreground px-2 py-2.5">Course ID</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground px-2 py-2.5">Status</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground px-2 py-2.5">Progress</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground px-2 py-2.5">Enrolled</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground px-2 py-2.5">Completed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {enrollments.map((e) => (
+                    <tr key={e.id} className="border-b last:border-b-0 hover:bg-muted/40 transition-colors">
+                      <td className="px-2 py-3 text-sm font-medium">
+                        <span className="font-mono text-xs">{e.course_id?.slice(0, 8) ?? "—"}...</span>
+                      </td>
+                      <td className="px-2 py-3">
+                        <StatusBadge tone={toneForStatus(e.status)}>{e.status ?? "—"}</StatusBadge>
+                      </td>
+                      <td className="px-2 py-3 text-sm tabular-nums">{e.progress ?? 0}%</td>
+                      <td className="px-2 py-3 text-sm text-muted-foreground">{formatDate(e.enrolled_at)}</td>
+                      <td className="px-2 py-3 text-sm text-muted-foreground">{formatDate(e.completed_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </DetailCard>
+
+          <DetailCard title={`Module completions (${moduleCompletions.length})`}>
+            {moduleCompletions.length === 0 ? (
+              <EmptyState
+                icon={BookOpen}
+                title="No module completions"
+                description="This user hasn't completed any course modules yet."
+              />
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left text-xs font-medium text-muted-foreground px-2 py-2.5">Module ID</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground px-2 py-2.5">Course ID</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground px-2 py-2.5">Score</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground px-2 py-2.5">Completed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {moduleCompletions.map((m) => (
+                    <tr key={m.id} className="border-b last:border-b-0 hover:bg-muted/40 transition-colors">
+                      <td className="px-2 py-3 text-sm">
+                        <span className="font-mono text-xs">{m.module_id?.slice(0, 8) ?? "—"}...</span>
+                      </td>
+                      <td className="px-2 py-3 text-sm">
+                        <span className="font-mono text-xs">{m.course_id?.slice(0, 8) ?? "—"}...</span>
+                      </td>
+                      <td className="px-2 py-3 text-sm tabular-nums">{m.score != null ? m.score : "—"}</td>
+                      <td className="px-2 py-3 text-sm text-muted-foreground">{formatDate(m.completed_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </DetailCard>
+        </>
+      )}
+
+      {tab === "picklist" && (
+        <DetailCard title={`Saved products (${picklist.length})`}>
+          {picklist.length === 0 ? (
+            <EmptyState
+              icon={ShoppingBag}
+              title="No saved products"
+              description="This user hasn't saved any products to their picklist yet."
+            />
+          ) : (
+            <ul className="divide-y">
+              {picklist.map((p) => (
+                <li key={p.id} className="py-3 flex items-center gap-3">
+                  {p.product_image_url ? (
+                    <img
+                      src={p.product_image_url}
+                      alt={p.product_title ?? "Product"}
+                      className="size-10 rounded-md object-cover shrink-0 bg-muted"
+                    />
+                  ) : (
+                    <div className="size-10 rounded-md bg-muted flex items-center justify-center shrink-0">
+                      <ShoppingBag className="size-4 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium truncate">{p.product_title ?? "Untitled product"}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {p.product_id ? <span className="font-mono">{p.product_id}</span> : null}
+                      {p.product_id && p.added_at ? " · " : null}
+                      {p.added_at ? `Added ${formatDate(p.added_at)}` : null}
+                    </div>
+                    {p.notes && <div className="text-sm text-muted-foreground mt-0.5">{p.notes}</div>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </DetailCard>
+      )}
+        </div>
+
+        {/* Right — communication */}
+        <div className="space-y-5 lg:sticky lg:top-5 lg:self-start">
+          <DetailCard title="Chat">
+            <ChannelEmbed
+              projectId={profile.id}
+              channelKind="user-support"
+              senderName="Support"
+              height="350px"
+              emptyHint="Start a conversation with this user"
+            />
+          </DetailCard>
+          <DetailCard title="Send Email">
+            <EmailWidget recipientEmail={profile.email} templates={emailTemplates} />
+          </DetailCard>
+        </div>
+      </div>
+
+      {/* Modals stay outside the grid */}
       {selectedStore && (
         <LargeModal title="Shopify store" onClose={() => setSelectedStore(null)}>
           <DetailCard title="Details">
@@ -377,7 +722,7 @@ export function UserDetailTabs({
               <div className="divide-y">
                 <InfoRow
                   label="Type"
-                  value={<StatusBadge tone="slate">{selectedActivity.activity_type ?? "—"}</StatusBadge>}
+                  value={<StatusBadge tone={activityTone(selectedActivity.activity_type)}>{activityLabel(selectedActivity.activity_type)}</StatusBadge>}
                 />
                 <InfoRow label="When" value={formatDate(selectedActivity.created_at)} />
                 <InfoRow

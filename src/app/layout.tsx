@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import localFont from "next/font/local"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { ThemeProvider } from "@/lib/theme-context"
 import { PwaRegister } from "@/components/pwa-register"
 import "./globals.css"
 
@@ -58,7 +59,9 @@ export default function RootLayout({
       className={`${plusJakarta.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
-        <TooltipProvider>{children}</TooltipProvider>
+        <ThemeProvider>
+          <TooltipProvider>{children}</TooltipProvider>
+        </ThemeProvider>
         <PwaRegister />
       </body>
     </html>

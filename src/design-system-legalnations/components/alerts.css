@@ -1,0 +1,60 @@
+/* Alert base */
+.ds-ln-alert {
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+.ds-ln-alert svg { width: 1.125rem; height: 1.125rem; flex-shrink: 0; margin-top: 0.0625rem; }
+
+/* Info */
+.ds-ln-alert-info {
+  background: hsl(210 50% 95%);
+  color: hsl(210 50% 25%);
+  border: 1px solid hsl(210 50% 85%);
+}
+
+/* Success */
+.ds-ln-alert-success {
+  background: hsl(160 50% 94%);
+  color: hsl(160 50% 20%);
+  border: 1px solid hsl(160 50% 82%);
+}
+
+/* Warning — deadline approaching */
+.ds-ln-alert-warning {
+  background: hsl(42 80% 94%);
+  color: hsl(35 60% 22%);
+  border: 1px solid hsl(42 70% 80%);
+}
+
+/* Danger — overdue or action required */
+.ds-ln-alert-danger {
+  background: hsl(0 50% 96%);
+  color: hsl(0 50% 30%);
+  border: 1px solid hsl(0 40% 85%);
+}
+
+/* Neutral — general notice */
+.ds-ln-alert-neutral {
+  background: var(--muted);
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+}
+
+/* Banner variant — full width, no border-radius */
+.ds-ln-banner {
+  padding: 0.625rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.ds-ln-banner-warning { background: hsl(42 80% 92%); color: hsl(35 60% 22%); }
+.ds-ln-banner-info { background: hsl(210 50% 94%); color: hsl(210 50% 25%); }
+.ds-ln-banner-success { background: hsl(160 50% 92%); color: hsl(160 50% 20%); }
+.ds-ln-banner-action { margin-left: auto; }

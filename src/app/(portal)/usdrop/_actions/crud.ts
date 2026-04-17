@@ -38,6 +38,7 @@ const ALLOWED_TABLES = new Set([
   "mentorship_leads",
   "payment_links",
   "llc_applications",
+  "plan_changes",
 ])
 
 function assertAllowed(table: string) {

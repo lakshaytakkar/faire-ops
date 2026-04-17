@@ -1,0 +1,20 @@
+/* Container */
+.ds-ln-container { max-width: 960px; width: 100%; }
+.ds-ln-container-wide { max-width: 1200px; width: 100%; }
+
+/* Status grid (3-col) */
+.ds-ln-grid-status { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+@media (min-width: 640px) { .ds-ln-grid-status { grid-template-columns: repeat(3, 1fr); } }
+
+/* 2-col layout */
+.ds-ln-grid-2 { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+@media (min-width: 768px) { .ds-ln-grid-2 { grid-template-columns: 1fr 1fr; } }
+
+/* 2:1 layout (content + sidebar summary) */
+.ds-ln-grid-content { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+@media (min-width: 768px) { .ds-ln-grid-content { grid-template-columns: 2fr 1fr; } }
+
+/* Flex helpers */
+.ds-ln-row { display: flex; align-items: center; gap: 0.5rem; }
+.ds-ln-row-between { display: flex; align-items: center; justify-content: space-between; }
+.ds-ln-stack { display: flex; flex-direction: column; }

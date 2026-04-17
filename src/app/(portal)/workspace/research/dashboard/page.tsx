@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import Link from "next/link"
 import {
   Telescope,
@@ -11,10 +11,20 @@ import {
   Plus,
   ExternalLink,
   Newspaper,
+  ArrowRight,
+  FlaskConical,
+  BarChart3,
+  Swords,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { SubNav } from "@/components/shared/sub-nav"
+import { EmptyState } from "@/components/shared/empty-state"
+import { useActiveSpace } from "@/lib/use-active-space"
+
+function hrefForSpace(href: string, slug: string): string {
+  return slug === "b2b-ecommerce" ? href : `${href}?space=${slug}`
+}
 
 const SUB_NAV_ITEMS = [
   { title: "Dashboard", href: "/workspace/research/dashboard" },
@@ -119,6 +129,17 @@ function formatDate(iso: string): string {
 /* ------------------------------------------------------------------ */
 
 export default function ResearchDashboardPage() {
+  return (
+    <Suspense fallback={<div className="max-w-[1440px] mx-auto w-full"><div className="h-8 w-40 rounded bg-muted animate-pulse" /></div>}>
+      <ResearchDashboardPageInner />
+    </Suspense>
+  )
+}
+
+function ResearchDashboardPageInner() {
+  const { slug: activeSlug } = useActiveSpace()
+  const researchAvailable = activeSlug === "b2b-ecommerce"
+
   const [loading, setLoading] = useState(true)
   const [ideas, setIdeas] = useState<ProductIdea[]>([])
   const [toolsCount, setToolsCount] = useState(0)
@@ -129,6 +150,10 @@ export default function ResearchDashboardPage() {
   const [notes, setNotes] = useState<Note[]>([])
 
   useEffect(() => {
+    if (!researchAvailable) {
+      setLoading(false)
+      return
+    }
     let cancelled = false
     async function load() {
       setLoading(true)
@@ -180,7 +205,7 @@ export default function ResearchDashboardPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [researchAvailable])
 
   const activeIdeaCount = ideas.filter(
     (i) => i.status !== "launched" && i.status !== "rejected",
@@ -227,12 +252,78 @@ export default function ResearchDashboardPage() {
   }
 
   /* ------------------------------------------------------------------ */
+  /*  Not wired up for this space                                        */
+  /* ------------------------------------------------------------------ */
+
+  if (!researchAvailable) {
+    return (
+      <div className="max-w-[1440px] mx-auto w-full space-y-5">
+        <SubNav items={SUB_NAV_ITEMS} />
+        <div>
+          <h1 className="text-2xl font-bold">Research</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Discover, validate, and launch new opportunities
+          </p>
+        </div>
+        <EmptyState
+          icon={Telescope}
+          title="Research isn't wired up for this space yet"
+          description="Research lives in B2B only for now."
+          action={
+            <Link href="/workspace/research/dashboard?space=b2b-ecommerce">
+              <Button variant="outline">Switch to B2B Research</Button>
+            </Link>
+          }
+        />
+      </div>
+    )
+  }
+
+  /* ------------------------------------------------------------------ */
   /*  Page                                                               */
   /* ------------------------------------------------------------------ */
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
       <SubNav items={SUB_NAV_ITEMS} />
+
+      {/* Hero Banner */}
+      <div
+        className="relative rounded-xl overflow-hidden px-8 py-10"
+        style={{
+          background: "linear-gradient(135deg, hsl(160,50%,12%) 0%, hsl(155,60%,30%) 100%)",
+        }}
+      >
+        <div className="relative z-10">
+          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-emerald-300/80 mb-2">
+            Research
+          </span>
+          <h1 className="text-3xl font-bold font-heading text-white">Research Lab</h1>
+          <p className="mt-1.5 text-sm text-white/70 max-w-md">
+            Product ideas, market trends &amp; competitive intelligence
+          </p>
+          <div className="mt-6 flex items-center gap-8">
+            <div>
+              <p className="text-2xl font-bold tabular-nums text-white">{ideas.length}</p>
+              <p className="text-xs text-white/60 mt-0.5">Total Ideas</p>
+            </div>
+            <div className="h-8 w-px bg-white/20" />
+            <div>
+              <p className="text-2xl font-bold tabular-nums text-white">{reports.length}</p>
+              <p className="text-xs text-white/60 mt-0.5">Published Reports</p>
+            </div>
+            <div className="h-8 w-px bg-white/20" />
+            <div>
+              <p className="text-2xl font-bold tabular-nums text-white">{goals.length}</p>
+              <p className="text-xs text-white/60 mt-0.5">Active Goals</p>
+            </div>
+          </div>
+        </div>
+        {/* Decorative circles */}
+        <div className="absolute -right-10 -top-10 h-56 w-56 rounded-full bg-white/5" />
+        <div className="absolute -right-4 bottom-0 h-32 w-32 rounded-full bg-white/5" />
+      </div>
+
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -419,18 +510,47 @@ export default function ResearchDashboardPage() {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="rounded-lg border border-border/80 bg-card shadow-sm overflow-hidden">
-        <div className="px-5 py-3.5 border-b text-[0.9375rem] font-semibold tracking-tight">
-          Quick Actions
-        </div>
-        <div className="p-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          <QuickAction href="/workspace/research/products" label="Product Idea" />
-          <QuickAction href="/workspace/research/tools" label="Tool" />
-          <QuickAction href="/workspace/research/competitors" label="Competitor" />
-          <QuickAction href="/workspace/research/trends" label="Trend" />
-          <QuickAction href="/workspace/research/reports" label="Report" />
-        </div>
+      {/* Quick Action Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Link
+          href={hrefForSpace("/workspace/research/products", activeSlug)}
+          className="group rounded-lg border border-border/80 bg-card shadow-sm p-5 hover:border-emerald-500/40 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-9 w-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+              <FlaskConical className="h-4 w-4" />
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-emerald-600 transition-colors" />
+          </div>
+          <h3 className="text-sm font-semibold">Browse Ideas</h3>
+          <p className="text-xs text-muted-foreground mt-1">Explore product ideas and validation pipeline</p>
+        </Link>
+        <Link
+          href={hrefForSpace("/workspace/research/trends", activeSlug)}
+          className="group rounded-lg border border-border/80 bg-card shadow-sm p-5 hover:border-emerald-500/40 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-9 w-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
+              <BarChart3 className="h-4 w-4" />
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-emerald-600 transition-colors" />
+          </div>
+          <h3 className="text-sm font-semibold">View Trends</h3>
+          <p className="text-xs text-muted-foreground mt-1">Market trends and opportunity scores</p>
+        </Link>
+        <Link
+          href={hrefForSpace("/workspace/research/competitors", activeSlug)}
+          className="group rounded-lg border border-border/80 bg-card shadow-sm p-5 hover:border-emerald-500/40 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-9 w-9 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+              <Swords className="h-4 w-4" />
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-emerald-600 transition-colors" />
+          </div>
+          <h3 className="text-sm font-semibold">Competitors</h3>
+          <p className="text-xs text-muted-foreground mt-1">Track and analyze competitive landscape</p>
+        </Link>
       </div>
     </div>
   )

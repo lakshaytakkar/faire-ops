@@ -213,16 +213,19 @@ export function ChannelEmbed({
       for (const file of Array.from(files)) {
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_")
         const path = `admin/${Date.now()}-${safeName}`
-        const { error: upErr } = await supabase.storage
-          .from(BUCKET)
-          .upload(path, file, { upsert: false, contentType: file.type })
-        if (upErr) {
-          console.error("upload failed:", upErr.message)
+        const form = new FormData()
+        form.append("file", file)
+        form.append("bucket", BUCKET)
+        form.append("path", path)
+        form.append("upsert", "false")
+        const res = await fetch("/api/upload", { method: "POST", body: form })
+        const json = await res.json()
+        if (!res.ok) {
+          console.error("upload failed:", json.error)
           continue
         }
-        const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path)
         uploads.push({
-          url: pub.publicUrl,
+          url: json.url,
           path,
           name: file.name,
           size: file.size,

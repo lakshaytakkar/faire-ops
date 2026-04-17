@@ -22,6 +22,7 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table"
+import { StatusBadge, toneForStatus } from "@/components/shared/status-badge"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -111,35 +112,6 @@ function fmtTimestamp(dateStr: string): string {
     hour: "numeric",
     minute: "2-digit",
   })
-}
-
-function StatusBadge({ status }: { status: string }) {
-  if (status === "success") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
-        <CheckCircle2 className="size-3" /> Success
-      </span>
-    )
-  }
-  if (status === "failed") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700">
-        <XCircle className="size-3" /> Failed
-      </span>
-    )
-  }
-  if (status === "running") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
-        <Loader2 className="size-3 animate-spin" /> Running
-      </span>
-    )
-  }
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
-      {status}
-    </span>
-  )
 }
 
 /* ------------------------------------------------------------------ */
@@ -306,7 +278,7 @@ export default function SyncPage() {
                         {run.automations?.name ?? run.automation_id}
                       </TableCell>
                       <TableCell>
-                        <StatusBadge status={run.status} />
+                        <StatusBadge tone={toneForStatus(run.status)}>{run.status}</StatusBadge>
                       </TableCell>
                       <TableCell className="text-muted-foreground text-xs">
                         {fmtTimestamp(run.started_at)}

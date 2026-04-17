@@ -41,9 +41,12 @@ function formatInitials(name: string | null | undefined) {
     .slice(0, 2)
 }
 
+const PAGE_SIZE = 50
+
 export function UsersClient({ rows }: { rows: ProfileRow[] }) {
   const [search, setSearch] = useState("")
   const [activeTier, setActiveTier] = useState<string>("all")
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   const tabs: FilterTab[] = useMemo(() => {
     const pro = rows.filter(
@@ -62,6 +65,8 @@ export function UsersClient({ rows }: { rows: ProfileRow[] }) {
   }, [rows])
 
   const filtered = useMemo(() => {
+    // Reset visible count when filters change
+    setVisibleCount(PAGE_SIZE)
     return rows.filter((r) => {
       if (activeTier === "pro" && r.account_type !== "pro" && r.account_type !== "enterprise") {
         return false
@@ -79,6 +84,9 @@ export function UsersClient({ rows }: { rows: ProfileRow[] }) {
       return true
     })
   }, [rows, activeTier, search])
+
+  const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount])
+  const hasMore = visibleCount < filtered.length
 
   return (
     <>
@@ -106,7 +114,7 @@ export function UsersClient({ rows }: { rows: ProfileRow[] }) {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((p) => {
+            {visible.map((p) => {
               const isPro = p.account_type === "pro" || p.account_type === "enterprise"
               return (
                 <tr key={p.id} className="border-b last:border-b-0 hover:bg-muted/40 transition-colors">
@@ -166,6 +174,22 @@ export function UsersClient({ rows }: { rows: ProfileRow[] }) {
             )}
           </tbody>
         </table>
+
+        {/* Pagination footer */}
+        <div className="flex items-center justify-between border-t px-4 py-3">
+          <span className="text-sm text-muted-foreground">
+            Showing {Math.min(visibleCount, filtered.length)} of {filtered.length} users
+          </span>
+          {hasMore && (
+            <button
+              type="button"
+              onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+              className="h-8 px-4 rounded-md border text-sm font-medium hover:bg-muted/40 transition-colors"
+            >
+              Load more
+            </button>
+          )}
+        </div>
       </div>
     </>
   )

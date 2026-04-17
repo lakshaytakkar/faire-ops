@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react"
 import { Upload, ImageOff } from "lucide-react"
-import { supabase } from "@/lib/supabase"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -123,14 +122,14 @@ export function UploadButton({
     try {
       const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase()
       const path = `products/${productId}.${ext}`
-      const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
-        cacheControl: "3600",
-        upsert: true,
-        contentType: file.type || undefined,
-      })
-      if (error) throw error
-      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}?v=${Date.now()}`
-      onUploaded(publicUrl)
+      const form = new FormData()
+      form.append("file", file)
+      form.append("bucket", BUCKET)
+      form.append("path", path)
+      const res = await fetch("/api/upload", { method: "POST", body: form })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? "Upload failed")
+      onUploaded(`${json.url}?v=${Date.now()}`)
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     } finally {

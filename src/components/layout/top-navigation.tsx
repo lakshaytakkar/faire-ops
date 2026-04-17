@@ -29,8 +29,10 @@ import {
   Compass,
   FileText,
   CreditCard,
+  ArrowUpFromLine,
   UserCircle,
-  LayoutGrid,
+  CheckCircle2,
+  FolderOpen,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useBrandFilter } from "@/lib/brand-filter-context"
@@ -111,6 +113,28 @@ const PLACEHOLDER_HQ: NavItem[] = [
     ],
   },
   {
+    title: "Razorpay", url: "/hq/razorpay/overview", icon: CreditCard,
+    subItems: [
+      { title: "Overview", url: "/hq/razorpay/overview" },
+      { title: "Payments", url: "/hq/razorpay/all" },
+      { title: "Payment Links", url: "/hq/razorpay/links" },
+      { title: "Invoices", url: "/hq/razorpay/invoices" },
+      { title: "Refunds", url: "/hq/razorpay/refunds" },
+      { title: "Settlements", url: "/hq/razorpay/settlements" },
+      { title: "Subscriptions", url: "/hq/razorpay/subscriptions" },
+      { title: "Disputes", url: "/hq/razorpay/disputes" },
+      { title: "Settings", url: "/hq/razorpay/settings" },
+    ],
+  },
+  {
+    title: "Razorpay X", url: "/hq/razorpay-x/payouts", icon: ArrowUpFromLine,
+    subItems: [
+      { title: "Payouts", url: "/hq/razorpay-x/payouts" },
+      { title: "Contacts", url: "/hq/razorpay-x/contacts" },
+      { title: "Transactions", url: "/hq/razorpay-x/transactions" },
+    ],
+  },
+  {
     title: "Projects", url: "/hq/projects/overview", icon: Blocks,
     subItems: [
       { title: "Active Projects", url: "/hq/projects/overview" },
@@ -162,25 +186,122 @@ const PLACEHOLDER_HQ: NavItem[] = [
 ]
 
 const PLACEHOLDER_LEGAL: NavItem[] = [
-  { title: "Dashboard", url: "/legal/dashboard", icon: LayoutDashboard },
-  { title: "Clients", url: "/legal/clients", icon: UserCircle },
-  { title: "Cases", url: "/legal/cases", icon: Blocks },
-  { title: "Documents", url: "/legal/documents", icon: FileText },
-  { title: "Payments", url: "/legal/payments", icon: CreditCard },
-  { title: "Compliance", url: "/legal/compliance", icon: Target },
+  {
+    title: "Dashboard", url: "/legal/dashboard", icon: LayoutDashboard,
+    subItems: [
+      { title: "Overview", url: "/legal/dashboard" },
+    ],
+  },
+  {
+    title: "Clients", url: "/legal/clients", icon: UserCircle,
+    subItems: [
+      { title: "All clients",  url: "/legal/clients" },
+      { title: "Healthy",      url: "/legal/clients/active" },
+      { title: "Onboarding",   url: "/legal/clients/onboarding" },
+      { title: "Pipeline",     url: "/legal/clients/pipeline" },
+    ],
+  },
+  {
+    title: "Onboarding", url: "/legal/onboarding", icon: CheckCircle2,
+    subItems: [
+      { title: "All steps",  url: "/legal/onboarding" },
+      { title: "By phase",   url: "/legal/onboarding/by-phase" },
+    ],
+  },
+  {
+    title: "Tax Filings", url: "/legal/tax-filings", icon: FileText,
+    subItems: [
+      { title: "All filings",  url: "/legal/tax-filings" },
+      { title: "By stage",     url: "/legal/tax-filings/by-stage" },
+    ],
+  },
+  {
+    title: "Compliance", url: "/legal/compliance", icon: Target,
+    subItems: [
+      { title: "Calendar",  url: "/legal/compliance" },
+      { title: "List",      url: "/legal/compliance/list" },
+    ],
+  },
+  {
+    title: "Documents", url: "/legal/documents", icon: FolderOpen,
+    subItems: [
+      { title: "All",  url: "/legal/documents" },
+    ],
+  },
+  {
+    title: "Payments", url: "/legal/payments", icon: CreditCard,
+    subItems: [
+      { title: "Ledger",     url: "/legal/payments" },
+      { title: "By client",  url: "/legal/payments/by-client" },
+    ],
+  },
 ]
 
 const PLACEHOLDER_GOYO: NavItem[] = [
-  { title: "Dashboard", url: "/goyo/dashboard", icon: LayoutDashboard },
-  { title: "Bookings", url: "/goyo/bookings", icon: ShoppingCart },
-  { title: "Clients", url: "/goyo/clients", icon: UserCircle },
-  { title: "Tours", url: "/goyo/tours", icon: Compass },
-  { title: "Visas", url: "/goyo/visas", icon: ShieldCheck },
-  { title: "Flights", url: "/goyo/travel/flights", icon: Plane },
-  { title: "Hotels", url: "/goyo/travel/hotels", icon: Hotel },
-  { title: "Itineraries", url: "/goyo/itineraries", icon: MapIcon },
-  { title: "Guides", url: "/goyo/guides", icon: Users },
-  { title: "Finance", url: "/goyo/finance", icon: Wallet },
+  {
+    title: "Dashboard", url: "/goyo/dashboard", icon: LayoutDashboard,
+    subItems: [
+      { title: "Overview", url: "/goyo/dashboard" },
+      { title: "Activity", url: "/goyo/dashboard/activity" },
+    ],
+  },
+  {
+    title: "Bookings", url: "/goyo/bookings", icon: ShoppingCart,
+    subItems: [
+      { title: "All",         url: "/goyo/bookings" },
+      { title: "Upcoming",    url: "/goyo/bookings/upcoming" },
+      { title: "In progress", url: "/goyo/bookings/in-progress" },
+      { title: "Completed",   url: "/goyo/bookings/completed" },
+    ],
+  },
+  {
+    title: "Clients", url: "/goyo/clients", icon: UserCircle,
+    subItems: [
+      { title: "All",    url: "/goyo/clients" },
+      { title: "Active", url: "/goyo/clients/active" },
+      { title: "Repeat", url: "/goyo/clients/repeat" },
+    ],
+  },
+  {
+    title: "Tours", url: "/goyo/tours", icon: Compass,
+    subItems: [
+      { title: "Catalog", url: "/goyo/tours" },
+      { title: "By type", url: "/goyo/tours/by-type" },
+    ],
+  },
+  {
+    title: "Visas", url: "/goyo/visas", icon: ShieldCheck,
+    subItems: [
+      { title: "All",         url: "/goyo/visas" },
+      { title: "In progress", url: "/goyo/visas/in-progress" },
+      { title: "Calendar",    url: "/goyo/visas/calendar" },
+    ],
+  },
+  {
+    title: "Travel", url: "/goyo/travel/flights", icon: Plane,
+    subItems: [
+      { title: "Flights",     url: "/goyo/travel/flights" },
+      { title: "Hotels",      url: "/goyo/travel/hotels" },
+      { title: "Itineraries", url: "/goyo/itineraries" },
+    ],
+  },
+  {
+    title: "Guides", url: "/goyo/guides", icon: Users,
+    subItems: [
+      { title: "All",     url: "/goyo/guides" },
+      { title: "Active",  url: "/goyo/guides/active" },
+      { title: "By city", url: "/goyo/guides/by-city" },
+    ],
+  },
+  {
+    title: "Finance", url: "/goyo/finance", icon: Wallet,
+    subItems: [
+      { title: "Overview",  url: "/goyo/finance" },
+      { title: "Payments",  url: "/goyo/finance/payments" },
+      { title: "Refunds",   url: "/goyo/finance/refunds" },
+      { title: "By booking",url: "/goyo/finance/by-booking" },
+    ],
+  },
 ]
 
 const PLACEHOLDER_USDROP: NavItem[] = [
@@ -240,7 +361,13 @@ const PLACEHOLDER_USDROP: NavItem[] = [
 // subItems covering the 37 Supabase tables in life.*. Order mirrors the user's
 // daily flow (Today → Goals → Journal → reflective/operational domains).
 const PLACEHOLDER_LIFE: NavItem[] = [
-  { title: "Today", url: "/life", icon: LayoutDashboard },
+  {
+    title: "Today", url: "/life", icon: LayoutDashboard,
+    subItems: [
+      { title: "Capture", url: "/life" },
+      { title: "Inbox",   url: "/life/inbox" },
+    ],
+  },
   {
     title: "Goals", url: "/life/goals", icon: Target,
     subItems: [
@@ -284,16 +411,6 @@ const PLACEHOLDER_LIFE: NavItem[] = [
       { title: "Mood", url: "/life/health/mood" },
       { title: "Meditation", url: "/life/health/meditation" },
       { title: "Gratitude", url: "/life/health/gratitude" },
-    ],
-  },
-  {
-    title: "Stack", url: "/life/stack", icon: LayoutGrid,
-    subItems: [
-      { title: "All apps",      url: "/life/stack" },
-      { title: "Favorites",     url: "/life/stack/favorites" },
-      { title: "Subscriptions", url: "/life/stack/subscriptions" },
-      { title: "Credentials",   url: "/life/stack/credentials" },
-      { title: "By category",   url: "/life/stack/categories" },
     ],
   },
   {
@@ -466,6 +583,92 @@ const PLACEHOLDER_DEVELOPMENT: NavItem[] = [
       { title: "By assignee", url: "/development/tasks/assignee" },
     ],
   },
+  {
+    title: "Meta", url: "/development/registry", icon: Layers,
+    subItems: [
+      { title: "Registry", url: "/development/registry" },
+      { title: "Checklists", url: "/development/checklists" },
+      { title: "Domains", url: "/development/domains" },
+      { title: "Integrations", url: "/development/integrations" },
+      { title: "AI tools", url: "/development/ai-tools" },
+      { title: "Automations", url: "/development/automations" },
+      { title: "Design system", url: "/development/design-system" },
+      { title: "Vault", url: "/development/vault" },
+      { title: "Claude log", url: "/development/claude-log" },
+    ],
+  },
+]
+
+const PLACEHOLDER_JSBLUERIDGE: NavItem[] = [
+  {
+    title: "Overview", url: "/jsblueridge/overview", icon: LayoutDashboard,
+    subItems: [
+      { title: "Dashboard", url: "/jsblueridge/overview" },
+      { title: "Analytics", url: "/jsblueridge/overview/analytics" },
+      { title: "Reports", url: "/jsblueridge/overview/reports" },
+    ],
+  },
+  {
+    title: "Orders", url: "/jsblueridge/orders", icon: ShoppingCart,
+    subItems: [
+      { title: "All Orders", url: "/jsblueridge/orders/all" },
+      { title: "Pending", url: "/jsblueridge/orders/pending" },
+      { title: "Fulfillment", url: "/jsblueridge/orders/fulfillment" },
+      { title: "Shipments", url: "/jsblueridge/orders/shipments" },
+      { title: "Disputes", url: "/jsblueridge/orders/refunds" },
+      { title: "Quotes", url: "/jsblueridge/orders/quotes" },
+    ],
+  },
+  {
+    title: "Products", url: "/jsblueridge/catalog", icon: Package,
+    subItems: [
+      { title: "Listings", url: "/jsblueridge/catalog/listings" },
+      { title: "Collections", url: "/jsblueridge/catalog/collections" },
+      { title: "Inventory", url: "/jsblueridge/catalog/inventory" },
+      { title: "Pricing", url: "/jsblueridge/catalog/pricing" },
+      { title: "Sourcing", url: "/jsblueridge/catalog/sourcing" },
+      { title: "Review", url: "/jsblueridge/catalog/sourcing/review" },
+      { title: "Queue", url: "/jsblueridge/catalog/publishing-queue" },
+      { title: "Images", url: "/jsblueridge/catalog/image-studio" },
+    ],
+  },
+  {
+    title: "Retailers", url: "/jsblueridge/retailers", icon: Users,
+    subItems: [
+      { title: "All Retailers", url: "/jsblueridge/retailers/directory" },
+      { title: "Campaigns", url: "/jsblueridge/retailers/campaigns" },
+      { title: "Follow-ups", url: "/jsblueridge/retailers/follow-ups" },
+      { title: "WhatsApp", url: "/jsblueridge/retailers/whatsapp" },
+      { title: "Faire Direct", url: "/jsblueridge/retailers/faire-direct" },
+    ],
+  },
+]
+
+const PLACEHOLDER_B2B_ECOSYSTEM: NavItem[] = [
+  {
+    title: "Overview", url: "/b2b-ecosystem/overview", icon: LayoutDashboard,
+    subItems: [
+      { title: "Dashboard", url: "/b2b-ecosystem/overview" },
+    ],
+  },
+  {
+    title: "Orders", url: "/b2b-ecosystem/orders", icon: ShoppingCart,
+    subItems: [
+      { title: "All Orders", url: "/b2b-ecosystem/orders" },
+    ],
+  },
+  {
+    title: "Products", url: "/b2b-ecosystem/catalog", icon: Package,
+    subItems: [
+      { title: "Catalog", url: "/b2b-ecosystem/catalog" },
+    ],
+  },
+  {
+    title: "Retailers", url: "/b2b-ecosystem/retailers", icon: Users,
+    subItems: [
+      { title: "Directory", url: "/b2b-ecosystem/retailers" },
+    ],
+  },
 ]
 
 const NAV_ITEMS: NavItem[] = [
@@ -634,12 +837,12 @@ function BrandFilterCell() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "flex items-center gap-2 h-12 px-4 text-sm font-medium border-r border-white/10 transition-colors min-w-[180px]",
-          open ? "bg-white/15 text-white" : "text-white hover:bg-white/15"
+          "flex items-center gap-2 h-12 px-4 text-sm font-medium border-r border-dock-border transition-colors min-w-[180px]",
+          open ? "bg-dock-hover text-dock-foreground" : "text-dock-foreground hover:bg-dock-hover"
         )}
       >
         {isAll ? (
-          <span className="flex items-center justify-center h-6 w-6 rounded bg-white/10 text-white shrink-0">
+          <span className="flex items-center justify-center h-6 w-6 rounded bg-dock-hover text-dock-foreground shrink-0">
             <Layers className="h-3.5 w-3.5" />
           </span>
         ) : activeStore?.logo_url ? (
@@ -647,11 +850,11 @@ function BrandFilterCell() {
           <img
             src={activeStore.logo_url}
             alt=""
-            className="h-6 w-6 rounded object-cover ring-1 ring-white/30 shrink-0"
+            className="h-6 w-6 rounded object-cover ring-1 ring-dock-border shrink-0"
           />
         ) : (
           <span
-            className="flex items-center justify-center h-6 w-6 rounded text-[10px] font-bold text-white shrink-0"
+            className="flex items-center justify-center h-6 w-6 rounded text-[10px] font-bold text-dock-foreground shrink-0"
             style={{ backgroundColor: activeStore?.color ?? "#64748b" }}
           >
             {activeStore?.short ?? "?"}
@@ -827,11 +1030,13 @@ export function TopNavigation() {
       case "legal":  return PLACEHOLDER_LEGAL
       case "goyo":   return PLACEHOLDER_GOYO
       case "usdrop": return PLACEHOLDER_USDROP
-      case "ets":         return PLACEHOLDER_ETS
-      case "development": return PLACEHOLDER_DEVELOPMENT
-      case "life":        return PLACEHOLDER_LIFE
+      case "ets":            return PLACEHOLDER_ETS
+      case "development":    return PLACEHOLDER_DEVELOPMENT
+      case "life":           return PLACEHOLDER_LIFE
+      case "jsblueridge":    return PLACEHOLDER_JSBLUERIDGE
+      case "b2b-ecosystem":  return PLACEHOLDER_B2B_ECOSYSTEM
       case "b2b-ecommerce":
-      default:       return NAV_ITEMS
+      default:               return NAV_ITEMS
     }
   })()
 
@@ -847,7 +1052,7 @@ export function TopNavigation() {
   return (
     <div className="shrink-0">
       {/* Primary nav bar — brand filter pinned as first cell (B2B only), modules fill remaining width */}
-      <nav className="flex bg-black">
+      <nav className="flex bg-dock">
         {isB2BSpace && <BrandFilterCell />}
         <div
           className="flex-1 grid"
@@ -866,8 +1071,8 @@ export function TopNavigation() {
               className={cn(
                 "flex items-center justify-center gap-1.5 h-12 text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-primary text-white"
-                  : "text-white hover:bg-white/15"
+                  ? "bg-dock-active text-dock-active-foreground"
+                  : "text-dock-foreground hover:bg-dock-hover"
               )}
             >
               <Icon className="size-4" />

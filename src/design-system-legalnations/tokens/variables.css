@@ -1,0 +1,139 @@
+/* LegalNations Client Portal — Design Tokens
+   Deep emerald + warm gold · Inter · Clean professional legal */
+
+:root {
+  /* Core */
+  --background: hsl(0 0% 99%);
+  --foreground: hsl(200 15% 12%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(200 15% 12%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(200 15% 12%);
+
+  /* Primary — deep emerald (trust, stability, wealth) */
+  --primary: hsl(160 45% 22%);
+  --primary-foreground: hsl(0 0% 100%);
+
+  /* Secondary — warm stone */
+  --secondary: hsl(40 10% 95%);
+  --secondary-foreground: hsl(200 15% 25%);
+
+  /* Muted */
+  --muted: hsl(40 8% 95%);
+  --muted-foreground: hsl(200 8% 46%);
+
+  /* Accent — warm gold for CTAs and highlights */
+  --accent: hsl(42 80% 55%);
+  --accent-foreground: hsl(30 50% 12%);
+
+  /* Destructive */
+  --destructive: hsl(0 65% 48%);
+  --destructive-foreground: hsl(0 0% 100%);
+
+  /* Borders — warm gray, not cool */
+  --border: hsl(40 10% 88%);
+  --input: hsl(40 10% 88%);
+  --ring: hsl(160 45% 22%);
+
+  /* Success / Info / Warning specific to legal status */
+  --status-delivered: hsl(160 50% 40%);
+  --status-processing: hsl(210 60% 50%);
+  --status-pending: hsl(40 70% 50%);
+  --status-on-hold: hsl(200 8% 55%);
+  --status-cancelled: hsl(0 50% 50%);
+
+  /* Charts */
+  --chart-1: hsl(160 45% 22%);
+  --chart-2: hsl(42 80% 55%);
+  --chart-3: hsl(210 50% 45%);
+  --chart-4: hsl(160 30% 75%);
+  --chart-5: hsl(200 8% 55%);
+
+  /* Sidebar — light, warm, approachable */
+  --sidebar: hsl(40 10% 97%);
+  --sidebar-foreground: hsl(200 15% 25%);
+  --sidebar-primary: hsl(160 45% 22%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(160 20% 94%);
+  --sidebar-accent-foreground: hsl(160 35% 18%);
+  --sidebar-border: hsl(40 10% 90%);
+  --sidebar-ring: hsl(160 45% 22%);
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-serif: 'Georgia', 'Times New Roman', serif;
+
+  /* Radius — moderate, professional */
+  --radius: 0.5rem;
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+
+  /* Shadows — warm-tinted, subtle */
+  --shadow-xs: 0px 1px 2px hsl(40 10% 20% / 0.04);
+  --shadow-sm: 0px 1px 3px hsl(40 10% 20% / 0.06), 0px 1px 2px hsl(40 10% 20% / 0.04);
+  --shadow-md: 0px 4px 8px -2px hsl(40 10% 20% / 0.06), 0px 2px 4px -1px hsl(40 10% 20% / 0.03);
+  --shadow-lg: 0px 10px 15px -3px hsl(40 10% 20% / 0.08), 0px 4px 6px -2px hsl(40 10% 20% / 0.03);
+  --shadow-xl: 0px 20px 25px -5px hsl(40 10% 20% / 0.10), 0px 8px 10px -5px hsl(40 10% 20% / 0.03);
+
+  /* Spacing base */
+  --spacing: 0.25rem;
+
+  /* Phase stepper */
+  --phase-complete: hsl(160 50% 40%);
+  --phase-active: hsl(42 80% 55%);
+  --phase-pending: hsl(40 10% 85%);
+  --phase-line: hsl(40 10% 85%);
+}
+
+.dark {
+  --background: hsl(200 20% 7%);
+  --foreground: hsl(40 10% 92%);
+  --card: hsl(200 18% 10%);
+  --card-foreground: hsl(40 10% 92%);
+  --popover: hsl(200 18% 10%);
+  --popover-foreground: hsl(40 10% 92%);
+  --primary: hsl(160 45% 38%);
+  --primary-foreground: hsl(200 20% 7%);
+  --secondary: hsl(200 12% 16%);
+  --secondary-foreground: hsl(40 10% 88%);
+  --muted: hsl(200 12% 16%);
+  --muted-foreground: hsl(200 8% 55%);
+  --accent: hsl(42 75% 50%);
+  --accent-foreground: hsl(200 20% 7%);
+  --destructive: hsl(0 60% 55%);
+  --destructive-foreground: hsl(200 20% 7%);
+  --border: hsl(200 12% 18%);
+  --input: hsl(200 12% 22%);
+  --ring: hsl(160 45% 38%);
+  --status-delivered: hsl(160 50% 48%);
+  --status-processing: hsl(210 60% 58%);
+  --status-pending: hsl(40 70% 55%);
+  --status-on-hold: hsl(200 8% 50%);
+  --status-cancelled: hsl(0 50% 55%);
+  --chart-1: hsl(160 45% 38%);
+  --chart-2: hsl(42 75% 50%);
+  --chart-3: hsl(210 50% 55%);
+  --chart-4: hsl(160 30% 30%);
+  --chart-5: hsl(200 8% 50%);
+  --sidebar: hsl(200 18% 8%);
+  --sidebar-foreground: hsl(40 10% 88%);
+  --sidebar-primary: hsl(160 45% 38%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(160 15% 14%);
+  --sidebar-accent-foreground: hsl(160 25% 75%);
+  --sidebar-border: hsl(200 12% 18%);
+  --sidebar-ring: hsl(160 45% 38%);
+  --shadow-xs: 0px 1px 2px hsl(0 0% 0% / 0.15);
+  --shadow-sm: 0px 1px 3px hsl(0 0% 0% / 0.20), 0px 1px 2px hsl(0 0% 0% / 0.15);
+  --shadow-md: 0px 4px 8px -2px hsl(0 0% 0% / 0.20), 0px 2px 4px -1px hsl(0 0% 0% / 0.12);
+  --shadow-lg: 0px 10px 15px -3px hsl(0 0% 0% / 0.25), 0px 4px 6px -2px hsl(0 0% 0% / 0.12);
+  --shadow-xl: 0px 20px 25px -5px hsl(0 0% 0% / 0.30), 0px 8px 10px -5px hsl(0 0% 0% / 0.12);
+  --phase-complete: hsl(160 50% 48%);
+  --phase-active: hsl(42 75% 50%);
+  --phase-pending: hsl(200 12% 22%);
+  --phase-line: hsl(200 12% 22%);
+}

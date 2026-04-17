@@ -4,8 +4,8 @@
  * Left dock — space switcher.
  *
  * Vertical extension of the top nav, mirroring the right WorkspaceDock:
- *   - `bg-black` with white icons + text, `bg-primary` active state,
- *     `hover:bg-white/15` hover, `h-12` cells, `size-4` icons,
+ *   - `bg-dock` with white icons + text, `bg-primary` active state,
+ *     `hover:bg-dock-hover` hover, `h-12` cells, `size-4` icons,
  *     `text-sm font-medium` labels.
  *   - Home button locked at the TOP (mirrors the user menu on the right).
  *   - Space list fills the middle and scrolls independently if overflow.
@@ -27,6 +27,7 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth-context"
 import { listSpaces, type Space } from "@/lib/spaces"
+import { useActiveSpace } from "@/lib/use-active-space"
 import {
   ShoppingBag,
   Building2,
@@ -41,6 +42,8 @@ import {
   ChevronRight,
   ExternalLink,
   Box,
+  Code,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react"
 
@@ -57,6 +60,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Zap,
   Inbox,
   Store,
+  Code,
+  Sparkles,
 }
 
 /**
@@ -99,13 +104,17 @@ const B2B_PREFIXES = [
 const PATH_PREFIXES_BY_SLUG: Record<string, string[]> = {
   "b2b-ecommerce": B2B_PREFIXES,
   "hq": ["/hq"],
+  "development": ["/development"],
   "legal": ["/legal", "/legalnations"],
   "goyo": ["/goyo"],
-  "usdrop": ["/usdrop"],
+  "usdrop": ["/usdrop", "/usdrop-admin"],
   "eazysell": ["/eazysell"],
   "ets": ["/ets"],
   "toysinbulk": ["/toysinbulk"],
   "suprans-app": ["/suprans-app"],
+  "life": ["/life"],
+  "jsblueridge": ["/jsblueridge"],
+  "b2b-ecosystem": ["/b2b-ecosystem"],
 }
 
 function prefixesFor(slug: string): string[] {
@@ -135,8 +144,12 @@ const STORAGE_KEY = "teamops:left-dock-collapsed"
 
 export function SpaceDock() {
   const pathname = usePathname()
-  const activeSlug = getActiveSpaceSlug(pathname)
+  // Honour the ?space= search param so universal-module pages (e.g.
+  // /workspace/tickets?space=usdrop) keep the venture highlighted in the
+  // left dock instead of falling back to b2b-ecommerce.
+  const { slug: activeSlug } = useActiveSpace()
   const { hasSpaceAccess, isSuperadmin, loading: authLoading, user } = useAuth()
+  void pathname // kept for any future pathname-dependent side effects
 
   const [spaces, setSpaces] = useState<Space[]>([])
   const [collapsed, setCollapsed] = useState(false)
@@ -177,15 +190,20 @@ export function SpaceDock() {
 
   const isCollapsed = hydrated ? collapsed : false
 
-  const visibleSpaces = spaces.filter((s) => {
-    if (authLoading || isSuperadmin || !user) return true
-    return hasSpaceAccess(s.slug)
-  })
+  const visibleSpaces = spaces
+    // Inactive spaces (marked is_active=false) are removed from the dock
+    // entirely — they used to render as a dimmed "coming soon" cell but the
+    // user wanted them gone.
+    .filter((s) => s.is_active)
+    .filter((s) => {
+      if (authLoading || isSuperadmin || !user) return true
+      return hasSpaceAccess(s.slug)
+    })
 
   return (
     <aside
       className={cn(
-        "shrink-0 bg-black flex flex-col border-r border-white/10 transition-[width] duration-200",
+        "shrink-0 bg-dock flex flex-col border-r border-dock-border transition-[width] duration-200",
         isCollapsed ? "w-12" : "w-44"
       )}
     >
@@ -193,7 +211,7 @@ export function SpaceDock() {
       <Link
         href="/"
         className={cn(
-          "relative flex items-center h-12 border-b border-white/10 text-white hover:bg-white/15 transition-colors group shrink-0",
+          "relative flex items-center h-12 border-b border-dock-border text-dock-foreground hover:bg-dock-hover transition-colors group shrink-0",
           isCollapsed ? "justify-center" : "gap-2 px-3"
         )}
         title="Home"
@@ -254,8 +272,8 @@ export function SpaceDock() {
                   "relative flex items-center h-12 text-sm font-medium transition-colors group shrink-0",
                   isCollapsed ? "justify-center" : "gap-2 px-3",
                   isActive
-                    ? "bg-primary text-white"
-                    : "text-white hover:bg-white/15"
+                    ? "bg-dock-active text-dock-active-foreground"
+                    : "text-dock-foreground hover:bg-dock-hover"
                 )}
                 title={space.name}
               >
@@ -268,7 +286,7 @@ export function SpaceDock() {
             <div
               key={space.slug}
               className={cn(
-                "relative flex items-center h-12 text-sm font-medium text-white opacity-40 cursor-not-allowed group shrink-0",
+                "relative flex items-center h-12 text-sm font-medium text-dock-foreground opacity-40 cursor-not-allowed group shrink-0",
                 isCollapsed ? "justify-center" : "gap-2 px-3"
               )}
               title={`${space.name} — coming soon`}
@@ -290,7 +308,7 @@ export function SpaceDock() {
         type="button"
         onClick={toggle}
         className={cn(
-          "flex items-center h-9 border-t border-white/10 text-white/60 hover:text-white hover:bg-white/15 transition-colors shrink-0",
+          "flex items-center h-9 border-t border-dock-border text-dock-muted hover:text-dock-foreground hover:bg-dock-hover transition-colors shrink-0",
           isCollapsed ? "justify-center" : "justify-start px-3 gap-1.5"
         )}
         title={isCollapsed ? "Expand dock" : "Collapse dock"}

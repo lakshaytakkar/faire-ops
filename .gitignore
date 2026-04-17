@@ -53,3 +53,11 @@ external/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# hygiene archive (filetree-hygiene agent output)
+_archive/
+
+# credentials — never commit
+*credentials*.csv
+*credentials*.json
+*-secrets.*

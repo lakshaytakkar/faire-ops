@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { PageResourcesButton } from "@/components/shared/page-resources"
 import {
@@ -18,31 +18,20 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Eye,
+  X,
 } from "lucide-react"
 import { useBrandFilter } from "@/lib/brand-filter-context"
 import { useOrderStats, useSync } from "@/lib/use-faire-data"
+import { PartnerCardStrip } from "@/components/overview/partner-card"
+import { StatusBadge, type StatusTone } from "@/components/shared/status-badge"
 
-function StatusBadge({
-  label,
-  variant,
-}: {
-  label: string
-  variant: "success" | "error" | "warning" | "neutral" | "info"
-}) {
-  const styles: Record<string, string> = {
-    success: "bg-emerald-50 text-emerald-700",
-    error: "bg-red-50 text-red-700",
-    warning: "bg-amber-50 text-amber-700",
-    neutral: "bg-slate-100 text-slate-600",
-    info: "bg-blue-50 text-blue-700",
-  }
-  return (
-    <span
-      className={`inline-flex items-center border-0 text-xs font-medium px-2 py-0.5 rounded-full ${styles[variant]}`}
-    >
-      {label}
-    </span>
-  )
+const VARIANT_TO_TONE: Record<"success" | "error" | "warning" | "neutral" | "info", StatusTone> = {
+  success: "emerald",
+  error: "red",
+  warning: "amber",
+  neutral: "slate",
+  info: "blue",
 }
 
 function timeAgo(dateStr: string | null): string {
@@ -62,9 +51,266 @@ function isStale(dateStr: string | null): boolean {
   return Date.now() - new Date(dateStr).getTime() > 24 * 60 * 60 * 1000
 }
 
+/* ------------------------------------------------------------------ */
+/*  Update Views Modal                                                 */
+/* ------------------------------------------------------------------ */
+
+interface StoreInfo {
+  id: string
+  name: string
+  color: string
+}
+
+interface MissingDay {
+  date: string // YYYY-MM-DD
+  stores: StoreInfo[] // stores missing data on this day
+}
+
+function UpdateViewsModal({
+  stores,
+  onClose,
+}: {
+  stores: StoreInfo[]
+  onClose: () => void
+}) {
+  const [missingDays, setMissingDays] = useState<MissingDay[]>([])
+  const [values, setValues] = useState<Record<string, Record<string, string>>>({}) // date -> storeId -> count
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [savedCount, setSavedCount] = useState<number | null>(null)
+
+  // Load existing views and compute missing days
+  useEffect(() => {
+    async function load() {
+      const res = await fetch(`/api/views?from=2026-04-01`)
+      const json = await res.json()
+      const existingViews = (json.data ?? []) as Array<{
+        store_id: string
+        view_date: string
+        view_count: number
+      }>
+
+      // Build a set of "storeId|date" that already have data
+      const filled = new Set(
+        existingViews.map((v) => `${v.store_id}|${v.view_date}`),
+      )
+
+      // Generate all dates from Apr 1 to yesterday
+      const start = new Date("2026-04-01")
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+
+      const days: MissingDay[] = []
+      const initValues: Record<string, Record<string, string>> = {}
+
+      for (let d = new Date(start); d <= yesterday; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().slice(0, 10)
+        const missingStores = stores.filter(
+          (s) => !filled.has(`${s.id}|${dateStr}`),
+        )
+        if (missingStores.length > 0) {
+          days.push({ date: dateStr, stores: missingStores })
+          initValues[dateStr] = {}
+          for (const s of missingStores) {
+            initValues[dateStr][s.id] = ""
+          }
+        }
+      }
+
+      setMissingDays(days)
+      setValues(initValues)
+      setLoading(false)
+    }
+    load()
+  }, [stores])
+
+  function updateValue(date: string, storeId: string, val: string) {
+    setValues((prev) => ({
+      ...prev,
+      [date]: { ...prev[date], [storeId]: val },
+    }))
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    setSavedCount(null)
+    const entries: Array<{ store_id: string; view_date: string; view_count: number }> = []
+    for (const [date, storeMap] of Object.entries(values)) {
+      for (const [storeId, val] of Object.entries(storeMap)) {
+        const num = parseInt(val, 10)
+        if (!isNaN(num) && num >= 0) {
+          entries.push({ store_id: storeId, view_date: date, view_count: num })
+        }
+      }
+    }
+    if (entries.length === 0) {
+      setSaving(false)
+      return
+    }
+    try {
+      const res = await fetch("/api/views", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entries }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error)
+      setSavedCount(entries.length)
+      // Remove saved days from missing list
+      const savedDates = new Set(entries.map((e) => `${e.store_id}|${e.view_date}`))
+      setMissingDays((prev) =>
+        prev
+          .map((day) => ({
+            ...day,
+            stores: day.stores.filter(
+              (s) => !savedDates.has(`${s.id}|${day.date}`),
+            ),
+          }))
+          .filter((day) => day.stores.length > 0),
+      )
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const totalPending = missingDays.reduce((sum, d) => sum + d.stores.length, 0)
+  const filledCount = Object.values(values).reduce(
+    (sum, storeMap) =>
+      sum +
+      Object.values(storeMap).filter((v) => v !== "" && !isNaN(Number(v)))
+        .length,
+    0,
+  )
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-card border border-border/80 rounded-lg shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <div>
+            <h2 className="text-lg font-bold font-heading">Update Views</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {loading
+                ? "Loading…"
+                : totalPending === 0
+                  ? "All caught up!"
+                  : `${totalPending} entries missing since Apr 1`}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-8 w-8 rounded-md flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 rounded-md bg-muted animate-pulse" />
+              ))}
+            </div>
+          ) : missingDays.length === 0 ? (
+            <div className="py-12 text-center text-sm text-muted-foreground">
+              All store views are up to date since April 1, 2026.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {missingDays.map((day) => (
+                <div
+                  key={day.date}
+                  className="rounded-lg border border-border/80 overflow-hidden"
+                >
+                  <div className="bg-muted/40 px-4 py-2 border-b">
+                    <p className="text-sm font-semibold">
+                      {new Date(day.date + "T00:00:00").toLocaleDateString(
+                        "en-US",
+                        {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        },
+                      )}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4">
+                    {day.stores.map((store) => (
+                      <div key={store.id} className="flex items-center gap-2">
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: store.color }}
+                        />
+                        <label className="text-sm text-muted-foreground truncate flex-1 min-w-0">
+                          {store.name}
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="—"
+                          value={values[day.date]?.[store.id] ?? ""}
+                          onChange={(e) =>
+                            updateValue(day.date, store.id, e.target.value)
+                          }
+                          className="w-20 h-8 px-2 text-sm tabular-nums text-right bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between px-6 py-3.5 border-t bg-muted/20">
+          <div className="text-xs text-muted-foreground">
+            {savedCount !== null && (
+              <span className="text-emerald-600 font-medium">
+                Saved {savedCount} entries
+              </span>
+            )}
+            {savedCount === null && filledCount > 0 && (
+              <span>{filledCount} entries ready to save</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-9 px-4 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || filledCount === 0}
+              className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {saving ? "Saving…" : `Save ${filledCount} entries`}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Dashboard                                                          */
+/* ------------------------------------------------------------------ */
+
 export default function DashboardPage() {
   const { activeBrand, stores, storesLoading } = useBrandFilter()
   const [dateFilter, setDateFilter] = useState("All Time")
+  const [showViews, setShowViews] = useState(false)
   const { stats, loading: statsLoading } = useOrderStats(activeBrand === "all" ? undefined : activeBrand, dateFilter)
   const { syncing, error: syncError, triggerSync } = useSync()
   const [sortKey, setSortKey] = useState("orders")
@@ -190,6 +436,9 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Pinned platform partners (Faire account manager, etc.) */}
+      <PartnerCardStrip spaceSlug="b2b-ecommerce" />
+
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Revenue */}
@@ -303,9 +552,10 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium truncate">{store.name}</p>
                       <StatusBadge
-                        label={isStale(store.last_synced_at) ? "Stale" : "Synced"}
-                        variant={isStale(store.last_synced_at) ? "warning" : "success"}
-                      />
+                        tone={VARIANT_TO_TONE[isStale(store.last_synced_at) ? "warning" : "success"]}
+                      >
+                        {isStale(store.last_synced_at) ? "Stale" : "Synced"}
+                      </StatusBadge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       Last synced {timeAgo(store.last_synced_at)} &middot; {store.total_orders} orders
@@ -362,16 +612,13 @@ export default function DashboardPage() {
                     <p className="text-sm font-medium truncate">{alert.title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{alert.detail}</p>
                   </div>
-                  <StatusBadge
-                    label={
-                      alert.severity === "error"
-                        ? "High"
-                        : alert.severity === "warning"
-                          ? "Medium"
-                          : "Low"
-                    }
-                    variant={alert.severity}
-                  />
+                  <StatusBadge tone={VARIANT_TO_TONE[alert.severity]}>
+                    {alert.severity === "error"
+                      ? "High"
+                      : alert.severity === "warning"
+                        ? "Medium"
+                        : "Low"}
+                  </StatusBadge>
                 </div>
               ))
             )}
@@ -442,9 +689,10 @@ export default function DashboardPage() {
                   </td>
                   <td className="px-4 py-3.5 text-sm">
                     <StatusBadge
-                      label={isStale(store.last_synced_at) ? "Stale" : "Synced"}
-                      variant={isStale(store.last_synced_at) ? "warning" : "success"}
-                    />
+                      tone={VARIANT_TO_TONE[isStale(store.last_synced_at) ? "warning" : "success"]}
+                    >
+                      {isStale(store.last_synced_at) ? "Stale" : "Synced"}
+                    </StatusBadge>
                   </td>
                 </tr>
               ))}
@@ -454,7 +702,20 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
+        <button
+          type="button"
+          onClick={() => setShowViews(true)}
+          className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-center gap-4 hover:bg-muted/20 transition-colors cursor-pointer text-left"
+        >
+          <div className="h-9 w-9 rounded-lg flex items-center justify-center bg-violet-500/10">
+            <Eye className="h-4 w-4 text-violet-600" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold">Update Views</p>
+            <p className="text-xs text-muted-foreground">Fill missing daily counts</p>
+          </div>
+        </button>
         <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-center gap-4 hover:bg-muted/20 transition-colors cursor-pointer">
           <div className="h-9 w-9 rounded-lg flex items-center justify-center bg-primary/10">
             <Zap className="h-4 w-4 text-primary" />
@@ -464,7 +725,10 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">Find trending products</p>
           </div>
         </div>
-        <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-center gap-4 hover:bg-muted/20 transition-colors cursor-pointer">
+        <Link
+          href="/analytics/revenue"
+          className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-center gap-4 hover:bg-muted/20 transition-colors cursor-pointer"
+        >
           <div className="h-9 w-9 rounded-lg flex items-center justify-center bg-emerald-500/10">
             <TrendingUp className="h-4 w-4 text-emerald-600" />
           </div>
@@ -472,7 +736,7 @@ export default function DashboardPage() {
             <p className="text-sm font-semibold">View Analytics</p>
             <p className="text-xs text-muted-foreground">Revenue &amp; performance</p>
           </div>
-        </div>
+        </Link>
         <div className="rounded-lg border border-border/80 bg-card shadow-sm p-5 flex items-center gap-4 hover:bg-muted/20 transition-colors cursor-pointer">
           <div className="h-9 w-9 rounded-lg flex items-center justify-center bg-amber-500/10">
             <Clock className="h-4 w-4 text-amber-600" />
@@ -483,6 +747,14 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Update Views Modal */}
+      {showViews && (
+        <UpdateViewsModal
+          stores={stores.map((s) => ({ id: s.id, name: s.name, color: s.color }))}
+          onClose={() => setShowViews(false)}
+        />
+      )}
     </div>
   )
 }

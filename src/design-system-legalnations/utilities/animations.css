@@ -1,0 +1,58 @@
+/* Subtle, professional — no playful shimmer, just clean entrances */
+
+@keyframes ds-ln-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ds-ln-slide-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes ds-ln-progress-fill {
+  from { width: 0; }
+  to { width: var(--fill, 100%); }
+}
+
+@keyframes ds-ln-scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Entrance animations */
+.ds-ln-animate-in { animation: ds-ln-fade-in 200ms ease-out; }
+.ds-ln-animate-slide { animation: ds-ln-slide-in 250ms ease-out; }
+.ds-ln-animate-scale { animation: ds-ln-scale-in 200ms ease-out; }
+
+/* Progress bar fill */
+.ds-ln-progress-bar {
+  height: 0.375rem;
+  background: var(--phase-pending);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.ds-ln-progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--primary);
+  animation: ds-ln-progress-fill 600ms ease-out;
+}
+.ds-ln-progress-fill--gold { background: var(--accent); }
+
+/* Step completion check animation */
+@keyframes ds-ln-check {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+.ds-ln-check-pop { animation: ds-ln-check 300ms ease-out; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ds-ln-animate-in,
+  .ds-ln-animate-slide,
+  .ds-ln-animate-scale,
+  .ds-ln-progress-fill,
+  .ds-ln-check-pop { animation: none; }
+}

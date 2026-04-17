@@ -46,6 +46,17 @@ src/app/(portal)/<space>/
 
 ---
 
+## 2b. Nav wiring invariants
+
+The top-nav engine does **longest-prefix matching** on the current pathname to decide which menu item is active. Consequences:
+
+- It's fine for a top-level nav item to have **no** `subItems` even when deeper routes exist beneath it — the engine will still highlight the parent correctly on deep routes.
+- But if deeper routes exist, **one of the sibling items' `subItems` must reference them**. Otherwise the sub-nav silently disappears on the deep route and the user loses context.
+- Every space's nav set in `src/components/layout/top-navigation.tsx` is switched via `switch (activeSpaceSlug)`. When you add a space, add its case *before* `default: return NAV_ITEMS`.
+- **Mandatory verification**: every new space must be QA'd on at least one deep route (e.g. `/<space>/<section>/<id>`) before merging — not just its landing page. Deep-route nav regressions are the most common failure mode.
+
+---
+
 ## 3. List page skeleton (copy-paste)
 
 ```tsx
@@ -94,6 +105,24 @@ export default function SomeListPage() {
 **Required primitives**: `PageHeader`, `KPIGrid`+`MetricCard` (even if you only use 2), `FilterBar`, `DetailCard`, `StatusBadge`+`toneForStatus`, `EmptyState`.
 
 **Row click → navigate to detail route** (`<Link href={\`/<space>/<section>/\${row.id}\`}>`). Not a modal.
+
+---
+
+## 3b. Layout variants
+
+The table-shaped list in §3 is the **fallback**, not the default. Pick the primitive that matches your data shape first, then fall back to a table only if nothing else fits.
+
+| Data shape | Primitive | Example |
+|---|---|---|
+| catalog, directory | `DetailCard + Table` | retailers, products |
+| chronological entries | `TimelineList` | journal, changelog, interactions |
+| status-grouped items | `KanbanBoard` | goals, issues, tasks |
+| money movements | `LedgerTable` | transactions, debtors |
+| daily logs with trends | `TrendChartGrid` | sleep, mood, fitness |
+| date-bound events | `CalendarGrid` | habits, events |
+| people directory | `ContactGrid` | contacts, team |
+
+The scaffolder (`scripts/new-space.mjs`) accepts `--layout <shape>` where shape ∈ {table, timeline, kanban, ledger, calendar, dashboard} to emit the matching list-page skeleton.
 
 ---
 
@@ -190,6 +219,8 @@ To opt a space out of a plugin: `UPDATE space_plugin_settings SET enabled=false 
 ❌ Padding on the page shell — the portal layout sets it; pages just use `space-y-5`.
 ❌ Inline hex colors (`#ABCDEF`) — use tailwind semantic tokens.
 ❌ Plugin pages that don't filter by `space_slug` — they're universal surfaces scoped per space.
+
+**Allowed / preferred**: `TimelineList`, `KanbanBoard`, `LedgerTable`, `TrendChartGrid`, `CalendarGrid`, and `ContactGrid` are first-class shared primitives. Use them when the data shape matches (§3b) — they are **not** bespoke cards and do not require a table fallback alongside them.
 
 ---
 

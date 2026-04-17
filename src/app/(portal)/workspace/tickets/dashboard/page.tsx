@@ -11,7 +11,10 @@ import {
   RefreshCw,
   Plus,
   ArrowUpRight,
+  ArrowRight,
   User,
+  FolderOpen,
+  List,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
@@ -299,6 +302,43 @@ function TicketsDashboardPageInner() {
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
       <SubNav items={TICKETS_SUBNAV} />
+
+      {/* Hero Banner */}
+      <div
+        className="relative rounded-xl overflow-hidden px-8 py-10"
+        style={{
+          background: "linear-gradient(135deg, hsl(10,50%,12%) 0%, hsl(15,60%,30%) 100%)",
+        }}
+      >
+        <div className="relative z-10">
+          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-orange-300/80 mb-2">
+            Support
+          </span>
+          <h1 className="text-3xl font-bold font-heading text-white">Support Center</h1>
+          <p className="mt-1.5 text-sm text-white/70 max-w-md">
+            Ticket management &amp; SLA tracking
+          </p>
+          <div className="mt-6 flex items-center gap-8">
+            <div>
+              <p className="text-2xl font-bold tabular-nums text-white">{metrics.openCount}</p>
+              <p className="text-xs text-white/60 mt-0.5">Open Tickets</p>
+            </div>
+            <div className="h-8 w-px bg-white/20" />
+            <div>
+              <p className="text-2xl font-bold tabular-nums text-white">{metrics.resolvedToday}</p>
+              <p className="text-xs text-white/60 mt-0.5">Resolved Today</p>
+            </div>
+            <div className="h-8 w-px bg-white/20" />
+            <div>
+              <p className="text-2xl font-bold tabular-nums text-white">{metrics.avgHours}h</p>
+              <p className="text-xs text-white/60 mt-0.5">Avg Resolution</p>
+            </div>
+          </div>
+        </div>
+        {/* Decorative circles */}
+        <div className="absolute -right-10 -top-10 h-56 w-56 rounded-full bg-white/5" />
+        <div className="absolute -right-4 bottom-0 h-32 w-32 rounded-full bg-white/5" />
+      </div>
 
       {/* Header */}
       <div className="flex items-start justify-between">
@@ -594,6 +634,48 @@ function TicketsDashboardPageInner() {
                 </tbody>
               </table>
             </div>
+          </div>
+          {/* Quick Action Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button
+              onClick={() => setModalOpen(true)}
+              className="group rounded-lg border border-border/80 bg-card shadow-sm p-5 hover:border-orange-500/40 hover:shadow-md transition-all text-left"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-9 w-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <Plus className="h-4 w-4" />
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-orange-600 transition-colors" />
+              </div>
+              <h3 className="text-sm font-semibold">New Ticket</h3>
+              <p className="text-xs text-muted-foreground mt-1">Create a new support ticket</p>
+            </button>
+            <Link
+              href="/workspace/tickets/categories"
+              className="group rounded-lg border border-border/80 bg-card shadow-sm p-5 hover:border-orange-500/40 hover:shadow-md transition-all"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-9 w-9 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center">
+                  <FolderOpen className="h-4 w-4" />
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-orange-600 transition-colors" />
+              </div>
+              <h3 className="text-sm font-semibold">View Categories</h3>
+              <p className="text-xs text-muted-foreground mt-1">Browse and manage ticket categories</p>
+            </Link>
+            <Link
+              href="/workspace/tickets/all"
+              className="group rounded-lg border border-border/80 bg-card shadow-sm p-5 hover:border-orange-500/40 hover:shadow-md transition-all"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-9 w-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <List className="h-4 w-4" />
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-orange-600 transition-colors" />
+              </div>
+              <h3 className="text-sm font-semibold">All Tickets</h3>
+              <p className="text-xs text-muted-foreground mt-1">View and filter the complete ticket list</p>
+            </Link>
           </div>
         </>
       )}

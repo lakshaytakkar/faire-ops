@@ -24,9 +24,10 @@ import {
   Sparkles,
   Telescope,
   LifeBuoy,
-  ShieldCheck,
   Megaphone,
   Phone,
+  StickyNote,
+  LayoutGrid,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
@@ -64,6 +65,17 @@ const SPACE_MODULE_OVERRIDES: Record<string, Partial<Record<string, string>>> = 
     // there rather than the generic /workspace/qa/calls path.
     "calls-qa": "/hq/calls/dashboard",
   },
+  development: {
+    // Tasks lives natively at /development/tasks (kanban + list + assignee).
+    // Without this override the dock would route into B2B's /operations/tasks.
+    tasks: "/development/tasks",
+  },
+  jsblueridge: {
+    // JSBlueridge native modules — add overrides as they ship
+  },
+  "b2b-ecosystem": {
+    // B2B Ecosystem (Toyarina.com + Gullee.com) — add overrides as they ship
+  },
 }
 
 const WORKSPACE_ITEMS = [
@@ -86,6 +98,8 @@ const WORKSPACE_ITEMS = [
   { module: "ai-team",     legacyHref: "/workspace/ai-team",          icon: Users,          label: "Remote" },
   { module: "gmail",       legacyHref: "/workspace/gmail",            icon: Mail,           label: "Gmail" },
   { module: "settings",    legacyHref: "/workspace/settings",         icon: Settings,       label: "Settings" },
+  { module: "notes",       legacyHref: "/workspace/notes",            icon: StickyNote,     label: "Notes" },
+  { module: "stack",       legacyHref: "/workspace/stack",            icon: LayoutGrid,     label: "Stack" },
 ] as const
 
 type WorkspaceItem = (typeof WORKSPACE_ITEMS)[number]
@@ -110,8 +124,8 @@ const STORAGE_KEY = "teamops:right-dock-collapsed"
 /**
  * Right workspace dock — vertical extension of the top nav.
  *
- * Visually mirrors the top navigation bar (`bg-black`, white icons + text,
- * `bg-primary` active state, `hover:bg-white/15`, `h-12` cells, `size-4`
+ * Visually mirrors the top navigation bar (`bg-dock`, white icons + text,
+ * `bg-primary` active state, `hover:bg-dock-hover`, `h-12` cells, `size-4`
  * icons, `text-sm font-medium`). Has a collapsed mode (`w-12`, icons only)
  * and an expanded mode (`w-44`, icon + label) toggled via a chevron pinned
  * to the BOTTOM of the dock; the choice is persisted to localStorage.
@@ -185,7 +199,7 @@ export function WorkspaceDock() {
   return (
     <aside
       className={cn(
-        "shrink-0 bg-black flex flex-col border-l border-white/10 transition-[width] duration-200",
+        "shrink-0 bg-dock flex flex-col border-l border-dock-border transition-[width] duration-200",
         isCollapsed ? "w-12" : "w-44"
       )}
     >
@@ -210,8 +224,8 @@ export function WorkspaceDock() {
                 "relative flex items-center h-12 text-sm font-medium transition-colors group shrink-0",
                 isCollapsed ? "justify-center" : "gap-2 px-3",
                 isActive
-                  ? "bg-primary text-white"
-                  : "text-white hover:bg-white/15"
+                  ? "bg-dock-active text-dock-active-foreground"
+                  : "text-dock-foreground hover:bg-dock-hover"
               )}
               title={item.label}
             >
@@ -234,7 +248,7 @@ export function WorkspaceDock() {
         type="button"
         onClick={toggle}
         className={cn(
-          "flex items-center h-9 border-t border-white/10 text-white/60 hover:text-white hover:bg-white/15 transition-colors shrink-0",
+          "flex items-center h-9 border-t border-dock-border text-dock-muted hover:text-dock-foreground hover:bg-dock-hover transition-colors shrink-0",
           isCollapsed ? "justify-center" : "justify-end px-3 gap-1.5"
         )}
         title={isCollapsed ? "Expand dock" : "Collapse dock"}

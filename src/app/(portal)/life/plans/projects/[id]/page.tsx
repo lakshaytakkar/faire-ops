@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation"
-import Link from "next/link"
-import { Briefcase, CalendarDays, Flag, Target } from "lucide-react"
+import { Briefcase, CalendarDays, Flag, Activity } from "lucide-react"
 import { supabaseLife } from "@/lib/supabase"
 import { PageHeader } from "@/components/shared/page-header"
 import { KPIGrid } from "@/components/shared/kpi-grid"
@@ -27,13 +26,13 @@ export default async function LifeProjectDetailPage({
     supabaseLife
       .from("personal_projects")
       .select(
-        "id, name, category, description, status, progress, start_date, target_date, next_action, linked_goal_id, notes, created_at",
+        "id, name, category, description, status, progress, start_date, target_date, next_action, notes, created_at",
       )
       .eq("id", id)
       .maybeSingle(),
     supabaseLife
       .from("project_milestones")
-      .select("id, title, due_date, done, done_at, created_at")
+      .select("id, title, due_date, done, created_at")
       .eq("project_id", id)
       .order("due_date", { ascending: true, nullsFirst: false }),
   ])
@@ -49,22 +48,10 @@ export default async function LifeProjectDetailPage({
     start_date: string | null
     target_date: string | null
     next_action: string | null
-    linked_goal_id: string | null
     notes: string | null
     created_at: string | null
   }
   const milestones = milestonesRes.data ?? []
-
-  type LinkedGoal = { id: string; title: string | null } | null
-  let linkedGoal: LinkedGoal = null
-  if (project.linked_goal_id) {
-    const { data } = await supabaseLife
-      .from("life_goals")
-      .select("id, title")
-      .eq("id", project.linked_goal_id)
-      .maybeSingle()
-    linkedGoal = data as unknown as LinkedGoal
-  }
 
   const doneCount = milestones.filter((m) => m.done).length
 
@@ -111,11 +98,10 @@ export default async function LifeProjectDetailPage({
           iconTone="amber"
         />
         <MetricCard
-          label="Linked goal"
-          value={linkedGoal?.title ?? "—"}
-          icon={Target}
+          label="Status"
+          value={project.status ?? "—"}
+          icon={Activity}
           iconTone="violet"
-          href={linkedGoal ? `/life/goals/${linkedGoal.id}` : undefined}
         />
       </KPIGrid>
 

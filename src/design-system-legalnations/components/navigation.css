@@ -1,0 +1,112 @@
+/* Sidebar — light variant */
+.ds-ln-sidebar {
+  width: 16rem;
+  height: 100svh;
+  background: var(--sidebar);
+  border-right: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+/* Sidebar brand */
+.ds-ln-sidebar-brand {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--sidebar-border);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.ds-ln-sidebar-logo {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-md);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8125rem;
+}
+.ds-ln-sidebar-brand-name { font-size: 0.9375rem; font-weight: 600; color: var(--sidebar-foreground); }
+.ds-ln-sidebar-brand-tier { font-size: 0.6875rem; color: var(--muted-foreground); }
+
+/* Sidebar section */
+.ds-ln-sidebar-section { padding: 0.75rem 0.75rem 0.25rem; }
+.ds-ln-sidebar-section-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+  padding: 0 0.5rem 0.375rem;
+}
+
+/* Sidebar item */
+.ds-ln-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--sidebar-foreground);
+  text-decoration: none;
+  transition: all 150ms;
+}
+.ds-ln-sidebar-item:hover { background: var(--sidebar-accent); color: var(--sidebar-accent-foreground); }
+.ds-ln-sidebar-item[data-active="true"] {
+  background: var(--sidebar-primary);
+  color: var(--sidebar-primary-foreground);
+}
+.ds-ln-sidebar-item svg { width: 1rem; height: 1rem; flex-shrink: 0; opacity: 0.7; }
+.ds-ln-sidebar-item[data-active="true"] svg { opacity: 1; }
+.ds-ln-sidebar-item-badge { margin-left: auto; }
+
+/* Sidebar footer — client info + support */
+.ds-ln-sidebar-footer {
+  margin-top: auto;
+  padding: 0.75rem;
+  border-top: 1px solid var(--sidebar-border);
+}
+.ds-ln-sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem;
+  border-radius: var(--radius-md);
+}
+.ds-ln-sidebar-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.ds-ln-sidebar-user-name { font-size: 0.8125rem; font-weight: 500; color: var(--sidebar-foreground); }
+.ds-ln-sidebar-user-email { font-size: 0.6875rem; color: var(--muted-foreground); }
+
+/* Topbar */
+.ds-ln-topbar {
+  height: 3.5rem;
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+  gap: 0.75rem;
+}
+.ds-ln-topbar-title { font-size: 0.9375rem; font-weight: 600; color: var(--foreground); }
+.ds-ln-topbar-breadcrumb { font-size: 0.8125rem; color: var(--muted-foreground); }
+.ds-ln-topbar-breadcrumb a { color: var(--primary); text-decoration: none; }
+.ds-ln-topbar-breadcrumb a:hover { text-decoration: underline; }
+.ds-ln-topbar-actions { margin-left: auto; display: flex; gap: 0.5rem; }

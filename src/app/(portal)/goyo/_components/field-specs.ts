@@ -1,0 +1,221 @@
+import type { FieldSpec } from "./GoyoDrawerForm"
+
+const CLIENT_STATUS = [
+  { value: "prospect", label: "Prospect" },
+  { value: "active", label: "Active" },
+  { value: "vip", label: "VIP" },
+  { value: "churned", label: "Churned" },
+]
+
+const BOOKING_STATUS = [
+  { value: "draft", label: "Draft" },
+  { value: "confirmed", label: "Confirmed" },
+  { value: "in_progress", label: "In progress" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
+]
+
+const TOUR_STATUS = [
+  { value: "active", label: "Active" },
+  { value: "draft", label: "Draft" },
+  { value: "archived", label: "Archived" },
+]
+
+const TOUR_TYPE = [
+  { value: "leisure", label: "Leisure" },
+  { value: "business", label: "Business" },
+  { value: "family", label: "Family" },
+  { value: "honeymoon", label: "Honeymoon" },
+  { value: "fair", label: "Trade fair" },
+  { value: "other", label: "Other" },
+]
+
+const FLIGHT_STATUS = [
+  { value: "draft", label: "Draft" },
+  { value: "confirmed", label: "Confirmed" },
+  { value: "ticketed", label: "Ticketed" },
+  { value: "flown", label: "Flown" },
+  { value: "cancelled", label: "Cancelled" },
+]
+
+const HOTEL_STATUS = [
+  { value: "draft", label: "Draft" },
+  { value: "booked", label: "Booked" },
+  { value: "confirmed", label: "Confirmed" },
+  { value: "in_house", label: "In house" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
+]
+
+const VISA_STATUS = [
+  { value: "pending", label: "Pending" },
+  { value: "submitted", label: "Submitted" },
+  { value: "approved", label: "Approved" },
+  { value: "rejected", label: "Rejected" },
+  { value: "on_arrival", label: "On arrival" },
+]
+
+const GUIDE_STATUS = [
+  { value: "active", label: "Active" },
+  { value: "on_assignment", label: "On assignment" },
+  { value: "unavailable", label: "Unavailable" },
+  { value: "retired", label: "Retired" },
+]
+
+const ITINERARY_STATUS = [
+  { value: "draft", label: "Draft" },
+  { value: "sent", label: "Sent" },
+  { value: "approved", label: "Approved" },
+  { value: "locked", label: "Locked" },
+]
+
+export const SPECS: Record<string, FieldSpec[]> = {
+  clients: [
+    { name: "name", label: "Name", required: true },
+    { name: "client_code", label: "Client code", placeholder: "42601" },
+    { name: "phone", label: "Phone" },
+    { name: "email", label: "Email" },
+    { name: "place", label: "City / State" },
+    { name: "meal_preference", label: "Meal", placeholder: "Veg / Non Veg / Both" },
+    { name: "passport_no", label: "Passport number" },
+    { name: "passport_expiry", label: "Passport expiry", type: "date" },
+    { name: "nationality", label: "Nationality", placeholder: "Indian" },
+    { name: "source", label: "Source", placeholder: "Canton Fair Apr 2026" },
+    { name: "status", label: "Status", type: "select", required: true, options: CLIENT_STATUS },
+    { name: "pan_gst_received", label: "PAN/GST received", type: "checkbox" },
+    { name: "documents_received", label: "Documents received", type: "checkbox" },
+    { name: "notes", label: "Notes", type: "textarea", rows: 2 },
+  ],
+  bookings: [
+    { name: "client_id", label: "Client ID", required: true, placeholder: "goyo.clients.id uuid" },
+    { name: "tour_id", label: "Tour ID", placeholder: "goyo.tours.id uuid (optional)" },
+    { name: "booking_code", label: "Booking code", placeholder: "42601" },
+    { name: "plan_details", label: "Plan", placeholder: "Phase 01 / Exclusive plan" },
+    { name: "departure_date", label: "Departure date", type: "date", required: true },
+    { name: "return_date", label: "Return date", type: "date" },
+    { name: "adult_count", label: "Adults", type: "number", required: true, min: 1 },
+    { name: "status", label: "Status", type: "select", required: true, options: BOOKING_STATUS },
+    { name: "total_amount", label: "Total amount", type: "number", step: "0.01", required: true },
+    { name: "paid_amount", label: "Paid amount", type: "number", step: "0.01", required: true },
+    { name: "currency", label: "Currency", required: true, placeholder: "INR" },
+    { name: "payment_type", label: "Payment type", placeholder: "Full Paid / Advanced Paid" },
+    { name: "sales_person", label: "Sales person" },
+    { name: "room_type", label: "Room type", placeholder: "sharing / single" },
+    { name: "visa_type", label: "Visa type", placeholder: "Group / Sticker / Both" },
+    { name: "trip_status", label: "Trip status", placeholder: "Going / Cancel / Select" },
+    { name: "trip_batch", label: "Trip batch", placeholder: "apr26 / jun26" },
+    { name: "flight_ticket_booked", label: "Flight booked", type: "checkbox" },
+    { name: "contract_signed", label: "Contract signed", type: "checkbox" },
+    { name: "notes", label: "Notes", type: "textarea", rows: 2 },
+  ],
+  tours: [
+    { name: "name", label: "Name", required: true },
+    { name: "type", label: "Type", type: "select", options: TOUR_TYPE },
+    { name: "destination", label: "Destination", placeholder: "City, Country" },
+    { name: "duration_days", label: "Duration (days)", type: "number" },
+    { name: "base_price", label: "Base price", type: "number", step: "0.01" },
+    { name: "currency", label: "Currency", required: true, placeholder: "INR" },
+    { name: "status", label: "Status", type: "select", required: true, options: TOUR_STATUS },
+    { name: "highlights", label: "Highlights", type: "textarea", rows: 2 },
+    { name: "inclusions", label: "Inclusions", type: "textarea", rows: 2 },
+    { name: "exclusions", label: "Exclusions", type: "textarea", rows: 2 },
+  ],
+  travel_flights: [
+    { name: "booking_id", label: "Booking ID", placeholder: "goyo.bookings.id (optional)" },
+    { name: "sector_from", label: "From (IATA)", required: true, placeholder: "DEL" },
+    { name: "sector_to", label: "To (IATA)", required: true, placeholder: "PVG" },
+    { name: "depart_at", label: "Departure", type: "text", placeholder: "YYYY-MM-DD HH:MM" },
+    { name: "airline", label: "Airline" },
+    { name: "flight_no", label: "Flight no" },
+    { name: "pnr", label: "PNR" },
+    { name: "status", label: "Status", type: "select", required: true, options: FLIGHT_STATUS },
+    { name: "cost", label: "Cost", type: "number", step: "0.01" },
+    { name: "currency", label: "Currency", required: true, placeholder: "INR" },
+  ],
+  travel_hotels: [
+    { name: "booking_id", label: "Booking ID", placeholder: "goyo.bookings.id (optional)" },
+    { name: "hotel_name", label: "Hotel name" },
+    { name: "city", label: "City" },
+    { name: "check_in", label: "Check in", type: "date" },
+    { name: "check_out", label: "Check out", type: "date" },
+    { name: "room_type", label: "Room type" },
+    { name: "rooms", label: "Rooms", type: "number" },
+    { name: "pax", label: "Pax", type: "number" },
+    { name: "status", label: "Status", type: "select", required: true, options: HOTEL_STATUS },
+    { name: "cost", label: "Cost", type: "number", step: "0.01" },
+    { name: "currency", label: "Currency", required: true, placeholder: "INR" },
+  ],
+  visas: [
+    { name: "booking_id", label: "Booking ID", placeholder: "goyo.bookings.id (optional)" },
+    { name: "traveller_name", label: "Traveller name", required: true },
+    { name: "country", label: "Country", required: true },
+    { name: "visa_type", label: "Visa type", placeholder: "Tourist L / Business L / eVisa" },
+    { name: "submission_date", label: "Submission date", type: "date" },
+    { name: "expected_date", label: "Expected date", type: "date" },
+    { name: "passport_expiry", label: "Passport expiry", type: "date" },
+    { name: "handler", label: "Handler" },
+    { name: "status", label: "Status", type: "select", required: true, options: VISA_STATUS },
+  ],
+  guides: [
+    { name: "name", label: "Name", required: true },
+    { name: "phone", label: "Phone" },
+    { name: "email", label: "Email" },
+    { name: "daily_rate", label: "Daily rate", type: "number", step: "0.01" },
+    { name: "currency", label: "Currency", placeholder: "CNY" },
+    { name: "status", label: "Status", type: "select", required: true, options: GUIDE_STATUS },
+    { name: "rating", label: "Rating (1-5)", type: "number", step: "0.1", min: 1, max: 5 },
+    { name: "notes", label: "Notes", type: "textarea", rows: 2 },
+  ],
+  itineraries: [
+    { name: "booking_id", label: "Booking ID", placeholder: "goyo.bookings.id (optional)" },
+    { name: "tour_id", label: "Tour ID", placeholder: "goyo.tours.id (optional)" },
+    { name: "title", label: "Title", required: true },
+    { name: "day_count", label: "Days", type: "number" },
+    { name: "status", label: "Status", type: "select", required: true, options: ITINERARY_STATUS },
+    { name: "start_date", label: "Start date", type: "date" },
+    { name: "end_date", label: "End date", type: "date" },
+    { name: "pdf_url", label: "PDF URL", type: "url" },
+    { name: "notes", label: "Notes", type: "textarea", rows: 3 },
+  ],
+  payments: [
+    { name: "booking_id", label: "Booking ID", required: true, placeholder: "goyo.bookings.id uuid" },
+    { name: "client_id", label: "Client ID", placeholder: "goyo.clients.id (optional)" },
+    { name: "amount", label: "Amount", type: "number", step: "0.01", required: true },
+    { name: "currency", label: "Currency", required: true, placeholder: "INR" },
+    { name: "received_at", label: "Received on", type: "date" },
+    { name: "method", label: "Method", placeholder: "NEFT / UPI / WIRE / Cash" },
+    { name: "reference", label: "Reference / txn id" },
+    { name: "notes", label: "Notes", type: "textarea", rows: 2 },
+  ],
+  refunds: [
+    { name: "client_code", label: "Client code", required: true },
+    { name: "total_amount", label: "Total amount", type: "number", step: "0.01" },
+    { name: "amount_paid", label: "Amount paid", type: "number", step: "0.01" },
+    { name: "deducted_amount", label: "Deducted", type: "number", step: "0.01" },
+    { name: "refunded_amount", label: "Refunded", type: "number", step: "0.01" },
+    { name: "reason", label: "Reason", type: "textarea", rows: 2 },
+    { name: "status", label: "Status", placeholder: "client side issue / Par Reject" },
+    { name: "handler", label: "Handler" },
+    { name: "done", label: "Done", type: "checkbox" },
+  ],
+  agencies: [
+    { name: "name", label: "Name", required: true },
+    { name: "phone", label: "Phone" },
+    { name: "email", label: "Email" },
+    { name: "services_offered", label: "Services", placeholder: "Canton Fair / Tour management" },
+    { name: "status", label: "Status", placeholder: "active / inactive" },
+    { name: "is_primary_partner", label: "Primary partner", type: "checkbox" },
+    { name: "notes", label: "Notes", type: "textarea", rows: 2 },
+  ],
+  client_business_profiles: [
+    { name: "client_code", label: "Client code", required: true },
+    { name: "company_name", label: "Company name" },
+    { name: "stage_of_business", label: "Stage", placeholder: "Mature / Start up" },
+    { name: "type_of_business", label: "Type", placeholder: "Trading / Manufacturing" },
+    { name: "category_of_business", label: "Category" },
+    { name: "monthly_income", label: "Monthly income" },
+    { name: "no_of_employees", label: "Employees" },
+    { name: "sourcing_product", label: "Sourcing product", type: "textarea", rows: 2 },
+    { name: "type_of_firm", label: "Firm type", placeholder: "Proprietorship / Partnership / Pvt Ltd" },
+  ],
+}

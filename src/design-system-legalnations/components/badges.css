@@ -1,0 +1,37 @@
+/* Base */
+.ds-ln-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: var(--radius-sm);
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  white-space: nowrap;
+  width: fit-content;
+}
+
+/* LLC Status variants */
+.ds-ln-badge-delivered { background: hsl(160 50% 92%); color: hsl(160 50% 28%); }
+.ds-ln-badge-processing { background: hsl(210 50% 92%); color: hsl(210 50% 32%); }
+.ds-ln-badge-pending { background: hsl(40 50% 92%); color: hsl(40 50% 28%); }
+.ds-ln-badge-on-hold { background: hsl(200 8% 92%); color: hsl(200 8% 40%); }
+.ds-ln-badge-cancelled { background: hsl(0 40% 94%); color: hsl(0 40% 40%); }
+
+/* Filing status */
+.ds-ln-badge-complete { background: hsl(160 50% 92%); color: hsl(160 50% 28%); }
+.ds-ln-badge-filed { background: hsl(210 50% 92%); color: hsl(210 50% 32%); }
+.ds-ln-badge-in-progress { background: hsl(42 70% 92%); color: hsl(42 60% 28%); }
+.ds-ln-badge-doc-collection { background: hsl(280 30% 92%); color: hsl(280 30% 35%); }
+
+/* Plan tier badges */
+.ds-ln-badge-elite { background: hsl(42 80% 50%); color: hsl(30 50% 12%); font-weight: 600; }
+.ds-ln-badge-pro { background: hsl(160 45% 22%); color: white; }
+.ds-ln-badge-starter { background: hsl(210 50% 92%); color: hsl(210 50% 32%); }
+.ds-ln-badge-basic { background: var(--muted); color: var(--muted-foreground); }
+
+/* Generic */
+.ds-ln-badge-default { background: var(--primary); color: var(--primary-foreground); }
+.ds-ln-badge-secondary { background: var(--secondary); color: var(--secondary-foreground); }
+.ds-ln-badge-outline { border: 1px solid var(--border); background: transparent; color: var(--foreground); }

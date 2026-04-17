@@ -1,0 +1,18 @@
+/* Comfortable spacing — legal clients need breathing room */
+.ds-ln-gap-xs { gap: 0.375rem; }
+.ds-ln-gap-sm { gap: 0.5rem; }
+.ds-ln-gap-md { gap: 0.75rem; }
+.ds-ln-gap-lg { gap: 1rem; }
+.ds-ln-gap-xl { gap: 1.5rem; }
+
+/* Card padding */
+.ds-ln-p-card { padding: 1.25rem; }
+.ds-ln-p-card-sm { padding: 1rem; }
+.ds-ln-p-card-compact { padding: 0.75rem 1rem; }
+
+/* Section margins */
+.ds-ln-mb-section { margin-bottom: 1.5rem; }
+.ds-ln-mb-subsection { margin-bottom: 0.75rem; }
+
+/* Content padding (inside shell) */
+.ds-ln-p-content { padding: 1.5rem; }

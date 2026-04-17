@@ -91,14 +91,16 @@ export function DetailCard({
 export function InfoRow({
   label,
   value,
+  mono,
 }: {
   label: string
   value: ReactNode
+  mono?: boolean
 }) {
   return (
     <div className="flex items-center justify-between py-2.5">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-sm font-semibold text-foreground">{value || "—"}</span>
+      <span className={`text-sm font-semibold text-foreground${mono ? " font-mono text-xs" : ""}`}>{value || "—"}</span>
     </div>
   )
 }

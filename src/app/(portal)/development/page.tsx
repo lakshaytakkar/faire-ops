@@ -2,7 +2,6 @@ import Link from "next/link"
 import {
   ArrowRight,
   FolderKanban,
-  Globe,
   Hammer,
   Sparkles,
   Rocket,
@@ -14,7 +13,6 @@ import { listProjects, type Project } from "@/lib/projects"
 import { supabase } from "@/lib/supabase"
 import { HealthDot, ventureMeta } from "@/components/development/dev-primitives"
 import { relativeTime } from "@/lib/format"
-import { PageHeader } from "@/components/shared/page-header"
 import { KPIGrid } from "@/components/shared/kpi-grid"
 import { MetricCard } from "@/components/shared/metric-card"
 import { DetailCard } from "@/components/shared/detail-views"
@@ -82,10 +80,47 @@ export default async function DevelopmentOverviewPage() {
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
-      <PageHeader
-        title="Development"
-        subtitle={`${projects.length} tracked projects across all ventures — every landing, portal, and app Suprans ships.`}
-      />
+      {/* Hero gradient banner */}
+      <div
+        className="relative rounded-xl overflow-hidden px-6 py-8 sm:px-8 sm:py-10"
+        style={{
+          background: "linear-gradient(135deg, hsl(145,50%,12%) 0%, hsl(140,60%,30%) 100%)",
+        }}
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.08),transparent_60%)]" />
+        <div className="relative z-10">
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/60 mb-1">
+            Development
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold font-heading text-white tracking-tight">
+            Dev Operations
+          </h1>
+          <p className="text-sm text-white/70 mt-1">
+            Projects, deployments &amp; roadmap
+          </p>
+
+          <div className="grid grid-cols-3 gap-6 mt-6 max-w-lg">
+            <div>
+              <p className="text-2xl font-bold text-white tabular-nums">
+                {projects.length}
+              </p>
+              <p className="text-xs text-white/50 mt-0.5">Total Projects</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white tabular-nums">
+                {deploys7d}
+              </p>
+              <p className="text-xs text-white/50 mt-0.5">Deploys (7d)</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white tabular-nums">
+                {(upcomingRaw ?? []).length}
+              </p>
+              <p className="text-xs text-white/50 mt-0.5">Roadmap Items</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <KPIGrid>
         <MetricCard label="Active projects" value={projects.length} icon={FolderKanban} iconTone="slate" />
@@ -284,10 +319,11 @@ export default async function DevelopmentOverviewPage() {
         )}
       </DetailCard>
 
+      {/* Quick actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <DeepLink href="/development/projects" icon={FolderKanban} title="All projects" body={`${projects.length} tracked properties across ventures.`} />
-        <DeepLink href="/development/deployments" icon={Rocket} title="Deployments feed" body="Real Vercel webhook + backfill stream." />
-        <DeepLink href="/development/tasks" icon={Globe} title="Tasks" body="Development-space work items." />
+        <DeepLink href="/development/projects" icon={FolderKanban} title="Projects" body={`${projects.length} tracked properties across ventures.`} />
+        <DeepLink href="/development/deployments" icon={Rocket} title="Deployments" body="Real Vercel webhook + backfill stream." />
+        <DeepLink href="/development/roadmap" icon={Sparkles} title="Roadmap" body="Planned features, milestones & timelines." />
       </div>
     </div>
   )

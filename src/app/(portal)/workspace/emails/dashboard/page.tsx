@@ -183,14 +183,6 @@ export default function EmailDashboardPage() {
     { label: "Failed", value: stats.failed, icon: AlertTriangle, iconBg: "bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400" },
   ]
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-6 p-6">
       {/* Toast */}
@@ -201,6 +193,38 @@ export default function EmailDashboardPage() {
         </div>
       )}
 
+      {/* Hero Banner */}
+      <div className="relative overflow-hidden rounded-xl px-8 py-8" style={{ background: "linear-gradient(135deg, hsl(210,50%,12%), hsl(205,60%,30%))" }}>
+        <div className="relative z-10">
+          <p className="text-xs font-semibold uppercase tracking-widest text-blue-300/80 mb-1">Email</p>
+          <h1 className="text-2xl font-bold font-heading text-white">Email Center</h1>
+          <p className="text-sm text-blue-100/70 mt-1">Templates, campaigns &amp; delivery tracking</p>
+          <div className="grid grid-cols-3 gap-6 mt-6 max-w-md">
+            <div>
+              <p className="text-2xl font-bold text-white tabular-nums">{loading ? "\u2014" : stats.sentToday}</p>
+              <p className="text-sm text-blue-200/60">Total Sent</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white tabular-nums">{loading ? "\u2014" : (stats.sentToday - stats.failed)}</p>
+              <p className="text-sm text-blue-200/60">Delivered</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white tabular-nums">{loading ? "\u2014" : stats.failed}</p>
+              <p className="text-sm text-blue-200/60">Failed</p>
+            </div>
+          </div>
+        </div>
+        <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-white/5 -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute bottom-0 left-1/2 w-48 h-48 rounded-full bg-white/5 translate-y-1/2" />
+      </div>
+
+      {loading && (
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
+
+      {!loading && <>
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -422,6 +446,47 @@ export default function EmailDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Quick Actions */}
+      <div>
+        <h2 className="text-sm font-semibold mb-3">Quick Actions</h2>
+        <div className="grid grid-cols-3 gap-4">
+          <Link href="/workspace/emails/compose" className="group rounded-lg border bg-card p-5 hover:border-primary/40 hover:shadow-sm transition-all">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-blue-50 group-hover:bg-blue-100 transition-colors dark:bg-blue-950 dark:group-hover:bg-blue-900">
+                <Send className="size-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">Compose Email</p>
+                <p className="text-sm text-muted-foreground">Draft and send an email</p>
+              </div>
+            </div>
+          </Link>
+          <Link href="/workspace/emails/templates" className="group rounded-lg border bg-card p-5 hover:border-primary/40 hover:shadow-sm transition-all">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-emerald-50 group-hover:bg-emerald-100 transition-colors dark:bg-emerald-950 dark:group-hover:bg-emerald-900">
+                <FileText className="size-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">Manage Templates</p>
+                <p className="text-sm text-muted-foreground">View and edit email templates</p>
+              </div>
+            </div>
+          </Link>
+          <Link href="/workspace/emails/scheduled" className="group rounded-lg border bg-card p-5 hover:border-primary/40 hover:shadow-sm transition-all">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-purple-50 group-hover:bg-purple-100 transition-colors dark:bg-purple-950 dark:group-hover:bg-purple-900">
+                <Clock className="size-4 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">View Scheduled</p>
+                <p className="text-sm text-muted-foreground">See upcoming scheduled emails</p>
+              </div>
+            </div>
+          </Link>
+        </div>
+      </div>
+      </>}
     </div>
   )
 }

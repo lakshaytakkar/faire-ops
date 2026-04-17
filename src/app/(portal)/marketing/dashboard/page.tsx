@@ -12,6 +12,8 @@ import {
   Wallet,
   ArrowRight,
   LayoutDashboard,
+  Megaphone,
+  PieChart,
 } from "lucide-react"
 import {
   useCampaigns,
@@ -346,7 +348,7 @@ export default function MarketingDashboardPage() {
   if (loading) {
     return (
       <div className="max-w-[1440px] mx-auto w-full space-y-5">
-        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-44 w-full rounded-xl" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <StatCardSkeleton key={i} />
@@ -376,15 +378,46 @@ export default function MarketingDashboardPage() {
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Marketing Dashboard</h1>
-        <Link
-          href="/marketing/campaigns"
-          className="text-sm text-primary hover:underline flex items-center gap-1"
-        >
-          View all campaigns <ArrowRight className="size-3.5" />
-        </Link>
+      {/* Hero gradient banner */}
+      <div
+        className="relative rounded-xl overflow-hidden px-6 py-8 sm:px-8 sm:py-10"
+        style={{
+          background: "linear-gradient(135deg, hsl(340,50%,12%) 0%, hsl(335,60%,30%) 100%)",
+        }}
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.08),transparent_60%)]" />
+        <div className="relative z-10">
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/60 mb-1">
+            Marketing
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold font-heading text-white tracking-tight">
+            Marketing Dashboard
+          </h1>
+          <p className="text-sm text-white/70 mt-1">
+            Ad spend, campaigns &amp; performance tracking
+          </p>
+
+          <div className="grid grid-cols-3 gap-6 mt-6 max-w-lg">
+            <div>
+              <p className="text-2xl font-bold text-white tabular-nums">
+                {`$${formatCents(totalSpendCents)}`}
+              </p>
+              <p className="text-xs text-white/50 mt-0.5">Total Spend</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white tabular-nums">
+                {String(activeCampaigns)}
+              </p>
+              <p className="text-xs text-white/50 mt-0.5">Active Campaigns</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white tabular-nums">
+                {`${roas.toFixed(2)}x`}
+              </p>
+              <p className="text-xs text-white/50 mt-0.5">ROAS</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Stat cards */}
@@ -592,6 +625,46 @@ export default function MarketingDashboardPage() {
             </>
           )}
         </div>
+      </div>
+
+      {/* Quick actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <Link href="/marketing/campaigns" className="group block">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4 transition-shadow hover:shadow-md h-full">
+            <div className="flex items-center justify-between mb-3">
+              <span className="size-9 rounded-md bg-primary/10 flex items-center justify-center">
+                <Megaphone className="size-4 text-primary" />
+              </span>
+              <ArrowRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+            </div>
+            <h3 className="text-sm font-semibold mb-1 group-hover:text-primary">Campaigns</h3>
+            <p className="text-sm text-muted-foreground">Manage and monitor all campaigns.</p>
+          </div>
+        </Link>
+        <Link href="/marketing/budget" className="group block">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4 transition-shadow hover:shadow-md h-full">
+            <div className="flex items-center justify-between mb-3">
+              <span className="size-9 rounded-md bg-primary/10 flex items-center justify-center">
+                <Wallet className="size-4 text-primary" />
+              </span>
+              <ArrowRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+            </div>
+            <h3 className="text-sm font-semibold mb-1 group-hover:text-primary">Budget</h3>
+            <p className="text-sm text-muted-foreground">Track monthly budgets and spend.</p>
+          </div>
+        </Link>
+        <Link href="/marketing/ads" className="group block">
+          <div className="rounded-lg border border-border/80 bg-card shadow-sm p-4 transition-shadow hover:shadow-md h-full">
+            <div className="flex items-center justify-between mb-3">
+              <span className="size-9 rounded-md bg-primary/10 flex items-center justify-center">
+                <PieChart className="size-4 text-primary" />
+              </span>
+              <ArrowRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+            </div>
+            <h3 className="text-sm font-semibold mb-1 group-hover:text-primary">Ad Manager</h3>
+            <p className="text-sm text-muted-foreground">Ad creative and audience reports.</p>
+          </div>
+        </Link>
       </div>
     </div>
   )

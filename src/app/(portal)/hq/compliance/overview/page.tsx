@@ -9,7 +9,7 @@ import {
   CalendarDays,
   Inbox,
 } from "lucide-react"
-import { PageHeader } from "@/components/shared/page-header"
+
 import { KPIGrid } from "@/components/shared/kpi-grid"
 import { MetricCard } from "@/components/shared/metric-card"
 import { DetailCard } from "@/components/shared/detail-views"
@@ -153,10 +153,17 @@ export default async function HqComplianceOverviewPage() {
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
-      <PageHeader
-        title="Compliance"
-        subtitle="Filings, contracts, cases — one view."
-      />
+      {/* Hero Banner */}
+      <div className="rounded-md px-8 py-7 text-white" style={{ background: "linear-gradient(135deg, hsl(220,50%,12%) 0%, hsl(215,60%,30%) 100%)" }}>
+        <p className="text-sm font-medium opacity-75">HQ Compliance</p>
+        <h1 className="mt-1 text-3xl font-bold font-heading tracking-tight">Compliance Center</h1>
+        <p className="mt-1 text-sm opacity-60">Entities, filings, contracts & legal cases</p>
+        <div className="mt-5 flex items-center gap-8">
+          <div><p className="text-2xl font-bold tabular-nums">{entities.length}</p><p className="text-xs opacity-50">Entities</p></div>
+          <div><p className="text-2xl font-bold tabular-nums">{filings.length}</p><p className="text-xs opacity-50">Filings</p></div>
+          <div><p className="text-2xl font-bold tabular-nums">{contracts.length}</p><p className="text-xs opacity-50">Contracts</p></div>
+        </div>
+      </div>
 
       <KPIGrid>
         <MetricCard
@@ -378,6 +385,31 @@ export default async function HqComplianceOverviewPage() {
           description="Seed entities, filings, contracts and cases in hq.* to see this dashboard light up."
         />
       )}
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Link href="/hq/compliance/entities" className="rounded-xl border bg-card p-5 hover:shadow-md transition-shadow block">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="inline-flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary"><Building2 className="size-4" /></span>
+            <span className="text-[0.9375rem] font-semibold tracking-tight">Entities</span>
+          </div>
+          <p className="text-sm text-muted-foreground">Manage registered entities</p>
+        </Link>
+        <Link href="/hq/compliance/filings" className="rounded-xl border bg-card p-5 hover:shadow-md transition-shadow block">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="inline-flex size-9 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600"><FileCheck className="size-4" /></span>
+            <span className="text-[0.9375rem] font-semibold tracking-tight">Filings</span>
+          </div>
+          <p className="text-sm text-muted-foreground">Track annual filings & returns</p>
+        </Link>
+        <Link href="/hq/compliance/contracts" className="rounded-xl border bg-card p-5 hover:shadow-md transition-shadow block">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="inline-flex size-9 items-center justify-center rounded-md bg-amber-500/10 text-amber-600"><ScrollText className="size-4" /></span>
+            <span className="text-[0.9375rem] font-semibold tracking-tight">Contracts</span>
+          </div>
+          <p className="text-sm text-muted-foreground">Review vendor & client contracts</p>
+        </Link>
+      </div>
     </div>
   )
 }

@@ -1,4 +1,3 @@
-import Link from "next/link"
 import { Network } from "lucide-react"
 import { PageHeader } from "@/components/shared/page-header"
 import { DetailCard } from "@/components/shared/detail-views"
@@ -6,24 +5,18 @@ import { EmptyState } from "@/components/shared/empty-state"
 import { supabase, supabaseHq } from "@/lib/supabase"
 import { formatInitials } from "@/lib/format"
 
-// HQ → People → Org Chart. Session 2 renders a simple nested list
-// grouped by department; the interactive D3 tree arrives in Session 3.
-// See suprans-hq-full-spec.md §2.6.
-
 export const dynamic = "force-dynamic"
-
-export const metadata = {
-  title: "Org Chart — HQ | Suprans",
-}
+export const metadata = { title: "Org Chart — HQ | Suprans" }
 
 interface EmployeeRow {
   id: string
-  team_member_id: string | null
   full_name: string | null
   role_title: string | null
   department_id: string | null
-  vertical: string | null
+  reporting_to: string | null
   photo_url: string | null
+  team_member_id: string | null
+  status: string | null
 }
 
 interface DepartmentRow {
@@ -32,45 +25,92 @@ interface DepartmentRow {
   vertical: string | null
 }
 
-async function fetchOrgChart() {
-  const [employeesRes, departmentsRes] = await Promise.all([
+async function fetchOrgData() {
+  const [empRes, deptRes] = await Promise.all([
     supabaseHq
       .from("employees")
-      .select("id, team_member_id, full_name, role_title, department_id, vertical, photo_url")
-      .neq("status", "terminated")
-      .order("full_name", { ascending: true }),
-    supabaseHq
-      .from("departments")
-      .select("id, name, vertical")
-      .order("name", { ascending: true }),
+      .select("id, full_name, role_title, department_id, reporting_to, photo_url, team_member_id, status")
+      .not("status", "eq", "resigned")
+      .order("full_name"),
+    supabaseHq.from("departments").select("id, name, vertical").order("name"),
   ])
 
-  const employees = (employeesRes.data ?? []) as EmployeeRow[]
-  const departments = (departmentsRes.data ?? []) as DepartmentRow[]
+  const employees = (empRes.data ?? []) as EmployeeRow[]
+  const departments = (deptRes.data ?? []) as DepartmentRow[]
 
-  const teamMemberIds = employees
-    .map((e) => e.team_member_id)
-    .filter((x): x is string => !!x)
-
+  // Fetch avatar URLs from team_members
+  const tmIds = employees.map((e) => e.team_member_id).filter((x): x is string => !!x)
   const avatars: Record<string, string | null> = {}
-  if (teamMemberIds.length > 0) {
-    const { data } = await supabase
-      .from("team_members")
-      .select("id, avatar_url")
-      .in("id", teamMemberIds)
-    for (const row of data ?? []) {
-      avatars[row.id as string] = (row.avatar_url as string | null) ?? null
-    }
+  if (tmIds.length > 0) {
+    const { data } = await supabase.from("team_members").select("id, avatar_url").in("id", tmIds)
+    for (const r of data ?? []) avatars[r.id as string] = (r.avatar_url as string | null) ?? null
   }
 
   return { employees, departments, avatars }
 }
 
-export default async function HqOrgChartPage() {
-  const { employees, departments, avatars } = await fetchOrgChart()
+/* ── Person node ─────────────────────────────────────────────────── */
 
-  // Group employees by department_id; employees with no department go
-  // into a synthetic "Unassigned" bucket so they remain visible.
+function PersonNode({
+  name,
+  role,
+  photoUrl,
+  initials,
+  isLeader,
+}: {
+  name: string
+  role: string
+  photoUrl: string | null
+  initials: string
+  isLeader?: boolean
+}) {
+  return (
+    <div className={`flex flex-col items-center ${isLeader ? "mb-2" : ""}`}>
+      <div
+        className={`rounded-full border-2 flex items-center justify-center overflow-hidden bg-muted ${
+          isLeader
+            ? "size-16 border-primary shadow-md"
+            : "size-12 border-border/80"
+        }`}
+      >
+        {photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photoUrl} alt={name} className="size-full object-cover" />
+        ) : (
+          <span className={`font-semibold text-muted-foreground ${isLeader ? "text-sm" : "text-xs"}`}>
+            {initials}
+          </span>
+        )}
+      </div>
+      <p className={`mt-1.5 text-center leading-tight ${isLeader ? "text-sm font-semibold" : "text-xs font-medium"} text-foreground`}>
+        {name}
+      </p>
+      <p className="text-[10px] text-muted-foreground text-center leading-tight mt-0.5">
+        {role}
+      </p>
+    </div>
+  )
+}
+
+/* ── Main page ───────────────────────────────────────────────────── */
+
+export default async function HqOrgChartPage() {
+  const { employees, departments, avatars } = await fetchOrgData()
+
+  if (employees.length === 0) {
+    return (
+      <div className="max-w-[1440px] mx-auto w-full space-y-5">
+        <PageHeader title="Org Chart" subtitle="Teams and reporting structure across Suprans HQ." />
+        <DetailCard title="Company">
+          <EmptyState icon={Network} title="No employees yet" description="Add employees to see the org chart." />
+        </DetailCard>
+      </div>
+    )
+  }
+
+  const deptMap = new Map(departments.map((d) => [d.id, d]))
+
+  // Group by department
   const byDept = new Map<string | null, EmployeeRow[]>()
   for (const e of employees) {
     const key = e.department_id ?? null
@@ -78,82 +118,117 @@ export default async function HqOrgChartPage() {
     byDept.get(key)!.push(e)
   }
 
-  const deptEntries: Array<{ id: string | null; label: string; vertical: string | null }> =
-    departments.map((d) => ({
-      id: d.id,
-      label: d.name ?? "Unnamed",
-      vertical: d.vertical,
-    }))
+  // Separate leadership from departments
+  const leadershipDept = departments.find((d) => d.name?.toLowerCase() === "leadership")
+  const leaders = leadershipDept ? (byDept.get(leadershipDept.id) ?? []) : []
+  const otherDepts = departments.filter((d) => d.id !== leadershipDept?.id && (byDept.get(d.id) ?? []).length > 0)
+  const unassigned = byDept.get(null) ?? []
 
-  if (byDept.has(null)) {
-    deptEntries.push({ id: null, label: "Unassigned", vertical: null })
+  function getAvatar(e: EmployeeRow) {
+    return (e.team_member_id ? avatars[e.team_member_id] : null) ?? e.photo_url
   }
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
       <PageHeader
         title="Org Chart"
-        subtitle="Teams and reporting structure across Suprans HQ."
+        subtitle={`${employees.length} active team members across ${departments.length} departments`}
       />
 
-      {employees.length === 0 ? (
-        <DetailCard title="Company">
-          <EmptyState
-            icon={Network}
-            title="No employees yet"
-            description="Add employees to see them grouped by department here."
-          />
-        </DetailCard>
-      ) : (
-        <div className="grid grid-cols-1 gap-5">
-          {deptEntries
-            .filter((d) => (byDept.get(d.id) ?? []).length > 0)
-            .map((d) => {
-              const members = byDept.get(d.id) ?? []
+      <DetailCard title="Company Structure">
+        <div className="flex flex-col items-center py-4">
+          {/* ── LEADERSHIP ROW ──────────────────────────────── */}
+          {leaders.length > 0 && (
+            <>
+              <div className="flex items-end justify-center gap-8 flex-wrap">
+                {leaders.map((e) => (
+                  <PersonNode
+                    key={e.id}
+                    name={e.full_name ?? "—"}
+                    role={e.role_title ?? "—"}
+                    photoUrl={getAvatar(e)}
+                    initials={formatInitials(e.full_name)}
+                    isLeader
+                  />
+                ))}
+              </div>
+
+              {/* Connector line down */}
+              <div className="w-px h-8 bg-border" />
+
+              {/* Horizontal connector spanning all departments */}
+              {otherDepts.length > 1 && (
+                <div className="w-full max-w-3xl flex items-center">
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── DEPARTMENT BRANCHES ─────────────────────────── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full mt-4">
+            {otherDepts.map((dept) => {
+              const members = byDept.get(dept.id) ?? []
               return (
-                <DetailCard
-                  key={d.id ?? "unassigned"}
-                  title={d.vertical ? `${d.label} · ${d.vertical}` : d.label}
+                <div
+                  key={dept.id}
+                  className="flex flex-col items-center rounded-xl border border-border/80 bg-card p-4"
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {members.map((e) => {
-                      const avatarUrl =
-                        (e.team_member_id ? avatars[e.team_member_id] : null) ?? e.photo_url
-                      return (
-                        <Link
-                          key={e.id}
-                          href={`/hq/people/directory/${e.id}`}
-                          className="flex items-center gap-3 rounded-md border border-border/80 bg-card px-3 py-2 hover:bg-muted/40 transition-colors"
-                        >
-                          {avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={avatarUrl}
-                              alt=""
-                              className="size-10 rounded-full object-cover border border-border bg-muted shrink-0"
-                            />
-                          ) : (
-                            <span className="size-10 rounded-full inline-flex items-center justify-center bg-muted text-muted-foreground text-xs font-semibold border border-border shrink-0">
-                              {formatInitials(e.full_name)}
-                            </span>
-                          )}
-                          <div className="min-w-0">
-                            <div className="text-sm font-medium text-foreground truncate">
-                              {e.full_name ?? "—"}
-                            </div>
-                            <div className="text-xs text-muted-foreground truncate">
-                              {e.role_title ?? "—"}
-                            </div>
-                          </div>
-                        </Link>
-                      )
-                    })}
+                  {/* Department header */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="h-2 w-2 rounded-full bg-primary" />
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {dept.name}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      ({members.length})
+                    </span>
                   </div>
-                </DetailCard>
+
+                  {/* Members grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full">
+                    {members.map((e) => (
+                      <PersonNode
+                        key={e.id}
+                        name={e.full_name ?? "—"}
+                        role={e.role_title ?? "—"}
+                        photoUrl={getAvatar(e)}
+                        initials={formatInitials(e.full_name)}
+                      />
+                    ))}
+                  </div>
+                </div>
               )
             })}
+
+            {/* Unassigned */}
+            {unassigned.length > 0 && (
+              <div className="flex flex-col items-center rounded-xl border border-dashed border-border/80 bg-muted/30 p-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="h-2 w-2 rounded-full bg-muted-foreground" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Team Members
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    ({unassigned.length})
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full">
+                  {unassigned.map((e) => (
+                    <PersonNode
+                      key={e.id}
+                      name={e.full_name ?? "—"}
+                      role={e.role_title ?? "—"}
+                      photoUrl={getAvatar(e)}
+                      initials={formatInitials(e.full_name)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      )}
+      </DetailCard>
     </div>
   )
 }

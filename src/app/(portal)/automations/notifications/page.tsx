@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import {
   Bell,
@@ -21,6 +21,11 @@ import {
   X,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import { useActiveSpace } from "@/lib/use-active-space"
+
+function hrefForSpace(href: string, slug: string): string {
+  return slug === "b2b-ecommerce" ? href : `${href}?space=${slug}`
+}
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -85,6 +90,15 @@ const RECURRING_STYLES: Record<string, string> = {
 /* ------------------------------------------------------------------ */
 
 export default function NotificationsPage() {
+  return (
+    <Suspense fallback={<div className="max-w-[1440px] mx-auto w-full"><div className="h-8 w-40 rounded bg-muted animate-pulse" /></div>}>
+      <NotificationsPageInner />
+    </Suspense>
+  )
+}
+
+function NotificationsPageInner() {
+  const { slug: activeSlug } = useActiveSpace()
   const [automations, setAutomations] = useState<Automation[]>([])
   const [scheduled, setScheduled] = useState<ScheduledEmail[]>([])
   const [templates, setTemplates] = useState<EmailTemplate[]>([])
@@ -572,7 +586,7 @@ export default function NotificationsPage() {
             <ChevronRight className="size-4 text-muted-foreground ml-auto" />
           </button>
           <Link
-            href="/workspace/emails/templates"
+            href={hrefForSpace("/workspace/emails/templates", activeSlug)}
             className="rounded-lg border border-border/80 bg-card shadow-sm p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors"
           >
             <div className="h-9 w-9 rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400 flex items-center justify-center shrink-0">
@@ -585,7 +599,7 @@ export default function NotificationsPage() {
             <ChevronRight className="size-4 text-muted-foreground ml-auto" />
           </Link>
           <Link
-            href="/workspace/emails/logs"
+            href={hrefForSpace("/workspace/emails/logs", activeSlug)}
             className="rounded-lg border border-border/80 bg-card shadow-sm p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors"
           >
             <div className="h-9 w-9 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400 flex items-center justify-center shrink-0">

@@ -1,0 +1,22 @@
+/* Input Component Classes */
+
+.ds-input {
+  width: 100%;
+  height: 2.25rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  background-color: var(--background);
+  border: 1px solid var(--input);
+  border-radius: var(--radius-md);
+  color: var(--foreground);
+  transition: all 150ms;
+}
+.ds-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ring) 30%, transparent);
+  border-color: var(--border);
+  background-color: var(--background);
+}
+.ds-input::placeholder {
+  color: var(--muted-foreground);
+}

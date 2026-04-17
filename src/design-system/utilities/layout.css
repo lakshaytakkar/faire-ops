@@ -1,0 +1,36 @@
+/* Layout Utility Classes */
+
+.ds-container {
+  max-width: 1440px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.ds-page {
+  max-width: 1440px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.ds-grid-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+@media (min-width: 1024px) {
+  .ds-grid-metrics { grid-template-columns: repeat(4, 1fr); }
+}
+
+.ds-grid-detail {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+@media (min-width: 1024px) {
+  .ds-grid-detail { grid-template-columns: 2fr 1fr; }
+}

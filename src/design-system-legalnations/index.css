@@ -1,0 +1,30 @@
+/* LegalNations Client Portal — Complete Design System
+   Single entry point for the full UI kit.
+
+   Deep emerald + warm gold · Inter · Professional legal
+   Sidebar-based layout for client self-service
+
+   All classes prefixed ds-ln- to coexist with Faire and USDrop systems. */
+
+/* Tokens (load first) */
+@import './tokens/variables.css';
+
+/* Components */
+@import './components/buttons.css';
+@import './components/cards.css';
+@import './components/progress.css';
+@import './components/badges.css';
+@import './components/inputs.css';
+@import './components/tables.css';
+@import './components/navigation.css';
+@import './components/alerts.css';
+
+/* Layout */
+@import './layout/shell.css';
+@import './layout/page-skeletons.css';
+
+/* Utilities */
+@import './utilities/typography.css';
+@import './utilities/spacing.css';
+@import './utilities/layout.css';
+@import './utilities/animations.css';

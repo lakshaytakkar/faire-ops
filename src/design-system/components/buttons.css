@@ -1,0 +1,55 @@
+/* Button Component Classes — Reference
+   These document the Tailwind class patterns used in the portal.
+   Import via index.css for reference documentation. */
+
+/* Primary button pattern */
+.ds-btn-primary {
+  /* Equivalent Tailwind: bg-primary text-primary-foreground shadow-btn-primary
+     hover:bg-primary/90 active:translate-y-px transition-all
+     rounded-md px-4 py-2 text-sm font-medium */
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: var(--shadow-btn-primary);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 150ms;
+}
+.ds-btn-primary:hover { opacity: 0.9; }
+.ds-btn-primary:active { transform: translateY(1px); }
+
+/* Secondary button */
+.ds-btn-secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+  box-shadow: var(--shadow-btn-secondary);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 150ms;
+}
+
+/* Ghost button */
+.ds-btn-ghost {
+  background: transparent;
+  color: var(--foreground);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 150ms;
+}
+.ds-btn-ghost:hover { background-color: var(--muted); }
+
+/* Destructive button */
+.ds-btn-destructive {
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 150ms;
+}

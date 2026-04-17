@@ -115,7 +115,7 @@ export async function matchContactsByPhone(
         type: "employee",
         id: userObj.id,
         name: userObj.full_name,
-        link: `/workspace/qa/employees/${userObj.id}`,
+        link: `/hq/calls/employees/${userObj.id}`,
         badgeClass: "bg-violet-50 text-violet-700 border-violet-200",
       })
     }

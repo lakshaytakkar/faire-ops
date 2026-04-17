@@ -27,8 +27,12 @@
       "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/cron/sync-callyzer",
-      "schedule": "0 1 * * *"
+      "path": "/api/cron/vercel-backfill",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/sync-razorpay",
+      "schedule": "0 5 * * *"
     }
   ],
   "headers": [

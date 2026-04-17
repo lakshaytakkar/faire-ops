@@ -68,7 +68,7 @@ export function FilterBar({
                   type="button"
                   onClick={() => onTabChange?.(tab.id)}
                   className={cn(
-                    "h-7 px-2.5 text-xs font-medium rounded-md transition-colors inline-flex items-center gap-1.5",
+                    "h-8 px-3 text-sm font-medium rounded-md transition-colors inline-flex items-center gap-1.5",
                     isActive
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted",
@@ -78,7 +78,7 @@ export function FilterBar({
                   {typeof tab.count === "number" && (
                     <span
                       className={cn(
-                        "inline-flex min-w-4 h-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold",
+                        "inline-flex min-w-5 h-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold",
                         isActive ? "bg-primary-foreground/20" : "bg-muted-foreground/15",
                       )}
                     >

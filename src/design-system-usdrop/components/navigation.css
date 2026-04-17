@@ -1,0 +1,131 @@
+/* ==========================================================================
+   USDrop Design System — Navigation
+   Extracted from USDrop v3 shadcn/ui Sidebar, Topbar, Tabs components
+   All classes use `ds-usdrop-` prefix; all values reference CSS custom properties.
+   ========================================================================== */
+
+/* Sidebar shell */
+.ds-usdrop-sidebar {
+  width: 18.08rem;
+  height: 100svh;
+  background-color: var(--sidebar);
+  border-right: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: width 200ms;
+}
+.ds-usdrop-sidebar[data-collapsed="true"] { width: 3rem; }
+
+/* Sidebar header */
+.ds-usdrop-sidebar-header { padding: 0.5rem; flex-shrink: 0; }
+
+/* Sidebar group */
+.ds-usdrop-sidebar-group { padding: 0.5rem; }
+.ds-usdrop-sidebar-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted-foreground);
+  padding: 0.25rem 0.5rem;
+}
+
+/* Sidebar menu item */
+.ds-usdrop-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--sidebar-foreground);
+  text-decoration: none;
+  transition: all 150ms;
+}
+.ds-usdrop-sidebar-item:hover { background-color: var(--sidebar-accent); }
+.ds-usdrop-sidebar-item[data-active="true"] {
+  background-color: var(--sidebar-primary);
+  color: var(--sidebar-primary-foreground);
+}
+.ds-usdrop-sidebar-item.locked { opacity: 0.6; }
+.ds-usdrop-sidebar-item svg { width: 1rem; height: 1rem; flex-shrink: 0; }
+
+/* Sidebar footer */
+.ds-usdrop-sidebar-footer { padding: 0.5rem; margin-top: auto; border-top: 1px solid var(--sidebar-border); }
+
+/* Sidebar toggle */
+.ds-usdrop-sidebar-toggle {
+  position: absolute;
+  top: 50%;
+  right: -0.75rem;
+  transform: translateY(-50%);
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+}
+
+/* Topbar */
+.ds-usdrop-topbar {
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--background);
+  flex-shrink: 0;
+  gap: 0.5rem;
+}
+
+/* Tabs (shadcn style) */
+.ds-usdrop-tabs { display: flex; gap: 0.25rem; }
+.ds-usdrop-tab {
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  color: var(--muted-foreground);
+  transition: all 150ms;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+.ds-usdrop-tab:hover { background-color: var(--muted); color: var(--foreground); }
+.ds-usdrop-tab[data-active="true"] {
+  background-color: var(--background);
+  color: var(--foreground);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Sub-nav tabs */
+.ds-usdrop-subnav {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+.ds-usdrop-subnav-item {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  border-bottom: 2px solid transparent;
+  transition: all 150ms;
+  cursor: pointer;
+}
+.ds-usdrop-subnav-item:hover { color: var(--foreground); }
+.ds-usdrop-subnav-item[data-active="true"] {
+  color: var(--foreground);
+  border-bottom-color: var(--primary);
+}

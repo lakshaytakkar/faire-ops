@@ -1,0 +1,16 @@
+export const PAYMENTS_SUB_NAV = [
+  { title: "Overview", href: "/hq/razorpay/overview" },
+  { title: "Payments", href: "/hq/razorpay/all" },
+  { title: "Orders", href: "/hq/razorpay/orders" },
+  { title: "Payment Links", href: "/hq/razorpay/links" },
+  { title: "Invoices", href: "/hq/razorpay/invoices" },
+  { title: "Refunds", href: "/hq/razorpay/refunds" },
+  { title: "Settlements", href: "/hq/razorpay/settlements" },
+  { title: "Subscriptions", href: "/hq/razorpay/subscriptions" },
+  { title: "Disputes", href: "/hq/razorpay/disputes" },
+  { title: "QR Codes", href: "/hq/razorpay/qr-codes" },
+  { title: "Payouts", href: "/hq/razorpay/payouts" },
+  { title: "Contacts", href: "/hq/razorpay/contacts" },
+  { title: "Transactions", href: "/hq/razorpay/transactions" },
+  { title: "Settings", href: "/hq/razorpay/settings" },
+]

@@ -1,0 +1,20 @@
+/* Badge / Status Pill Component Classes */
+
+.ds-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  ring: 1px inset;
+  text-transform: capitalize;
+}
+
+.ds-badge-emerald { background-color: rgb(236 253 245); color: rgb(21 128 61); --tw-ring-color: rgb(167 243 208); }
+.ds-badge-amber { background-color: rgb(255 251 235); color: rgb(180 83 9); --tw-ring-color: rgb(253 230 138); }
+.ds-badge-red { background-color: rgb(254 242 242); color: rgb(185 28 28); --tw-ring-color: rgb(254 202 202); }
+.ds-badge-blue { background-color: rgb(239 246 255); color: rgb(29 78 216); --tw-ring-color: rgb(191 219 254); }
+.ds-badge-violet { background-color: rgb(245 243 255); color: rgb(109 40 217); --tw-ring-color: rgb(221 214 254); }
+.ds-badge-slate { background-color: rgb(241 245 249); color: rgb(51 65 85); --tw-ring-color: rgb(226 232 240); }

@@ -58,7 +58,7 @@ async function fetchEmployee(id: string) {
     supabaseHq
       .from("employees")
       .select(
-        "id, team_member_id, full_name, email, phone, photo_url, role_title, department_id, vertical, status, join_date, reporting_to, blood_group, ctc_annual, ctc_currency",
+        "id, team_member_id, full_name, email, work_email, phone, photo_url, role_title, department_id, vertical, status, join_date, reporting_to, blood_group, ctc_annual, ctc_currency, father_name, relation, dob, aadhaar_address, pan_no, bank_name, bank_account, ifsc, office, employment_type, pf_applicable, esic_applicable, office_phone, salary_monthly",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -104,6 +104,7 @@ async function fetchEmployee(id: string) {
     team_member_id: string | null
     full_name: string | null
     email: string | null
+    work_email: string | null
     phone: string | null
     photo_url: string | null
     role_title: string | null
@@ -115,6 +116,20 @@ async function fetchEmployee(id: string) {
     blood_group: string | null
     ctc_annual: number | null
     ctc_currency: string | null
+    father_name: string | null
+    relation: string | null
+    dob: string | null
+    aadhaar_address: string | null
+    pan_no: string | null
+    bank_name: string | null
+    bank_account: string | null
+    ifsc: string | null
+    office: string | null
+    employment_type: string | null
+    pf_applicable: boolean | null
+    esic_applicable: boolean | null
+    office_phone: string | null
+    salary_monthly: number | null
   }
 
   // Resolve department name + reporting-to name + avatar in parallel.
@@ -146,6 +161,7 @@ async function fetchEmployee(id: string) {
     id: emp.id,
     full_name: emp.full_name,
     email: emp.email,
+    work_email: emp.work_email,
     phone: emp.phone,
     role_title: emp.role_title,
     vertical: emp.vertical,
@@ -158,6 +174,20 @@ async function fetchEmployee(id: string) {
     department_name: (deptRes.data as { name: string | null } | null)?.name ?? null,
     reporting_to_name:
       (reporterRes.data as { full_name: string | null } | null)?.full_name ?? null,
+    father_name: emp.father_name,
+    relation: emp.relation,
+    dob: emp.dob,
+    aadhaar_address: emp.aadhaar_address,
+    pan_no: emp.pan_no,
+    bank_name: emp.bank_name,
+    bank_account: emp.bank_account,
+    ifsc: emp.ifsc,
+    office: emp.office,
+    employment_type: emp.employment_type,
+    pf_applicable: emp.pf_applicable,
+    esic_applicable: emp.esic_applicable,
+    office_phone: emp.office_phone,
+    salary_monthly: emp.salary_monthly,
   }
 
   const avatarUrl =
@@ -207,7 +237,7 @@ export default async function HqEmployeeDetailPage({
     </span>
   )
 
-  const subtitleParts = [detail.role_title, detail.department_name, detail.vertical].filter(
+  const subtitleParts = [detail.role_title, detail.department_name, detail.office].filter(
     Boolean,
   ) as string[]
 
@@ -226,7 +256,10 @@ export default async function HqEmployeeDetailPage({
                 {detail.status.replace(/_/g, " ")}
               </StatusBadge>
             )}
-            <span className="text-xs text-muted-foreground">
+            {detail.employment_type && (
+              <StatusBadge tone="blue">{detail.employment_type}</StatusBadge>
+            )}
+            <span className="text-sm text-muted-foreground">
               Joined {formatDate(detail.join_date)}
             </span>
           </>

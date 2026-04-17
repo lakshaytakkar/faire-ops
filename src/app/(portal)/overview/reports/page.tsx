@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { FileText, Plus, X, Sparkles } from "lucide-react"
 import { supabaseB2B } from "@/lib/supabase"
 import { useBrandFilter } from "@/lib/brand-filter-context"
+import { useActiveSpace } from "@/lib/use-active-space"
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -88,8 +89,21 @@ function startOfMonthIso(): string {
 /* ------------------------------------------------------------------ */
 
 export default function DashboardReportsPage() {
+  return (
+    <Suspense fallback={<div className="max-w-[1440px] mx-auto w-full"><div className="h-8 w-40 rounded bg-muted animate-pulse" /></div>}>
+      <DashboardReportsPageInner />
+    </Suspense>
+  )
+}
+
+function DashboardReportsPageInner() {
   const router = useRouter()
   const { activeBrand } = useBrandFilter()
+  const { slug: activeSlug } = useActiveSpace()
+  const researchHref =
+    activeSlug === "b2b-ecommerce"
+      ? "/workspace/research/reports"
+      : `/workspace/research/reports?space=${activeSlug}`
 
   const [reports, setReports] = useState<ReportRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -331,7 +345,7 @@ export default function DashboardReportsPage() {
         </Link>
         <span className="px-1.5">&middot;</span>
         <Link
-          href="/workspace/research/reports"
+          href={researchHref}
           className="text-primary hover:underline font-medium"
         >
           Research

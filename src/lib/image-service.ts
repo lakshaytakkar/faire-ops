@@ -1,10 +1,9 @@
-import { supabase, supabaseB2B } from "@/lib/supabase"
+import { supabaseB2B } from "@/lib/supabase"
 
 const BUCKET = "images"
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""
 
 /* ------------------------------------------------------------------ */
-/*  Upload                                                             */
+/*  Upload (via server-side API route to bypass RLS)                   */
 /* ------------------------------------------------------------------ */
 
 export async function uploadImage(
@@ -14,32 +13,39 @@ export async function uploadImage(
   const ext = file.name.split(".").pop() ?? "jpg"
   const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`
 
-  const { error } = await supabase.storage.from(BUCKET).upload(fileName, file, {
-    cacheControl: "3600",
-    upsert: false,
-    contentType: file.type,
-  })
-
-  if (error) {
+  try {
+    const form = new FormData()
+    form.append("file", file)
+    form.append("bucket", BUCKET)
+    form.append("path", fileName)
+    form.append("upsert", "false")
+    const res = await fetch("/api/upload", { method: "POST", body: form })
+    const json = await res.json()
+    if (!res.ok) {
+      console.error("Upload error:", json.error)
+      return null
+    }
+    return { path: fileName, publicUrl: json.url }
+  } catch (error) {
     console.error("Upload error:", error)
     return null
   }
-
-  const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${fileName}`
-  return { path: fileName, publicUrl }
 }
 
 /* ------------------------------------------------------------------ */
-/*  Delete                                                             */
+/*  Delete (via server-side — service role handles RLS)                */
 /* ------------------------------------------------------------------ */
 
 export async function deleteImage(path: string): Promise<boolean> {
-  const { error } = await supabase.storage.from(BUCKET).remove([path])
-  if (error) {
+  try {
+    const res = await fetch("/api/upload?" + new URLSearchParams({ bucket: BUCKET, path }), {
+      method: "DELETE",
+    })
+    return res.ok
+  } catch (error) {
     console.error("Delete error:", error)
     return false
   }
-  return true
 }
 
 /* ------------------------------------------------------------------ */

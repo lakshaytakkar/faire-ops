@@ -1,0 +1,97 @@
+/* ==========================================================================
+   USDrop Design System — Cards
+   Extracted from USDrop v3 shadcn/ui Card component
+   All classes use `ds-usdrop-` prefix; all values reference CSS custom properties.
+   ========================================================================== */
+
+/* Base card */
+.ds-usdrop-card {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  padding: 0.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Card slots */
+.ds-usdrop-card-header {
+  display: grid;
+  grid-template-rows: auto auto;
+  align-items: start;
+  gap: 0.5rem;
+  padding: 0 0.5rem;
+}
+.ds-usdrop-card-title { font-weight: 600; line-height: 1; }
+.ds-usdrop-card-description { font-size: 0.875rem; color: var(--muted-foreground); }
+.ds-usdrop-card-action { grid-column-start: 2; grid-row: 1 / span 2; align-self: start; justify-self: end; }
+.ds-usdrop-card-content { padding: 0 0.5rem; }
+.ds-usdrop-card-footer { display: flex; align-items: center; padding: 0 0.5rem; }
+
+/* Metric card — the admin dashboard pattern */
+.ds-usdrop-metric-card {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  box-shadow: var(--metric-shadow);
+}
+.ds-usdrop-metric-card .metric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ds-usdrop-metric-card .metric-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+.ds-usdrop-metric-card .metric-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ds-usdrop-metric-card .metric-icon svg {
+  width: 18px;
+  height: 18px;
+  color: var(--primary);
+}
+.ds-usdrop-metric-card .metric-value {
+  margin-top: 0.25rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+.ds-usdrop-metric-card .metric-subtitle {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+/* Profile summary gradient card */
+.ds-usdrop-profile-card {
+  padding: 1.25rem;
+  background: linear-gradient(to right, oklch(0.4099 0.2135 264.0522), oklch(0.3500 0.1498 285.3249));
+  color: white;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-xl);
+}
+.ds-usdrop-profile-avatar {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 9999px;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}

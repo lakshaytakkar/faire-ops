@@ -208,19 +208,59 @@ export default function CallsDashboard() {
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
       <SubNav items={CALLS_SUB_NAV} />
 
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Calls dashboard</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            AI-scored quality metrics across all sales reps. Auto-transcribed via Gemini 2.5 Flash.
-          </p>
-        </div>
-        {(pendingAi > 0 || failedAi > 0) && (
-          <div className="text-xs text-muted-foreground">
-            AI queue: <span className="text-amber-700 font-medium">{pendingAi} pending</span>
-            {failedAi > 0 && <> · <span className="text-red-700 font-medium">{failedAi} failed</span></>}
+      {/* Hero gradient banner */}
+      <div
+        className="relative rounded-2xl overflow-hidden px-8 py-10"
+        style={{
+          background: "linear-gradient(135deg, hsl(250,50%,12%) 0%, hsl(245,60%,30%) 100%)",
+        }}
+      >
+        <div className="relative z-10">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <span className="inline-block text-xs font-semibold uppercase tracking-widest text-violet-300/80 mb-2">
+                Call QA
+              </span>
+              <h1 className="text-2xl font-bold font-heading text-white">
+                Call Quality Assurance
+              </h1>
+              <p className="mt-1 text-sm text-white/70">
+                Call monitoring, coaching &amp; sentiment analysis
+              </p>
+            </div>
+            {(pendingAi > 0 || failedAi > 0) && (
+              <div className="text-xs text-white/60">
+                AI queue: <span className="text-amber-300 font-medium">{pendingAi} pending</span>
+                {failedAi > 0 && <> · <span className="text-red-300 font-medium">{failedAi} failed</span></>}
+              </div>
+            )}
           </div>
-        )}
+
+          <div className="mt-6 grid grid-cols-3 gap-6 max-w-lg">
+            <div>
+              <div className="text-2xl font-bold text-white tabular-nums">
+                {loading ? "\u2014" : (team?.total_calls ?? 0).toLocaleString()}
+              </div>
+              <div className="text-xs text-white/60 mt-0.5">Total Calls</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-white tabular-nums">
+                {loading ? "\u2014" : (team?.flagged_count ?? 0).toLocaleString()}
+              </div>
+              <div className="text-xs text-white/60 mt-0.5">Flagged</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-white tabular-nums">
+                {loading ? "\u2014" : (team?.avg_score ?? "\u2014")}
+              </div>
+              <div className="text-xs text-white/60 mt-0.5">Avg Score</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Decorative circles */}
+        <div className="absolute -top-16 -right-16 size-64 rounded-full bg-white/5" />
+        <div className="absolute -bottom-20 -left-20 size-48 rounded-full bg-white/5" />
       </div>
 
       {/* Urgent section */}
@@ -403,6 +443,46 @@ export default function CallsDashboard() {
             ))
           )}
         </div>
+      </div>
+
+      {/* Quick actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Link
+          href="/hq/calls"
+          className="rounded-xl border bg-card p-5 hover:shadow-md transition-shadow block"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <span className="inline-flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <Phone className="size-4" />
+            </span>
+            <span className="text-[0.9375rem] font-semibold tracking-tight">Review Calls</span>
+          </div>
+          <p className="text-sm text-muted-foreground">Browse and review all recorded calls</p>
+        </Link>
+        <Link
+          href="/hq/calls/coaching"
+          className="rounded-xl border bg-card p-5 hover:shadow-md transition-shadow block"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <span className="inline-flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <Award className="size-4" />
+            </span>
+            <span className="text-[0.9375rem] font-semibold tracking-tight">Coaching</span>
+          </div>
+          <p className="text-sm text-muted-foreground">Rep coaching priorities and training insights</p>
+        </Link>
+        <Link
+          href="/hq/calls/reports"
+          className="rounded-xl border bg-card p-5 hover:shadow-md transition-shadow block"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <span className="inline-flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <TrendingUp className="size-4" />
+            </span>
+            <span className="text-[0.9375rem] font-semibold tracking-tight">Reports</span>
+          </div>
+          <p className="text-sm text-muted-foreground">Quality trends, team performance, and analytics</p>
+        </Link>
       </div>
     </div>
   )

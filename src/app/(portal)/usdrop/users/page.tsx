@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { Users, Crown, UserCheck, UserX } from "lucide-react"
 import { supabaseUsdrop } from "@/lib/supabase"
 import { PageHeader } from "@/components/shared/page-header"
@@ -29,7 +30,7 @@ async function fetchProfiles(): Promise<{ rows: Profile[]; count: number }> {
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
-    .limit(50)
+    .limit(1000)
   if (error) {
     console.error("usdrop.profiles fetch error:", error)
     return { rows: [], count: 0 }
@@ -38,7 +39,19 @@ async function fetchProfiles(): Promise<{ rows: Profile[]; count: number }> {
 }
 
 export default async function UsersPage() {
-  const { rows, count } = await fetchProfiles()
+  const [{ rows, count }, totalRes, proRes, inactiveRes, onboardedRes] = await Promise.all([
+    fetchProfiles(),
+    supabaseUsdrop.from("profiles").select("id", { count: "exact", head: true }),
+    supabaseUsdrop.from("profiles").select("id", { count: "exact", head: true }).in("account_type", ["pro", "enterprise"]),
+    supabaseUsdrop.from("profiles").select("id", { count: "exact", head: true }).not("status", "eq", "active"),
+    supabaseUsdrop.from("profiles").select("id", { count: "exact", head: true }).eq("onboarding_completed", true),
+  ])
+
+  const totalCount = totalRes.count ?? 0
+  const proCount = proRes.count ?? 0
+  const freeCount = totalCount - proCount
+  const inactiveCount = inactiveRes.count ?? 0
+  const onboardedCount = onboardedRes.count ?? 0
 
   const profileRows: ProfileRow[] = rows.map((p) => ({
     id: p.id,
@@ -52,16 +65,16 @@ export default async function UsersPage() {
     onboarding_completed: p.onboarding_completed,
   }))
 
-  const proCount = rows.filter((r) => r.account_type === "pro" || r.account_type === "enterprise").length
-  const freeCount = rows.filter((r) => !r.account_type || r.account_type === "free").length
-  const onboardedCount = rows.filter((r) => r.onboarding_completed).length
-  const inactiveCount = rows.filter((r) => r.status && r.status !== "active").length
-
   return (
     <div className="space-y-5">
       <PageHeader
         title="Users"
-        subtitle={`${count.toLocaleString("en-IN")} registered users (newest 50)`}
+        subtitle={`${totalCount.toLocaleString("en-IN")} registered users`}
+        actions={
+          <Link href="/usdrop/users/create" className="h-8 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors inline-flex items-center">
+            + Create User
+          </Link>
+        }
       />
 
       <KPIGrid>
@@ -77,7 +90,7 @@ export default async function UsersPage() {
           value={freeCount}
           icon={Users}
           iconTone="slate"
-          hint="of newest 50"
+          hint="all users"
         />
         <MetricCard
           label="Onboarded"

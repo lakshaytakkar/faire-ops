@@ -5,3 +5,14 @@ scripts/
 faire.code-workspace
 .claude/
 external/
+external/**
+**/node_modules
+**/.next/cache
+tmp-images/
+tmp/
+.staging/
+.checkpoints/
+exports/
+*.xlsx
+*.xls
+.env.local

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import Link from "next/link"
 import {
   Zap,
   Activity,
@@ -13,6 +14,9 @@ import {
   Bell,
   Plug,
   Mail,
+  Plus,
+  ScrollText,
+  Settings2,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
@@ -229,10 +233,16 @@ export default function AutomationsPage() {
 
   return (
     <div className="max-w-[1440px] mx-auto w-full space-y-5">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold font-heading text-foreground">Automations</h1>
-        <p className="text-sm text-muted-foreground">Manage automated workflows and scheduled tasks</p>
+      {/* Hero Banner */}
+      <div className="rounded-md px-8 py-7 text-white" style={{ background: "linear-gradient(135deg, hsl(240,50%,12%) 0%, hsl(235,60%,30%) 100%)" }}>
+        <p className="text-sm font-medium opacity-75">Automations</p>
+        <h1 className="mt-1 text-3xl font-bold font-heading tracking-tight">Automation Hub</h1>
+        <p className="mt-1 text-sm opacity-60">Scheduled tasks, webhooks & triggered workflows</p>
+        <div className="mt-5 flex items-center gap-8">
+          <div><p className="text-2xl font-bold tabular-nums">{loading ? "-" : total}</p><p className="text-xs opacity-50">Total</p></div>
+          <div><p className="text-2xl font-bold tabular-nums">{loading ? "-" : active}</p><p className="text-xs opacity-50">Active</p></div>
+          <div><p className="text-2xl font-bold tabular-nums">{loading ? "-" : failed24h}</p><p className="text-xs opacity-50">Failed (24h)</p></div>
+        </div>
       </div>
 
       {/* Stats */}
@@ -283,6 +293,81 @@ export default function AutomationsPage() {
         </Card>
       </div>
 
+      {/* Breakdown Grid */}
+      {!loading && automations.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Type Breakdown */}
+          <div className="rounded-lg border bg-card p-5">
+            <h3 className="text-[0.9375rem] font-semibold tracking-tight mb-4">By Type</h3>
+            <div className="space-y-3">
+              {Object.entries(
+                automations.reduce<Record<string, number>>((acc, a) => {
+                  acc[a.type] = (acc[a.type] || 0) + 1
+                  return acc
+                }, {})
+              )
+                .sort((a, b) => b[1] - a[1])
+                .map(([type, count]) => {
+                  const pct = Math.round((count / total) * 100)
+                  const barColor =
+                    type === "sync" ? "bg-blue-500" :
+                    type === "notification" ? "bg-amber-500" :
+                    type === "integration" ? "bg-purple-500" :
+                    type === "email" ? "bg-red-500" : "bg-muted-foreground"
+                  return (
+                    <div key={type}>
+                      <div className="flex items-center justify-between text-sm mb-1">
+                        <span className="capitalize font-medium">{type}</span>
+                        <span className="text-muted-foreground tabular-nums">{count}</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-muted overflow-hidden">
+                        <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
+
+          {/* Status Breakdown */}
+          <div className="rounded-lg border bg-card p-5">
+            <h3 className="text-[0.9375rem] font-semibold tracking-tight mb-4">By Status</h3>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-2">Active vs Paused</p>
+                <div className="flex gap-4">
+                  <div className="flex-1 rounded-lg bg-emerald-50 p-3 text-center">
+                    <p className="text-xl font-bold tabular-nums text-emerald-700">{active}</p>
+                    <p className="text-sm text-emerald-600">Active</p>
+                  </div>
+                  <div className="flex-1 rounded-lg bg-muted p-3 text-center">
+                    <p className="text-xl font-bold tabular-nums">{total - active}</p>
+                    <p className="text-sm text-muted-foreground">Paused</p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-2">Last Run Result</p>
+                <div className="flex gap-4">
+                  <div className="flex-1 rounded-lg bg-emerald-50 p-3 text-center">
+                    <p className="text-xl font-bold tabular-nums text-emerald-700">{automations.filter((a) => a.last_status === "success").length}</p>
+                    <p className="text-sm text-emerald-600">Success</p>
+                  </div>
+                  <div className="flex-1 rounded-lg bg-red-50 p-3 text-center">
+                    <p className="text-xl font-bold tabular-nums text-red-700">{automations.filter((a) => a.last_status === "failed").length}</p>
+                    <p className="text-sm text-red-600">Failed</p>
+                  </div>
+                  <div className="flex-1 rounded-lg bg-muted p-3 text-center">
+                    <p className="text-xl font-bold tabular-nums">{automations.filter((a) => !a.last_status).length}</p>
+                    <p className="text-sm text-muted-foreground">Never Run</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
@@ -322,12 +407,12 @@ export default function AutomationsPage() {
                           </div>
                         )
                       })()}
-                      <div>
+                      <a href={`/automations/${a.id}`} className="hover:text-primary transition-colors">
                         <div className="text-sm font-medium">{a.name}</div>
                         {a.description && (
                           <div className="text-xs text-muted-foreground truncate max-w-[240px]">{a.description}</div>
                         )}
-                      </div>
+                      </a>
                     </div>
                   </td>
                   <td className="px-4 py-3.5">
@@ -393,6 +478,31 @@ export default function AutomationsPage() {
           </table>
         </div>
       )}
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Link href="#" className="rounded-xl border bg-card p-5 hover:shadow-md transition-shadow block">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="inline-flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary"><Plus className="size-4" /></span>
+            <span className="text-[0.9375rem] font-semibold tracking-tight">Create Automation</span>
+          </div>
+          <p className="text-sm text-muted-foreground">Set up a new automated workflow</p>
+        </Link>
+        <Link href="#" className="rounded-xl border bg-card p-5 hover:shadow-md transition-shadow block">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="inline-flex size-9 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600"><ScrollText className="size-4" /></span>
+            <span className="text-[0.9375rem] font-semibold tracking-tight">View Run Logs</span>
+          </div>
+          <p className="text-sm text-muted-foreground">Inspect execution history & errors</p>
+        </Link>
+        <Link href="#" className="rounded-xl border bg-card p-5 hover:shadow-md transition-shadow block">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="inline-flex size-9 items-center justify-center rounded-md bg-amber-500/10 text-amber-600"><Settings2 className="size-4" /></span>
+            <span className="text-[0.9375rem] font-semibold tracking-tight">Manage Triggers</span>
+          </div>
+          <p className="text-sm text-muted-foreground">Configure cron schedules & webhooks</p>
+        </Link>
+      </div>
 
       {/* Toast */}
       {toast && (

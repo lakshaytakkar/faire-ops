@@ -1,0 +1,49 @@
+/* ==========================================================================
+   USDrop Design System — Badges
+   Extracted from USDrop v3 shadcn/ui Badge component
+   All classes use `ds-usdrop-` prefix; all values reference CSS custom properties.
+   ========================================================================== */
+
+/* Base */
+.ds-usdrop-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  width: fit-content;
+  white-space: nowrap;
+  flex-shrink: 0;
+  gap: 0.25rem;
+  overflow: hidden;
+  transition: color 150ms, box-shadow 150ms;
+}
+.ds-usdrop-badge svg { width: 0.75rem; height: 0.75rem; pointer-events: none; }
+
+/* Variants */
+.ds-usdrop-badge-default {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+.ds-usdrop-badge-secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+}
+.ds-usdrop-badge-destructive {
+  background-color: var(--destructive);
+  color: white;
+}
+.ds-usdrop-badge-outline {
+  border-color: var(--border);
+  color: var(--foreground);
+  background: transparent;
+}
+
+/* Semantic status */
+.ds-usdrop-badge-success { background-color: oklch(0.9200 0.0400 155); color: oklch(0.3500 0.1200 155); }
+.ds-usdrop-badge-warning { background-color: oklch(0.9500 0.0500 80); color: oklch(0.4500 0.1300 60); }
+.ds-usdrop-badge-info { background-color: oklch(0.9200 0.0400 240); color: oklch(0.4000 0.1500 240); }
+.ds-usdrop-badge-error { background-color: oklch(0.9300 0.0400 25); color: oklch(0.5000 0.1800 25); }
