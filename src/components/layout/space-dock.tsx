@@ -44,6 +44,7 @@ import {
   Box,
   Code,
   Sparkles,
+  Ship,
   type LucideIcon,
 } from "lucide-react"
 
@@ -62,6 +63,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Store,
   Code,
   Sparkles,
+  Ship,
 }
 
 /**
@@ -115,6 +117,10 @@ const PATH_PREFIXES_BY_SLUG: Record<string, string[]> = {
   "life": ["/life"],
   "jsblueridge": ["/jsblueridge"],
   "b2b-ecosystem": ["/b2b-ecosystem"],
+  "suprdm": ["/suprdm"],
+  "gullee": ["/gullee"],
+  "chinaproducts": ["/chinaproducts"],
+  "chinaimports": ["/chinaimports"],
 }
 
 function prefixesFor(slug: string): string[] {

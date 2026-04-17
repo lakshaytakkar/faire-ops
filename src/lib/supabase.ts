@@ -71,6 +71,41 @@ export const supabaseLegal = createClient(supabaseUrl, supabaseAnonKey, {
   db: { schema: "legal" },
 })
 
+// SuprDM admin (suprdm.users, suprdm.plans, suprdm.roles, suprdm.features,
+// suprdm.automations, suprdm.payments). Mirrors the SuprDM product's data model;
+// client app lives at a separate Vercel deploy, admin lives inside faire-ops.
+export const supabaseSuprdm = createClient(supabaseUrl, supabaseAnonKey, {
+  db: { schema: "suprdm" },
+})
+
+// Gullee admin (gullee.products, gullee.collections, gullee.retailers,
+// gullee.orders, gullee.wholesale_applications). Storefronts at gullee-storefront
+// and toyarina-storefront on Vercel; admin lives inside faire-ops.
+export const supabaseGullee = createClient(supabaseUrl, supabaseAnonKey, {
+  db: { schema: "gullee" },
+})
+
+// chinaproducts.in — Wholesale Catalog rep portal (chinaproducts.products,
+// chinaproducts.orders, chinaproducts.order_items, chinaproducts.rep_queue,
+// chinaproducts.call_scripts, chinaproducts.objection_handlers).
+export const supabaseChinaproducts = createClient(supabaseUrl, supabaseAnonKey, {
+  db: { schema: "chinaproducts" },
+})
+
+// chinaimports.in — Custom Sourcing ops portal (chinaimports.rfqs,
+// chinaimports.quote_options, chinaimports.orders, chinaimports.order_stages,
+// chinaimports.ops_queue).
+export const supabaseChinaimports = createClient(supabaseUrl, supabaseAnonKey, {
+  db: { schema: "chinaimports" },
+})
+
+// Shared cross-portal tables for the china ventures (shared.factories,
+// shared.waitlist_signups, shared.whatsapp_logs, shared.payment_records,
+// shared.documents).
+export const supabaseShared = createClient(supabaseUrl, supabaseAnonKey, {
+  db: { schema: "shared" },
+})
+
 /* ------------------------------------------------------------------ */
 /*  Store types                                                        */
 /* ------------------------------------------------------------------ */
