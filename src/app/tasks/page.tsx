@@ -2,9 +2,10 @@
 
 import { useState, useCallback, useRef, useEffect } from "react"
 import Link from "next/link"
-import { ArrowLeft, Plus, Trash2, Square, CheckSquare, ListTodo, Lightbulb, Bug, Puzzle, Bot, Plug, X } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Square, CheckSquare, ListTodo, Lightbulb, Bug, Puzzle, Bot, Plug, X, FolderKanban } from "lucide-react"
 import { getTaskDetail } from "./_data/task-details"
 import { TaskDetailModal } from "./_components/task-detail-modal"
+import { ExternalProjectsTab } from "./_components/external-projects-tab"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -19,7 +20,7 @@ interface TaskNode {
   children?: TaskNode[]
 }
 
-type TabKey = "tasks" | "ideas" | "bugs" | "plugins" | "agents" | "integrations"
+type TabKey = "tasks" | "ideas" | "bugs" | "plugins" | "agents" | "integrations" | "external-projects"
 
 /* ------------------------------------------------------------------ */
 /*  Initial task tree                                                   */
@@ -1155,6 +1156,7 @@ const TABS: { key: TabKey; label: string; icon: typeof ListTodo; description: st
   { key: "plugins", label: "Plugins", icon: Puzzle, description: "Right-dock plugins — planned, built, stable", addLabel: "Add plugin group", isTree: true },
   { key: "agents", label: "Agents & Skills", icon: Bot, description: "Claude Code skills, agents, and AI employees", addLabel: "", isTree: false },
   { key: "integrations", label: "Integrations", icon: Plug, description: "External services connected across spaces", addLabel: "", isTree: false },
+  { key: "external-projects", label: "External Projects", icon: FolderKanban, description: "Incoming GitHub repos — landing pages, client portals, admin spaces", addLabel: "", isTree: false },
 ]
 
 /* ------------------------------------------------------------------ */
@@ -1464,6 +1466,9 @@ export default function TasksPage() {
           })}
         </div>
       )}
+
+      {/* ── External Projects tab (Supabase-backed) ── */}
+      {activeTab === "external-projects" && <ExternalProjectsTab />}
 
       {/* ── Detail modal ── */}
       {modalItem && (
