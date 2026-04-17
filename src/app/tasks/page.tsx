@@ -1156,7 +1156,7 @@ const TABS: { key: TabKey; label: string; icon: typeof ListTodo; description: st
   { key: "plugins", label: "Plugins", icon: Puzzle, description: "Right-dock plugins — planned, built, stable", addLabel: "Add plugin group", isTree: true },
   { key: "agents", label: "Agents & Skills", icon: Bot, description: "Claude Code skills, agents, and AI employees", addLabel: "", isTree: false },
   { key: "integrations", label: "Integrations", icon: Plug, description: "External services connected across spaces", addLabel: "", isTree: false },
-  { key: "external-projects", label: "External Projects", icon: FolderKanban, description: "Incoming GitHub repos — landing pages, client portals, admin spaces", addLabel: "", isTree: false },
+  { key: "external-projects", label: "Claude Tasks Queue", icon: FolderKanban, description: "Claude work queue — landing pages, client portals, admin spaces, and other ingest/deploy work", addLabel: "", isTree: false },
 ]
 
 /* ------------------------------------------------------------------ */
