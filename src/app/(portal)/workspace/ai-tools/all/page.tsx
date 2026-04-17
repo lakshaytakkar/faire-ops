@@ -12,6 +12,7 @@ import {
   Tag,
   ClipboardCheck,
   TrendingUp,
+  BarChart3,
 } from "lucide-react"
 import { isGeminiConfigured } from "@/lib/gemini"
 
@@ -141,6 +142,16 @@ const TOOLS: Tool[] = [
     iconColor: "text-violet-600",
     category: "Research",
     categoryColor: "bg-violet-50 text-violet-700",
+  },
+  {
+    slug: "report-generator",
+    name: "Product Research Report",
+    description: "Full D2C opportunity report — market size, competitors, supplier, ROI, GTM plan",
+    icon: BarChart3,
+    iconBg: "bg-indigo-100",
+    iconColor: "text-indigo-600",
+    category: "Research",
+    categoryColor: "bg-indigo-50 text-indigo-700",
   },
 ]
 

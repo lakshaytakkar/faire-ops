@@ -370,3 +370,155 @@ export async function auditListing(productName: string, description: string, ima
 export async function analyzeTrends(category: string): Promise<string> {
   return generateText(`You are a wholesale market analyst for Faire marketplace.\nCategory: ${category}\n\nProvide:\n1. Top 5 trending keywords in this category for wholesale\n2. 3 emerging product types retailers are looking for\n3. Seasonal considerations for the next 3 months\n4. Price range sweet spot for this category\n5. One actionable recommendation\n\nBe specific to wholesale/B2B market. Keep concise.`)
 }
+
+/* ------------------------------------------------------------------ */
+/*  Product Research Report (ported from report-gen-tool)              */
+/* ------------------------------------------------------------------ */
+
+export interface ProductResearchReport {
+  product: string
+  market: string
+  businessModel: string
+  coverSubtitle: string
+  coverDescription: string
+  coverPills: string[]
+  productIntelligence: Array<{ label: string; value: string }>
+  demandSignals: Array<{ label: string; value: string }>
+  productTypes: Array<{ name: string; description: string; marketShare: string; priceRange: string; features: string[]; recommended?: boolean }>
+  marketHeadline: string
+  marketPieData: Array<{ name: string; value: number }>
+  marketGrowthData: Array<{ year: string; value: number }>
+  marketGrowthLabel: string
+  marketChips: string[]
+  marketVerdict: string[]
+  supplierName: string
+  supplierLocation: string
+  supplierYears: string
+  supplierCertifications: string[]
+  supplierMOQ: number
+  supplierFOBRange: string
+  supplierAbout: string
+  skus: Array<{ code: string; name: string; price: string; features: string[]; recommended?: boolean }>
+  competitionHeadline: string
+  competitorData: Array<{ name: string; price: number }>
+  competitionVerdict: string
+  currencySymbol: string
+  teamViewQuote: string
+  teamViewPoints: Array<{ title: string; body: string }>
+  roiNetProfit: string
+  roiTotalCost: string
+  roiPercent: string
+  teamViewRemember: string
+  safetyHeadline: string
+  safetyMarkets: Array<{ code: string; market: string; standard: string; status: string; body: string; isPrimary?: boolean }>
+  safetyFeatures: string[]
+  financialsHeadline: string
+  roiPipeline: Array<{ label: string; value: string; sub: string }>
+  costTable: Array<{ label: string; value: string; bold?: boolean }>
+  scenarios: Array<{ scenario: string; units: string; revenue: string; profit: string; roi: string; accent?: boolean }>
+  gtmPhases: Array<{ title: string; timeline: string; steps: string[] }>
+  yesBecause: string[]
+  onlyIf: string[]
+  sources: Array<string[]>
+}
+
+const RESEARCH_REPORT_SYSTEM_PROMPT = `You are a world-class business research analyst and D2C market strategist.
+You produce detailed, factual, and highly specific product opportunity reports for entrepreneurs.
+
+Your reports are grounded in REAL data — real market sizes, actual competitor names and pricing, genuine supplier options from Alibaba, and honest financial projections.
+
+When generating a report, you MUST:
+1. Research the product category deeply — real market sizes, real CAGR figures
+2. Name ACTUAL competitors that exist in the market with real pricing
+3. Recommend a real Alibaba supplier (verified Gold Supplier if appropriate)
+4. Calculate realistic financials — actual import duties, platform fees, landed costs
+5. Provide specific compliance requirements (BIS/FSSAI/CE/CPSC as relevant to the target market)
+6. Write in plain, simple language a first-time entrepreneur can understand
+7. Be SPECIFIC — use real numbers, real brand names, real platform names
+
+CRITICAL: Return ONLY valid JSON matching the exact schema in the user message. No markdown, no explanation, just JSON.`
+
+function buildResearchReportUserPrompt(product: string, market: string, businessModel: string, additionalContext: string): string {
+  return `Generate a complete business research report for:
+
+PRODUCT: ${product}
+TARGET MARKET: ${market}
+BUSINESS MODEL: ${businessModel}
+ADDITIONAL CONTEXT: ${additionalContext || "None provided"}
+
+Return a JSON object with this structure (fill all fields with REAL, SPECIFIC data):
+{
+  "product": "${product}", "market": "${market}", "businessModel": "${businessModel}",
+  "coverSubtitle": "Short subtitle for the report cover",
+  "coverDescription": "One compelling sentence describing what this report covers",
+  "coverPills": ["3 key insight pills, each max 6 words"],
+  "productIntelligence": [{"label": "Product", "value": "..."}, {"label": "Retail Price Range", "value": "..."}, {"label": "Market Size (2024)", "value": "..."}, {"label": "Monthly Units Sold", "value": "..."}, {"label": "Avg Review", "value": "..."}, {"label": "Barrier to Entry", "value": "..."}],
+  "demandSignals": [{"label": "FOB Price (China)", "value": "..."}, {"label": "Min Order (MOQ)", "value": "..."}, {"label": "Search Volume", "value": "..."}, {"label": "Top Platforms", "value": "..."}, {"label": "Organic/Paid Ratio", "value": "..."}, {"label": "Avg CPC", "value": "..."}],
+  "productTypes": [{"name": "...", "description": "2-3 sentences", "marketShare": "XX%", "priceRange": "...", "features": ["4 features"], "recommended": true}],
+  "marketHeadline": "Short market headline with real numbers",
+  "marketPieData": [{"name": "Segment 1", "value": 40}, {"name": "Segment 2", "value": 35}, {"name": "Segment 3", "value": 20}, {"name": "Online", "value": 5}],
+  "marketGrowthData": [{"year": "2024", "value": 500}, {"year": "2025", "value": 650}, {"year": "2026", "value": 850}, {"year": "2027", "value": 1100}, {"year": "2028", "value": 1400}, {"year": "2029", "value": 1800}],
+  "marketGrowthLabel": "Market Revenue Projection",
+  "marketChips": ["4 short insight chips"],
+  "marketVerdict": ["3 verdict points on why the market opportunity is real"],
+  "supplierName": "Real verified Gold Supplier",
+  "supplierLocation": "City, China",
+  "supplierYears": "XX+",
+  "supplierCertifications": ["4 real certs for this product"],
+  "supplierMOQ": 50,
+  "supplierFOBRange": "$X-$XX",
+  "supplierAbout": "2-3 sentences about the supplier and why they fit",
+  "skus": [{"code": "SKU-001", "name": "...", "price": "$XX FOB", "features": ["4 features"], "recommended": true}],
+  "competitionHeadline": "Market positioning headline",
+  "competitorData": [{"name": "Generic", "price": 400}, {"name": "Brand A", "price": 1200}, {"name": "Our Brand", "price": 1800}, {"name": "Premium", "price": 3500}],
+  "competitionVerdict": "2-3 sentences explaining the pricing gap",
+  "currencySymbol": "₹",
+  "teamViewQuote": "3-LINE QUOTE IN CAPS. MAX 8 WORDS PER LINE.",
+  "teamViewPoints": [{"title": "...", "body": "2-3 sentences"}, {"title": "...", "body": "..."}, {"title": "...", "body": "..."}, {"title": "...", "body": "..."}],
+  "roiNetProfit": "₹X,XXX",
+  "roiTotalCost": "₹X,XXX",
+  "roiPercent": "XX%",
+  "teamViewRemember": "One memorable success sentence for this category",
+  "safetyHeadline": "What certifications you need to sell legally",
+  "safetyMarkets": [{"code": "IN", "market": "India", "standard": "BIS/IS XXXX", "status": "Register First", "body": "Mandatory", "isPrimary": true}, {"code": "US", "market": "United States", "standard": "CPSC", "status": "Certified", "body": "For export"}, {"code": "EU", "market": "European Union", "standard": "CE", "status": "Certified", "body": "CE Marking"}, {"code": "GB", "market": "United Kingdom", "standard": "UKCA", "status": "Confirm", "body": "OPSS"}],
+  "safetyFeatures": ["5 key safety features"],
+  "financialsHeadline": "Buy at X. Sell at Y. Keep Z per unit.",
+  "roiPipeline": [{"label": "TOTAL COST", "value": "...", "sub": "Landed"}, {"label": "SELL PRICE", "value": "...", "sub": "D2C"}, {"label": "NET PROFIT", "value": "...", "sub": "Per Unit"}, {"label": "ROI", "value": "XX%", "sub": "Return on Investment"}],
+  "costTable": [{"label": "Total Landed Cost", "value": "..."}, {"label": "Selling Price", "value": "..."}, {"label": "Platform Fee", "value": "- ..."}, {"label": "Net Profit", "value": "...", "bold": true}],
+  "scenarios": [{"scenario": "Conservative", "units": "...", "revenue": "...", "profit": "...", "roi": "XX%"}, {"scenario": "Base Case", "units": "...", "revenue": "...", "profit": "...", "roi": "XX%"}, {"scenario": "Optimistic", "units": "...", "revenue": "...", "profit": "...", "roi": "XX%", "accent": true}],
+  "gtmPhases": [{"title": "Validate", "timeline": "Month 1-3", "steps": ["5 specific steps"]}, {"title": "Launch", "timeline": "Month 3-6", "steps": ["5 specific steps"]}, {"title": "Scale", "timeline": "Month 6-12", "steps": ["5 specific steps"]}],
+  "yesBecause": ["4 specific reasons why this product is worth pursuing"],
+  "onlyIf": ["4 honest conditions that must be met for success"],
+  "sources": [["1", "Source Name", "Report Title"], ["2", "Source Name", "Report Title"], ["3", "Source Name", "Report Title"], ["4", "Source Name", "Report Title"], ["5", "Source Name", "Report Title"]]
+}
+
+CRITICAL RULES:
+- Use REAL competitor names with real approximate pricing
+- Use REAL market sizes based on industry knowledge
+- For India market: prices in Rs, BIS cert required, check correct IS standard
+- For US market: prices in $, CPSC cert required
+- Make every insight SPECIFIC to this product — no generic advice`
+}
+
+export async function generateProductResearchReport(
+  product: string,
+  market: string,
+  businessModel: string,
+  additionalContext: string,
+): Promise<ProductResearchReport> {
+  if (!genAI) throw new Error("Gemini API key not configured — add NEXT_PUBLIC_GEMINI_API_KEY to .env.local")
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    generationConfig: {
+      responseMimeType: "application/json",
+      temperature: 0.4,
+      maxOutputTokens: 16000,
+    },
+  })
+  const result = await model.generateContent([
+    { text: RESEARCH_REPORT_SYSTEM_PROMPT },
+    { text: buildResearchReportUserPrompt(product, market, businessModel, additionalContext) },
+  ])
+  const text = result.response.text()
+  return JSON.parse(text) as ProductResearchReport
+}

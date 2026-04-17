@@ -119,6 +119,14 @@ const TOOL_META: Record<string, ToolMeta> = {
     iconBg: "bg-violet-100",
     iconColor: "text-violet-600",
   },
+  "report-generator": {
+    name: "Product Research Report",
+    description: "Full D2C opportunity report — market size, competitors, supplier, ROI, GTM plan",
+    icon: TrendingUp,
+    iconBg: "bg-indigo-100",
+    iconColor: "text-indigo-600",
+    redirect: "/workspace/ai-tools/report-generator",
+  },
 }
 
 /* ------------------------------------------------------------------ */
